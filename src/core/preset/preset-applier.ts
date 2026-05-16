@@ -4,6 +4,7 @@ import { stringify as stringifyYaml } from "yaml";
 import { countChanges } from "#src/utils/diff.js";
 import { hashContent } from "#src/utils/hash.js";
 import { resolveConflicts, type ConflictEntry } from "#src/utils/conflict-resolver.js";
+import { Logger } from "../output/logger.js";
 import { StateManager } from "../config/state.js";
 import type { ArtifactFileState } from "../config/state.js";
 import type { LoadedPreset } from "./preset-loader.js";
@@ -30,6 +31,12 @@ export interface ApplyResult {
   conflicts: string[];
   conflictDetails: ConflictDetail[];
   resourcesCopied: number;
+  /**
+   * CORE-007 — files whose hunk-level conflicts could not be merged
+   * automatically in a non-interactive environment. CLI callers map
+   * this to `EXIT_CODES.UNRESOLVABLE_CONFLICTS`.
+   */
+  unresolvable: string[];
 }
 
 interface ConflictFile {
@@ -42,7 +49,8 @@ interface ConflictFile {
   removals: number;
 }
 
-type ArtifactType = "rule" | "skill" | "agent" | "mcp-server";
+import type { ArtifactType } from "../artifact-types.js";
+import { artifactRelativePath } from "../artifact-types.js";
 
 export function reconstructRuleContent(rule: NormalizedRule): string {
   const fm = [
@@ -101,16 +109,7 @@ export function reconstructAgentContent(agent: NormalizedAgent): string {
 }
 
 function getArtifactPath(configDir: string, type: ArtifactType, name: string): string {
-  switch (type) {
-    case "rule":
-      return path.join(configDir, "rules", `${name}.md`);
-    case "skill":
-      return path.join(configDir, "skills", name, "SKILL.md");
-    case "agent":
-      return path.join(configDir, "agents", `${name}.md`);
-    case "mcp-server":
-      return path.join(configDir, "mcp-servers", `${name}.yaml`);
-  }
+  return path.join(configDir, artifactRelativePath(type, name));
 }
 
 async function readFileOrNull(filePath: string): Promise<string | null> {
@@ -132,17 +131,11 @@ async function readOriginalArtifact(
   type: ArtifactType,
   name: string,
 ): Promise<string | null> {
+  // mcp-server presets are not directory-backed today — every other type
+  // resolves through the canonical layout map.
+  if (type === "mcp-server") return null;
   const presetDir = path.join(configDir, "presets", presetName);
-  switch (type) {
-    case "rule":
-      return readFileOrNull(path.join(presetDir, "rules", `${name}.md`));
-    case "skill":
-      return readFileOrNull(path.join(presetDir, "skills", name, "SKILL.md"));
-    case "agent":
-      return readFileOrNull(path.join(presetDir, "agents", `${name}.md`));
-    default:
-      return null;
-  }
+  return readFileOrNull(path.join(presetDir, artifactRelativePath(type, name)));
 }
 
 async function copyResourceTree(srcDir: string, destDir: string, force: boolean): Promise<number> {
@@ -241,6 +234,7 @@ export async function applyPresetArtifacts(
     conflicts: [],
     conflictDetails: [],
     resourcesCopied: 0,
+    unresolvable: [],
   };
 
   const conflicts: ConflictFile[] = [];
@@ -320,7 +314,10 @@ export async function applyPresetArtifacts(
     removals: c.removals,
   }));
 
-  const resolution = await resolveConflicts(conflictEntries, options);
+  const resolution = await resolveConflicts(conflictEntries, {
+    ...options,
+    log: Logger.getInstance(),
+  });
 
   for (const entry of [...resolution.accepted, ...resolution.merged]) {
     await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");
@@ -328,6 +325,13 @@ export async function applyPresetArtifacts(
   }
   for (const entry of resolution.skipped) {
     result.skipped.push(entry.label);
+  }
+  // CORE-007: forward unresolvable conflicts + stderr payload upstream.
+  if (resolution.unresolvable.length > 0 && resolution.nonInteractivePayload) {
+    process.stderr.write(JSON.stringify(resolution.nonInteractivePayload) + "\n");
+  }
+  for (const entry of resolution.unresolvable) {
+    result.unresolvable.push(entry.label);
   }
 
   // Record artifact hashes for drift tracking

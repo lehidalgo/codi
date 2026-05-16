@@ -1,11 +1,9 @@
-import fs from "node:fs/promises";
 import path from "node:path";
 import { stringify as stringifyYaml } from "yaml";
-import { ok, err } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
-import { createError } from "../output/errors.js";
 import { loadMcpServerTemplate } from "./mcp-template-loader.js";
-import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT, PROJECT_NAME } from "#src/constants.js";
+import { MANAGED_BY_USER, PROJECT_NAME } from "#src/constants.js";
+import { assertNotExists, ensureDir, validateArtifactName, writeFileSafe } from "./common.js";
 
 export interface CreateMcpServerOptions {
   name: string;
@@ -14,49 +12,30 @@ export interface CreateMcpServerOptions {
   force?: boolean;
 }
 
+/**
+ * Scaffold an MCP server YAML file. MCP cannot use `writeArtifactFile`
+ * directly because (a) the content is YAML, not the standard markdown
+ * frontmatter shape, and (b) the `{{name}}` placeholder replacement does
+ * not apply — the object is constructed programmatically. We compose the
+ * shared primitives (`validateArtifactName`, `ensureDir`, `assertNotExists`,
+ * `writeFileSafe`) instead.
+ */
 export async function createMcpServer(options: CreateMcpServerOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
-  if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
-    return err([
-      createError("E_CONFIG_INVALID", {
-        message: `Invalid MCP server name "${name}". Use lowercase letters, digits, and hyphens only (max ${MAX_NAME_LENGTH} chars).`,
-      }),
-    ]);
-  }
+  const nameResult = validateArtifactName(name, "MCP server");
+  if (!nameResult.ok) return nameResult;
 
   const filePath = path.join(configDir, "mcp-servers", `${name}.yaml`);
   const dir = path.dirname(filePath);
 
-  try {
-    await fs.mkdir(dir, { recursive: true });
-  } catch (cause) {
-    return err([
-      createError(
-        "E_PERMISSION_DENIED",
-        {
-          path: dir,
-        },
-        cause as Error,
-      ),
-    ]);
-  }
+  const dirResult = await ensureDir(dir);
+  if (!dirResult.ok) return dirResult;
 
-  if (!force) {
-    try {
-      await fs.access(filePath);
-      return err([
-        createError("E_CONFIG_INVALID", {
-          message: `MCP server file already exists: ${filePath}`,
-        }),
-      ]);
-    } catch {
-      // File does not exist, good to proceed
-    }
-  }
+  const existsResult = await assertNotExists(filePath, "MCP server", Boolean(force));
+  if (!existsResult.ok) return existsResult;
 
   let yamlObj: Record<string, unknown>;
-
   if (template) {
     const tmplResult = loadMcpServerTemplate(template);
     if (!tmplResult.ok) return tmplResult;
@@ -77,25 +56,11 @@ export async function createMcpServer(options: CreateMcpServerOptions): Promise<
     yamlObj = {
       name,
       version: 1,
-      managed_by: "user",
+      managed_by: MANAGED_BY_USER,
       command: "",
       args: [],
     };
   }
 
-  try {
-    await fs.writeFile(filePath, stringifyYaml(yamlObj), "utf-8");
-  } catch (cause) {
-    return err([
-      createError(
-        "E_PERMISSION_DENIED",
-        {
-          path: filePath,
-        },
-        cause as Error,
-      ),
-    ]);
-  }
-
-  return ok(filePath);
+  return writeFileSafe(filePath, stringifyYaml(yamlObj));
 }

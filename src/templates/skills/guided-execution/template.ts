@@ -15,13 +15,14 @@ description: |
   Every completed step produces a written document. Do NOT activate for
   pure code changes (use ${PROJECT_NAME}-plan-execution), audits of
   existing code (use ${PROJECT_NAME}-audit-fix), or design-only tasks
-  (use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer).
+  (use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writing).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 14
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Guided Execution
@@ -38,7 +39,7 @@ version: 11
 
 - Pure code changes within the codebase — use ${PROJECT_NAME}-plan-execution
 - Systematic audits of existing code — use ${PROJECT_NAME}-audit-fix
-- Design and planning only — use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer
+- Design and planning only — use ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writing
 - Running tests without collaborative setup — use ${PROJECT_NAME}-test-suite
 - Committing finished work — use ${PROJECT_NAME}-commit
 
@@ -58,8 +59,8 @@ Work through these 9 steps in order. Mark each via TaskUpdate before starting an
 2. **Build the master task list** — Decompose the goal into phases and steps using TaskCreate
 3. **Present the execution plan** — Show the full plan, ownership per step, and get user approval
 4. **Execute the current step** — Follow the Step Execution Protocol
-5. **Validate the step** — Use ${PROJECT_NAME}-evidence-gathering and ${PROJECT_NAME}-verification
-6. **Document the step** — Invoke ${PROJECT_NAME}-step-documenter
+5. **Validate the step** — Use ${PROJECT_NAME}-verify-evidence and ${PROJECT_NAME}-verify-evidence
+6. **Document the step** — Invoke ${PROJECT_NAME}-dev-step-documenter
 7. **Update the task list** — Mark completed, surface the next step
 8. **Repeat steps 4–7** — Until all steps in the current phase are done
 9. **Generate workflow summary** — Final doc linking all step docs, in docs/executions/<workflow-name>/README.md
@@ -102,13 +103,13 @@ If the user must perform an action, explicitly ask for the result:
 Wait for the user's response before proceeding. Do not assume success.
 
 ### Phase 6: Validation
-Invoke ${PROJECT_NAME}-evidence-gathering to confirm the step's intended outcome is achieved.
-Then invoke ${PROJECT_NAME}-verification for the completion claim.
+Invoke ${PROJECT_NAME}-verify-evidence to confirm the step's intended outcome is achieved.
+Then invoke ${PROJECT_NAME}-verify-evidence for the completion claim.
 If validation fails, enter Troubleshooting Mode (see below).
 
 ### Phase 7: Step Closure
 Summarize the result in one paragraph.
-Invoke ${PROJECT_NAME}-step-documenter to generate the step document.
+Invoke ${PROJECT_NAME}-dev-step-documenter to generate the step document.
 Show the user: "Step N complete. Document written to docs/executions/<workflow>/step-NN-<slug>.md"
 
 ## Troubleshooting Mode
@@ -155,9 +156,9 @@ At the end of each step:
 
 ## Integration
 
-- Uses ${PROJECT_NAME}-evidence-gathering for step validation in Phase 6.
-- Uses ${PROJECT_NAME}-verification before claiming any step complete.
-- Uses ${PROJECT_NAME}-step-documenter to document each completed step.
+- Uses ${PROJECT_NAME}-verify-evidence for step validation in Phase 6.
+- Uses ${PROJECT_NAME}-verify-evidence before claiming any step complete.
+- Uses ${PROJECT_NAME}-dev-step-documenter to document each completed step.
 - Uses ${PROJECT_NAME}-debugging in Troubleshooting Mode.
-- For complex goals requiring initial planning, invoke ${PROJECT_NAME}-brainstorming and ${PROJECT_NAME}-plan-writer first, then use this skill to execute the resulting plan collaboratively.
+- For complex goals requiring initial planning, invoke ${PROJECT_NAME}-brainstorming and ${PROJECT_NAME}-plan-writing first, then use this skill to execute the resulting plan collaboratively.
 `;

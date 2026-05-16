@@ -1,10 +1,25 @@
 import { chmod, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import pLimit from "p-limit";
 import type { GeneratedFile, GenerateOptions } from "#src/types/agent.js";
 import type { NormalizedConfig } from "#src/types/config.js";
 import type { Result } from "#src/types/result.js";
 import { ok, err } from "#src/types/result.js";
+import { Logger } from "#src/core/output/logger.js";
 import { getAdapter } from "./adapter-registry.js";
+
+/**
+ * CORE-002: cap concurrent file I/O so a large skill catalog × multiple
+ * adapters can't exhaust file descriptors. macOS default RLIMIT_NOFILE is
+ * 256; Linux is 1024. With ~150-900 files across 6 adapters and 3 sequential
+ * I/O waves (read-classify, direct-write, conflict-write), a peak of 32
+ * in-flight operations leaves ample headroom even on the tightest default
+ * (~12% of macOS). Override via `CODI_FILE_IO_CONCURRENCY` env var.
+ */
+const FILE_IO_CONCURRENCY = Math.max(
+  1,
+  Number.parseInt(process.env["CODI_FILE_IO_CONCURRENCY"] ?? "", 10) || 32,
+);
 import { buildVerificationData } from "../verify/token.js";
 import { buildVerificationSection } from "../verify/section-builder.js";
 import { hashContent } from "#src/utils/hash.js";
@@ -31,6 +46,15 @@ export interface GenerationResult {
   filesByAgent: Record<string, GeneratedFile[]>;
   /** Relative paths of files kept as-is due to conflict resolution. */
   skipped: string[];
+  /**
+   * CORE-007 — labels (relative paths) of files whose hunk-level
+   * conflicts could not be merged automatically in a non-interactive
+   * environment. When non-empty, the CLI maps the run to
+   * `EXIT_CODES.UNRESOLVABLE_CONFLICTS`. Before CORE-007 this state
+   * was signalled by an in-resolver `process.exitCode = 2` assignment
+   * invisible to callers. Files in this list are NOT written to disk.
+   */
+  unresolvable: string[];
 }
 
 interface AgentOutput {
@@ -68,9 +92,10 @@ export async function generate(
 ): Promise<Result<GenerationResult>> {
   const agentIds = options.agents ?? config.manifest.agents ?? [];
 
-  // Phase 1: generate content for all agents (no I/O)
-  const agentOutputs: AgentOutput[] = [];
-
+  // Pre-validate every adapter is registered BEFORE dispatching parallel
+  // work. Fail fast with the canonical error shape — partial-success of
+  // some adapters while another is missing would be a confusing state.
+  const adapters: Array<{ agentId: string; adapter: ReturnType<typeof getAdapter> }> = [];
   for (const agentId of agentIds) {
     const adapter = getAdapter(agentId);
     if (!adapter) {
@@ -84,16 +109,28 @@ export async function generate(
         },
       ]);
     }
+    adapters.push({ agentId, adapter });
+  }
 
-    const generated = await adapter.generate(config, {
-      ...options,
-      projectRoot,
-    });
+  // Phase 1: generate content for all agents in parallel. Each adapter's
+  // `.generate()` is independent — scaffolder template loaders are
+  // module-level immutable maps; the only filesystem I/O here is the
+  // instruction-file read which targets different paths per adapter.
+  // `Promise.all` preserves input order, so `agentOutputs` ordering stays
+  // deterministic for downstream consumers (verification, status, hash).
+  const verifyData = buildVerificationData(config);
+  const verifySection = buildVerificationSection(verifyData);
 
-    const verifyData = buildVerificationData(config);
-    const verifySection = buildVerificationSection(verifyData);
-    for (const file of generated) {
-      if (file.path === adapter.paths.instructionFile) {
+  // CORE-003: thread the singleton logger into every adapter so adapter-side
+  // warn/info calls (codex HTTP MCP skip, copilot raw-secret heuristic,
+  // skill-generator lossy-field strips) reach the user.
+  const log = Logger.getInstance();
+  const agentOutputs: AgentOutput[] = await Promise.all(
+    adapters.map(async ({ agentId, adapter }) => {
+      const generated = await adapter!.generate(config, { ...options, projectRoot, log });
+
+      for (const file of generated) {
+        if (file.path !== adapter!.paths.instructionFile) continue;
         file.content = file.content + "\n\n" + verifySection;
 
         // Ensure the onboarding playbook/skill always has a deterministic
@@ -118,55 +155,76 @@ export async function generate(
 
         file.hash = hashContent(file.content);
       }
-    }
 
-    agentOutputs.push({ agentId, generated });
-  }
+      return { agentId, generated };
+    }),
+  );
 
   // Phase 2: write files (with conflict detection unless dry-run)
   const skipped: string[] = [];
+  const unresolvable: string[] = [];
 
   if (!options.dryRun) {
     const directWrites: GeneratedFile[] = [];
     const potentialConflicts: ConflictEntry[] = [];
 
-    for (const { generated } of agentOutputs) {
-      for (const file of generated) {
-        // Binary files are always copied without conflict checking
-        if (file.binarySrc) {
-          directWrites.push(file);
-          continue;
-        }
+    // Classification pass: read every existing file in parallel, then
+    // sort into directWrites vs potentialConflicts. CORE-002 bounds each
+    // I/O wave with `FILE_IO_CONCURRENCY` so the fan-out can't exhaust
+    // file descriptors on tight ulimit environments (macOS default 256).
+    type Classified =
+      | { kind: "direct"; file: GeneratedFile }
+      | { kind: "conflict"; entry: ConflictEntry };
 
-        const fullPath = join(projectRoot, file.path);
-        let existing: string | null = null;
-        try {
-          existing = await readFile(fullPath, "utf-8");
-        } catch {
-          // File does not exist yet
-        }
+    const ioLimit = pLimit(FILE_IO_CONCURRENCY);
 
-        if (existing === null || existing.trim() === file.content.trim()) {
-          directWrites.push(file);
-        } else {
-          potentialConflicts.push(makeConflictEntry(file.path, fullPath, existing, file.content));
-        }
-      }
+    const classified: Classified[] = await Promise.all(
+      agentOutputs.flatMap(({ generated }) =>
+        generated.map((file) =>
+          ioLimit(async (): Promise<Classified> => {
+            // Binary files are always copied without conflict checking.
+            if (file.binarySrc) return { kind: "direct", file };
+
+            const fullPath = join(projectRoot, file.path);
+            let existing: string | null = null;
+            try {
+              existing = await readFile(fullPath, "utf-8");
+            } catch {
+              // File does not exist yet — falls through to direct write.
+            }
+
+            if (existing === null || existing.trim() === file.content.trim()) {
+              return { kind: "direct", file };
+            }
+            return {
+              kind: "conflict",
+              entry: makeConflictEntry(file.path, fullPath, existing, file.content),
+            };
+          }),
+        ),
+      ),
+    );
+
+    for (const c of classified) {
+      if (c.kind === "direct") directWrites.push(c.file);
+      else potentialConflicts.push(c.entry);
     }
 
     await Promise.all(
-      directWrites.map(async (file) => {
-        const fullPath = join(projectRoot, file.path);
-        await mkdir(dirname(fullPath), { recursive: true });
-        if (file.binarySrc) {
-          await copyFile(file.binarySrc, fullPath);
-        } else {
-          await writeFile(fullPath, file.content, "utf-8");
-          if (fullPath.endsWith(".cjs") || fullPath.endsWith(".sh")) {
-            await chmod(fullPath, 0o755);
+      directWrites.map((file) =>
+        ioLimit(async () => {
+          const fullPath = join(projectRoot, file.path);
+          await mkdir(dirname(fullPath), { recursive: true });
+          if (file.binarySrc) {
+            await copyFile(file.binarySrc, fullPath);
+          } else {
+            await writeFile(fullPath, file.content, "utf-8");
+            if (fullPath.endsWith(".cjs") || fullPath.endsWith(".sh")) {
+              await chmod(fullPath, 0o755);
+            }
           }
-        }
-      }),
+        }),
+      ),
     );
 
     if (potentialConflicts.length > 0) {
@@ -174,19 +232,33 @@ export async function generate(
         force: options.force,
         keepCurrent: options.keepCurrent,
         unionMerge: options.unionMerge,
+        log,
       });
 
       await Promise.all(
-        [...resolution.accepted, ...resolution.merged].map(async (entry) => {
-          await mkdir(dirname(entry.fullPath), { recursive: true });
-          await writeFile(entry.fullPath, entry.incomingContent, "utf-8");
-          if (entry.fullPath.endsWith(".cjs") || entry.fullPath.endsWith(".sh")) {
-            await chmod(entry.fullPath, 0o755);
-          }
-        }),
+        [...resolution.accepted, ...resolution.merged].map((entry) =>
+          ioLimit(async () => {
+            await mkdir(dirname(entry.fullPath), { recursive: true });
+            await writeFile(entry.fullPath, entry.incomingContent, "utf-8");
+            if (entry.fullPath.endsWith(".cjs") || entry.fullPath.endsWith(".sh")) {
+              await chmod(entry.fullPath, 0o755);
+            }
+          }),
+        ),
       );
 
       skipped.push(...resolution.skipped.map((e) => e.label));
+
+      // CORE-007: the resolver no longer sets `process.exitCode = 2` as a
+      // hidden side effect. It returns `unresolvable[]` plus a
+      // machine-readable `nonInteractivePayload`; we forward the payload
+      // to stderr here (the composition root that owns I/O) and propagate
+      // the label list up to the CLI, which maps it to
+      // `EXIT_CODES.UNRESOLVABLE_CONFLICTS`.
+      if (resolution.unresolvable.length > 0 && resolution.nonInteractivePayload) {
+        process.stderr.write(JSON.stringify(resolution.nonInteractivePayload) + "\n");
+      }
+      unresolvable.push(...resolution.unresolvable.map((e) => e.label));
     }
   }
 
@@ -201,5 +273,5 @@ export async function generate(
     filesByAgent[agentId] = generated;
   }
 
-  return ok({ files, agents, filesByAgent, skipped });
+  return ok({ files, agents, filesByAgent, skipped, unresolvable });
 }

@@ -135,7 +135,7 @@ describe("update command handler", () => {
     expect(result.data.rulesUpdated).toContain(ruleName);
   });
 
-  it("routes managed_by:codi rule change through conflict resolver with json:true => skipped", async () => {
+  it("routes managed_by:codi rule change through conflict resolver with onConflict=keep-current => skipped", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.writeFile(
       path.join(configDir, "flags.yaml"),
@@ -150,8 +150,16 @@ describe("update command handler", () => {
       "utf-8",
     );
 
-    // json:true = keep existing (skip all conflicts)
-    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    // CORE-007: explicit keep-current routes conflicts to user-skipped (not
+    // unresolvable). Before CORE-007 this test relied on `json:true` to
+    // produce the same effect as a side-effect of non-TTY auto-merge; the
+    // new contract distinguishes the two paths so we ask for keep-current
+    // explicitly.
+    const result = await updateHandler(tmpDir, {
+      json: true,
+      rules: true,
+      onConflict: "keep-current",
+    });
     expect(result.success).toBe(true);
     expect(result.data.rulesSkipped).toContain(ruleName);
     expect(result.data.rulesUpdated).not.toContain(ruleName);
@@ -161,7 +169,7 @@ describe("update command handler", () => {
     expect(onDisk).toContain("old content");
   });
 
-  it("routes managed_by:user rule change through conflict resolver with json:true => skipped", async () => {
+  it("routes managed_by:user rule change through conflict resolver with onConflict=keep-current => skipped", async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.writeFile(
       path.join(configDir, "flags.yaml"),
@@ -174,8 +182,14 @@ describe("update command handler", () => {
     const originalContent = `---\nname: ${ruleName}\nmanaged_by: user\n---\nmy custom content`;
     await fs.writeFile(path.join(configDir, "rules", `${ruleName}.md`), originalContent, "utf-8");
 
-    // json:true = keep existing
-    const result = await updateHandler(tmpDir, { json: true, rules: true });
+    // CORE-007: see sibling test above — explicit keep-current is the
+    // documented way to skip conflicts non-interactively without surfacing
+    // them as unresolvable failures.
+    const result = await updateHandler(tmpDir, {
+      json: true,
+      rules: true,
+      onConflict: "keep-current",
+    });
     expect(result.success).toBe(true);
     expect(result.data.rulesSkipped).toContain(ruleName);
     expect(result.data.rulesUpdated).not.toContain(ruleName);

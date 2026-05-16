@@ -10,13 +10,13 @@
 
 ## What already exists (no gap)
 
-| Hook | What it covers |
-|------|---------------|
-| `skill-yaml-validate` | SKILL.md frontmatter: name, description, compatibility, types, enums |
-| `skill-resource-check` | `[[/path]]` references exist on disk |
-| `skill-path-wrap-check` | Bare paths not wrapped in `[[/path]]` |
-| `template-wiring-check` | template.ts wired into generate pipeline |
-| `version-bump` | version field incremented when template content changes |
+| Hook                    | What it covers                                                       |
+| ----------------------- | -------------------------------------------------------------------- |
+| `skill-yaml-validate`   | SKILL.md frontmatter: name, description, compatibility, types, enums |
+| `skill-resource-check`  | `[[/path]]` references exist on disk                                 |
+| `skill-path-wrap-check` | Bare paths not wrapped in `[[/path]]`                                |
+| `template-wiring-check` | template.ts wired into generate pipeline                             |
+| `version-bump`          | version field incremented when template content changes              |
 
 ## What is missing
 
@@ -32,6 +32,7 @@
 For every staged file inside a `*-brand` skill directory, the hook resolves the skill root and validates:
 
 **tokens.json schema** (blocking):
+
 - File exists at `brand/tokens.json`
 - Required top-level fields: `brand`, `display_name`, `version`, `themes`, `fonts`, `assets`, `voice`
 - `themes.dark` and `themes.light` each have: `background`, `surface`, `text_primary`, `text_secondary`, `primary`, `accent`, `logo`
@@ -40,6 +41,7 @@ For every staged file inside a `*-brand` skill directory, the hook resolves the 
 - `voice` has: `tone` (string), `phrases_use` (array), `phrases_avoid` (array)
 
 **Required files** (blocking):
+
 - `brand/tokens.css` exists
 - At least one SVG exists in `assets/` (logo-dark.svg or logo-light.svg or any `.svg`)
 - `references/` directory exists and contains at least one `.html` file
@@ -47,6 +49,7 @@ For every staged file inside a `*-brand` skill directory, the hook resolves the 
 - `LICENSE.txt` exists
 
 **templates/ convention** (blocking, applies to both circuits, only when `templates/` directory exists — skips silently when absent):
+
 - Every `.html` file in `templates/` contains `<meta name="codi:template"`
 
 ### Dual circuit
@@ -79,7 +82,7 @@ The hook uses a simple broad filter. For each staged file it walks up the direct
 
   Action required (coding agent):
     1. Open brand/tokens.json — add "google_fonts_url": null (Google Fonts URL or null for local fonts)
-       Reference: src/templates/skills/brand-creator/references/brand-standard.md
+       Reference: src/templates/skills/dev-brand-creator/references/brand-standard.md
     2. Create references/brandguide.html — a visual HTML style guide for the brand
     3. Stage the fixed files and commit again.
 ```
@@ -93,6 +96,7 @@ Add one check to the existing `SKILL_YAML_VALIDATE_TEMPLATE` in `src/core/hooks/
 **When `user-invocable: true`**: description must contain at least one of these trigger phrases: `"Use when"`, `"TRIGGER when"`, `"Activate when"`, `"Use for"`. Descriptions without a trigger clause make intent routing unreliable.
 
 Failure output (**non-blocking warning**, not exit 1 — existing skills without the clause must not break all commits):
+
 ```
 ⚠ src/.../SKILL.md: 'user-invocable' is true but description has no trigger clause
   Add a "Use when..." sentence so the agent knows when to activate this skill.
@@ -102,15 +106,15 @@ Failure output (**non-blocking warning**, not exit 1 — existing skills without
 
 ## Files to modify
 
-| File | Change |
-|------|--------|
-| `src/core/hooks/hook-templates.ts` | Add `BRAND_SKILL_VALIDATE_TEMPLATE` export (new hook script) |
-| `src/core/hooks/hook-policy-templates.ts` | Add trigger-clause warning to `SKILL_YAML_VALIDATE_TEMPLATE` |
-| `src/core/hooks/hook-config-generator.ts` | Add `brandSkillValidation: boolean` to `HooksConfig`; register `brand-skill-validate` entry in Stage 2; return `brandSkillValidation: true` |
-| `src/core/hooks/hook-installer.ts` | Import `BRAND_SKILL_VALIDATE_TEMPLATE`; add `brandSkillValidation` to `InstallOptions`; write the `.mjs` file in `writeAuxiliaryScripts` |
-| `tests/unit/hooks/hook-templates.test.ts` | Tests for `BRAND_SKILL_VALIDATE_TEMPLATE` (see below) |
-| `tests/unit/hooks/hook-config-generator.test.ts` | Assert `brandSkillValidation: true` in generated config |
-| `tests/unit/hooks/hook-policy-templates.test.ts` | Test trigger-clause warning for `user-invocable: true` skill without trigger phrase |
+| File                                             | Change                                                                                                                                      |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/hooks/hook-templates.ts`               | Add `BRAND_SKILL_VALIDATE_TEMPLATE` export (new hook script)                                                                                |
+| `src/core/hooks/hook-policy-templates.ts`        | Add trigger-clause warning to `SKILL_YAML_VALIDATE_TEMPLATE`                                                                                |
+| `src/core/hooks/hook-config-generator.ts`        | Add `brandSkillValidation: boolean` to `HooksConfig`; register `brand-skill-validate` entry in Stage 2; return `brandSkillValidation: true` |
+| `src/core/hooks/hook-installer.ts`               | Import `BRAND_SKILL_VALIDATE_TEMPLATE`; add `brandSkillValidation` to `InstallOptions`; write the `.mjs` file in `writeAuxiliaryScripts`    |
+| `tests/unit/hooks/hook-templates.test.ts`        | Tests for `BRAND_SKILL_VALIDATE_TEMPLATE` (see below)                                                                                       |
+| `tests/unit/hooks/hook-config-generator.test.ts` | Assert `brandSkillValidation: true` in generated config                                                                                     |
+| `tests/unit/hooks/hook-policy-templates.test.ts` | Test trigger-clause warning for `user-invocable: true` skill without trigger phrase                                                         |
 
 ---
 
@@ -151,6 +155,7 @@ sequenceDiagram
 ## Testing approach
 
 `tests/unit/hooks/hook-templates.test.ts` — for `BRAND_SKILL_VALIDATE_TEMPLATE`:
+
 - Valid brand with all required fields and files → exit 0
 - Missing `fonts.google_fonts_url` → exit 1, message names the field
 - Missing `references/*.html` → exit 1, message names the directory
@@ -161,9 +166,11 @@ sequenceDiagram
 - Error output contains "Action required (coding agent)" section
 
 `tests/unit/hooks/hook-config-generator.test.ts`:
+
 - `brandSkillValidation: true` present in generated config
 
 `tests/unit/hooks/hook-policy-templates.test.ts` — trigger-clause extension:
+
 - `user-invocable: true` with "Use when" in description → no warning
 - `user-invocable: true` without any trigger phrase → prints warning, exits 0 (non-blocking)
 - `user-invocable: false` without trigger phrase → no warning

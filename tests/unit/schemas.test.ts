@@ -1,16 +1,11 @@
 import { describe, it, expect } from "vitest";
-import {
-  ProjectManifestSchema,
-  AgentFrontmatterSchema,
-  RuleFrontmatterSchema,
-  SkillFrontmatterSchema,
-  FlagModeSchema,
-  FlagConditionsSchema,
-  FlagDefinitionSchema,
-  McpConfigSchema,
-  HookDefinitionSchema,
-  HooksConfigSchema,
-} from "../../src/schemas/index.js";
+import { AgentFrontmatterSchema } from "#src/schemas/agent.js";
+import { FlagModeSchema, FlagConditionsSchema, FlagDefinitionSchema } from "#src/schemas/flag.js";
+import { HookDefinitionSchema, HooksConfigSchema } from "#src/schemas/hooks.js";
+import { ProjectManifestSchema } from "#src/schemas/manifest.js";
+import { McpConfigSchema } from "#src/schemas/mcp.js";
+import { RuleFrontmatterSchema } from "#src/schemas/rule.js";
+import { SkillFrontmatterSchema } from "#src/schemas/skill.js";
 import {
   PROJECT_NAME,
   ALL_SKILL_CATEGORIES,
@@ -21,7 +16,7 @@ import {
 import {
   AVAILABLE_SKILL_TEMPLATES,
   loadSkillTemplateContent,
-} from "../../src/core/scaffolder/skill-template-loader.js";
+} from "#src/core/scaffolder/skill-template-loader.js";
 
 describe("ProjectManifestSchema", () => {
   it("accepts valid manifest", () => {
@@ -219,7 +214,7 @@ describe("HookDefinitionSchema", () => {
   it("accepts valid hook", () => {
     const result = HookDefinitionSchema.safeParse({
       name: "lint-check",
-      command: "pnpm lint",
+      command: "npm run lint",
       condition: "always",
     });
     expect(result.success).toBe(true);
@@ -228,7 +223,7 @@ describe("HookDefinitionSchema", () => {
   it("rejects hook with invalid name", () => {
     const result = HookDefinitionSchema.safeParse({
       name: "Lint Check",
-      command: "pnpm lint",
+      command: "npm run lint",
       condition: "always",
     });
     expect(result.success).toBe(false);
@@ -246,7 +241,7 @@ describe("HooksConfigSchema", () => {
           lint: [
             {
               name: "eslint",
-              command: "pnpm lint",
+              command: "npm run lint",
               condition: "always",
             },
           ],

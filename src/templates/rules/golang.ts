@@ -7,7 +7,8 @@ priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
 language: golang
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Go Conventions

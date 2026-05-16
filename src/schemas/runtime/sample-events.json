@@ -1,0 +1,566 @@
+[
+  {
+    "event_id": "00000000-0000-4000-8000-000000000001",
+    "schema_version": "1.0.0",
+    "event_type": "init",
+    "timestamp": "2026-05-01T13:00:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": null,
+    "commitable": true,
+    "payload": {
+      "workflow_id": "feat-dark-mode-20260501",
+      "workflow_type": "feature",
+      "task": "Add dark mode to settings page",
+      "plugin_version": "0.1.0"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000002",
+    "schema_version": "1.0.0",
+    "event_type": "workflow_completed",
+    "timestamp": "2026-05-01T17:30:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000001",
+    "commitable": true,
+    "payload": { "duration_ms": 16200000, "summary": "Dark mode shipped, all gates passed." }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000003",
+    "schema_version": "1.0.0",
+    "event_type": "workflow_abandoned",
+    "timestamp": "2026-05-01T15:00:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000001",
+    "commitable": true,
+    "payload": {
+      "reason": "Approach deemed unfeasible after exploration",
+      "abandoned_in_phase": "plan"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000004",
+    "schema_version": "1.0.0",
+    "event_type": "phase_started",
+    "timestamp": "2026-05-01T13:05:00.000Z",
+    "author": { "type": "system", "id": "codi" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000001",
+    "commitable": false,
+    "payload": { "phase": "plan" }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000005",
+    "schema_version": "1.0.0",
+    "event_type": "phase_completed",
+    "timestamp": "2026-05-01T13:50:00.000Z",
+    "author": { "type": "system", "id": "codi" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000004",
+    "commitable": true,
+    "payload": { "phase": "plan", "duration_ms": 2700000, "gate_passed": true }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000006",
+    "schema_version": "1.0.0",
+    "event_type": "phase_transition_proposed",
+    "timestamp": "2026-05-01T13:50:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000005",
+    "commitable": false,
+    "payload": { "from_phase": "plan", "to_phase": "decompose" }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000007",
+    "schema_version": "1.0.0",
+    "event_type": "phase_transition_approved",
+    "timestamp": "2026-05-01T13:51:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000006",
+    "commitable": true,
+    "payload": { "from_phase": "plan", "to_phase": "decompose" }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000008",
+    "schema_version": "1.0.0",
+    "event_type": "phase_transition_rejected",
+    "timestamp": "2026-05-01T13:51:30.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000006",
+    "commitable": false,
+    "payload": {
+      "from_phase": "plan",
+      "to_phase": "decompose",
+      "reason": "Plan does not cover SSR hydration."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000009",
+    "schema_version": "1.0.0",
+    "event_type": "scope_change_classified",
+    "timestamp": "2026-05-01T14:30:00.000Z",
+    "author": { "type": "system", "id": "classify-change" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "file_path": "src/utils/date.ts",
+      "category": "incidental",
+      "confidence": "high",
+      "reason": "Diff only adds imports."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000010",
+    "schema_version": "1.0.0",
+    "event_type": "scope_expansion_proposed",
+    "timestamp": "2026-05-01T14:35:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000009",
+    "commitable": false,
+    "payload": {
+      "file_path": "src/themes/persistence.ts",
+      "reason": "localStorage handling required for theme persistence; not in original plan."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000011",
+    "schema_version": "1.0.0",
+    "event_type": "scope_expansion_approved",
+    "timestamp": "2026-05-01T14:40:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000010",
+    "commitable": true,
+    "payload": {
+      "file_path": "src/themes/persistence.ts",
+      "added_to_scope": ["src/themes/persistence.ts"]
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000012",
+    "schema_version": "1.0.0",
+    "event_type": "scope_expansion_rejected",
+    "timestamp": "2026-05-01T14:42:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000010",
+    "commitable": false,
+    "payload": {
+      "file_path": "src/themes/legacy.ts",
+      "reason": "Legacy file should not be touched in this workflow."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000013",
+    "schema_version": "1.0.0",
+    "event_type": "incidental_change_recorded",
+    "timestamp": "2026-05-01T14:45:00.000Z",
+    "author": { "type": "system", "id": "pre-tool-use-hook" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000009",
+    "commitable": false,
+    "payload": {
+      "file_path": "src/utils/date.ts",
+      "lines_changed": 1,
+      "classifier_reason": "Diff only adds imports."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000014",
+    "schema_version": "1.0.0",
+    "event_type": "gate_check_started",
+    "timestamp": "2026-05-01T13:45:00.000Z",
+    "author": { "type": "system", "id": "gate-runner" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000004",
+    "commitable": false,
+    "payload": {
+      "gate_name": "plan-complete",
+      "check_id": "plan_addresses_intent",
+      "check_type": "agent"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000015",
+    "schema_version": "1.0.0",
+    "event_type": "gate_check_passed",
+    "timestamp": "2026-05-01T13:46:00.000Z",
+    "author": { "type": "system", "id": "gate-runner" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000014",
+    "commitable": false,
+    "payload": {
+      "gate_name": "plan-complete",
+      "check_id": "plan_addresses_intent",
+      "duration_ms": 60000
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000016",
+    "schema_version": "1.0.0",
+    "event_type": "gate_check_failed",
+    "timestamp": "2026-05-01T13:47:00.000Z",
+    "author": { "type": "system", "id": "gate-runner" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000014",
+    "commitable": false,
+    "payload": {
+      "gate_name": "plan-complete",
+      "check_id": "plan_addresses_intent",
+      "reason": "Plan does not cover user story #3 (localStorage persistence).",
+      "retry_count": 1,
+      "retries_remaining": 1,
+      "suggested_action": "Add localStorage steps to plan or document as out-of-scope."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000017",
+    "schema_version": "1.0.0",
+    "event_type": "validation_run",
+    "timestamp": "2026-05-01T16:30:00.000Z",
+    "author": { "type": "system", "id": "codi" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": { "command": "npm run validate", "exit_code": 0, "duration_ms": 12500 }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000018",
+    "schema_version": "1.0.0",
+    "event_type": "subagent_dispatched",
+    "timestamp": "2026-05-01T13:45:30.000Z",
+    "author": { "type": "system", "id": "subagent-runner" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000014",
+    "commitable": false,
+    "payload": {
+      "skill_name": "gate-plan-coverage",
+      "category": "fork-by-design",
+      "purpose": "Validate plan covers all intent user stories.",
+      "parent_phase": "plan"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000019",
+    "schema_version": "1.0.0",
+    "event_type": "subagent_completed",
+    "timestamp": "2026-05-01T13:46:00.000Z",
+    "author": { "type": "system", "id": "subagent-runner" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000018",
+    "commitable": false,
+    "payload": {
+      "skill_name": "gate-plan-coverage",
+      "verdict_summary": "Plan covers 3/4 user stories. Missing: localStorage persistence.",
+      "tokens_consumed": 1245,
+      "duration_ms": 30000
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000020",
+    "schema_version": "1.0.0",
+    "event_type": "subagent_failed",
+    "timestamp": "2026-05-01T13:50:30.000Z",
+    "author": { "type": "system", "id": "subagent-runner" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000018",
+    "commitable": false,
+    "payload": {
+      "skill_name": "gate-plan-coverage",
+      "reason": "schema_validation_failed",
+      "details": "Subagent output did not match gate-result schema after one retry."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000021",
+    "schema_version": "1.0.0",
+    "event_type": "parallel_fork_dispatched",
+    "timestamp": "2026-05-01T13:10:00.000Z",
+    "author": { "type": "system", "id": "subagent-runner" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "count": 3,
+      "purposes": [
+        "Explore module structure",
+        "Search for prior art in codebase",
+        "Check related ADRs"
+      ]
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000022",
+    "schema_version": "1.0.0",
+    "event_type": "child_workflow_initiated",
+    "timestamp": "2026-05-01T15:00:00.000Z",
+    "author": { "type": "system", "id": "codi" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000010",
+    "commitable": true,
+    "payload": {
+      "child_workflow_id": "refactor-theme-decoupling-20260501",
+      "child_workflow_type": "refactor",
+      "child_branch": "codi/feat-dark-mode/refactor-theme-decoupling",
+      "reason": "Theme is coupled to Settings; structural separation required before feature can proceed."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000023",
+    "schema_version": "1.0.0",
+    "event_type": "child_workflow_resolved",
+    "timestamp": "2026-05-01T16:30:00.000Z",
+    "author": { "type": "system", "id": "codi" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000022",
+    "commitable": true,
+    "payload": {
+      "child_workflow_id": "refactor-theme-decoupling-20260501",
+      "status": "completed",
+      "summary": "Theme decoupled from Settings, 3 files modified, all tests pass."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000024",
+    "schema_version": "1.0.0",
+    "event_type": "workflow_paused_for_child",
+    "timestamp": "2026-05-01T15:00:01.000Z",
+    "author": { "type": "system", "id": "codi" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000022",
+    "commitable": true,
+    "payload": {
+      "child_workflow_id": "refactor-theme-decoupling-20260501",
+      "paused_in_phase": "execute"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000025",
+    "schema_version": "1.0.0",
+    "event_type": "workflow_resumed_after_child",
+    "timestamp": "2026-05-01T16:31:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000023",
+    "commitable": true,
+    "payload": {
+      "child_workflow_id": "refactor-theme-decoupling-20260501",
+      "resumed_in_phase": "plan"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000026",
+    "schema_version": "1.0.0",
+    "event_type": "elevation_proposed",
+    "timestamp": "2026-05-01T14:55:00.000Z",
+    "author": { "type": "system", "id": "classify-change" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000010",
+    "commitable": false,
+    "payload": {
+      "suggested_workflow_type": "refactor",
+      "trigger": "public_interface_change_in_multiple_files",
+      "reason": "Scope expansion touches public interfaces in src/themes/Theme.ts and src/settings/Settings.ts."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000027",
+    "schema_version": "1.0.0",
+    "event_type": "elevation_approved",
+    "timestamp": "2026-05-01T14:58:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000026",
+    "commitable": true,
+    "payload": { "child_workflow_type": "refactor" }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000028",
+    "schema_version": "1.0.0",
+    "event_type": "elevation_rejected",
+    "timestamp": "2026-05-01T14:58:30.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000026",
+    "commitable": false,
+    "payload": { "reason": "Refactor too large for current sprint; defer." }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000029",
+    "schema_version": "1.0.0",
+    "event_type": "context_term_added",
+    "timestamp": "2026-05-01T13:20:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "term": "ColorScheme",
+      "definition": "User-selectable visual theme variant (light or dark) persisted across sessions."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000030",
+    "schema_version": "1.0.0",
+    "event_type": "context_term_updated",
+    "timestamp": "2026-05-01T13:25:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000029",
+    "commitable": false,
+    "payload": {
+      "term": "ColorScheme",
+      "previous_definition": "User-selectable visual theme variant (light or dark) persisted across sessions.",
+      "new_definition": "User-selectable visual theme variant (light, dark, or system) persisted via localStorage."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000031",
+    "schema_version": "1.0.0",
+    "event_type": "adr_proposed",
+    "timestamp": "2026-05-01T13:35:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "adr_number": 8,
+      "title": "Use localStorage for theme persistence",
+      "rationale": "Hard to reverse: changes data shape. Surprising: SSR hydration handling. Trade-off: localStorage vs server-side preference vs cookie."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000032",
+    "schema_version": "1.0.0",
+    "event_type": "adr_approved",
+    "timestamp": "2026-05-01T13:40:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": "00000000-0000-4000-8000-000000000031",
+    "commitable": true,
+    "payload": { "adr_number": 8, "adr_path": "docs/adr/0008-localstorage-theme-persistence.md" }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000033",
+    "schema_version": "1.0.0",
+    "event_type": "adr_superseded",
+    "timestamp": "2026-08-15T10:00:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": null,
+    "commitable": true,
+    "payload": { "superseded_adr_number": 8, "superseding_adr_number": 14 }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000034",
+    "schema_version": "1.0.0",
+    "event_type": "artifact_linked",
+    "timestamp": "2026-05-01T13:42:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "artifact_type": "plan",
+      "path": "docs/20260501_133000_[PLAN]_dark-mode.md",
+      "content_hash": "sha256:abc123def456"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000038",
+    "schema_version": "1.0.0",
+    "event_type": "design_doc_authored",
+    "timestamp": "2026-05-02T14:30:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": null,
+    "commitable": true,
+    "payload": {
+      "design_doc_path": "docs/20260502_143000_[PLAN]_google-oauth.md",
+      "story_id": "US-014",
+      "content_hash": "sha256:fedc1234"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000041",
+    "schema_version": "1.0.0",
+    "event_type": "sheet_row_upserted",
+    "timestamp": "2026-05-02T14:35:00.000Z",
+    "author": { "type": "agent", "id": "claude-code" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "entity": "UserStory",
+      "row_id": "US-014",
+      "columns_written": ["status", "branch", "started_at"],
+      "was_no_op": false
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000042",
+    "schema_version": "1.0.0",
+    "event_type": "sheet_row_appended",
+    "timestamp": "2026-05-02T14:35:01.000Z",
+    "author": { "type": "system", "id": "sheets-sync" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": { "entity": "Audit", "row_id": "aud_a1b2c3" }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000043",
+    "schema_version": "1.0.0",
+    "event_type": "sheet_sync_queued",
+    "timestamp": "2026-05-02T14:36:00.000Z",
+    "author": { "type": "system", "id": "sheets-sync" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "entity": "UserStory",
+      "row_id": "US-014",
+      "queue_id": "q_abc123",
+      "reason": "Sheets API 503"
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000044",
+    "schema_version": "1.0.0",
+    "event_type": "sheet_sync_failed",
+    "timestamp": "2026-05-02T14:36:30.000Z",
+    "author": { "type": "system", "id": "sheets-sync" },
+    "parent_event_id": null,
+    "commitable": false,
+    "payload": {
+      "entity": "UserStory",
+      "row_id": "US-014",
+      "queue_id": "q_abc123",
+      "code": "sheet_unreachable",
+      "message": "503 Service Unavailable after 5 attempts",
+      "attempts": 5
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000045",
+    "schema_version": "1.0.0",
+    "event_type": "sheet_reconciled",
+    "timestamp": "2026-05-02T15:00:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": null,
+    "commitable": true,
+    "payload": { "rows_reconciled": 14, "duration_ms": 2350 }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000035",
+    "schema_version": "1.0.0",
+    "event_type": "decision_recorded",
+    "timestamp": "2026-05-01T13:38:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": null,
+    "commitable": true,
+    "payload": {
+      "summary": "Use localStorage for theme persistence.",
+      "rationale": "Simplest path with acceptable trade-offs for SSR hydration.",
+      "alternatives_considered": ["Server-side user preference", "Cookie-based persistence"]
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000036",
+    "schema_version": "1.0.0",
+    "event_type": "workflow_handover",
+    "timestamp": "2026-05-02T09:00:00.000Z",
+    "author": { "type": "human", "id": "le.hidalgot@gmail.com" },
+    "parent_event_id": null,
+    "commitable": true,
+    "payload": {
+      "from_dev_id": "le.hidalgot@gmail.com",
+      "to_dev_id": "ana@example.com",
+      "reason": "Going on vacation; please continue the verify phase."
+    }
+  },
+  {
+    "event_id": "00000000-0000-4000-8000-000000000037",
+    "schema_version": "1.0.0",
+    "event_type": "workflow_force_handover",
+    "timestamp": "2026-05-10T09:00:00.000Z",
+    "author": { "type": "human", "id": "maintainer@example.com" },
+    "parent_event_id": null,
+    "commitable": true,
+    "payload": {
+      "from_dev_id": "departed@example.com",
+      "to_dev_id": "ana@example.com",
+      "maintainer_id": "maintainer@example.com",
+      "reason": "Original developer left the company; reassigning workflow ownership."
+    }
+  }
+]

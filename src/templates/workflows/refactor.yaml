@@ -1,0 +1,88 @@
+id: refactor
+name: Refactor
+description: Adaptive refactor workflow — phases compress per kind (deadcode/extract/deepen/decouple), scope, exec mode
+version: 4
+phases:
+  intent:
+    gates: [task_described]
+    next: [baseline, plan, abandoned]
+    chains:
+      - {
+          skill: discover,
+          role: required,
+          hint: "wide or domain mode depending on knowledge base depth",
+        }
+      - {
+          skill: architecture-review,
+          role: alt-entry,
+          hint: "user has not identified a structural target",
+        }
+  baseline:
+    gates: [baseline_captured]
+    next: [plan, abandoned]
+    chains:
+      - {
+          skill: worktrees,
+          role: optional,
+          hint: "Strongly recommended — captures unrefactored baseline tests on a clean isolated branch",
+        }
+  plan:
+    gates: [scope_files_listed, plan_artifact_exists]
+    next: [execute, baseline, abandoned]
+    chains:
+      - { skill: plan-writing, role: required }
+      - { skill: discover, role: alt-entry, hint: "plan needs sharpening — mode sharpen" }
+      - {
+          skill: dev-gate-deep-modules,
+          role: optional,
+          hint: "validate the new shape matches the deepening rationale",
+        }
+      - { skill: dev-gate-plan-coverage, role: optional, hint: "before transition to execute" }
+  execute:
+    gates: []
+    next: [verify, execute, abandoned]
+    chains:
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "≥3 discrete steps — sequential mode with two-stage review",
+        }
+      - { skill: refactoring, role: optional, hint: "dead-code or DRY subtasks during execute" }
+      - {
+          skill: debugging,
+          role: optional,
+          hint: "regression detected during refactor — diagnose stalls, escalate to MCP-deep",
+        }
+  verify:
+    gates:
+      [
+        validation_passes,
+        no_unresolved_scope_proposals,
+        all_planned_files_modified,
+        behavior_unchanged,
+      ]
+    next: [done, execute, abandoned]
+    chains:
+      - { skill: verify-evidence, role: required }
+      - {
+          skill: test-suite,
+          role: optional,
+          hint: "regression-test suite — proves behavior_unchanged",
+        }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — refactors are high-leverage candidates for review",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  no_behavior_change: true
+  adaptive: true
+  profiles: [deadcode, standard, deep]
+  skip_phases_when:
+    baseline: { kind: deadcode }

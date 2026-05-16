@@ -1,56 +1,93 @@
+/**
+ * CORE-010 — hook registry entry point.
+ *
+ * Pre-CORE-010 this module imported 15 hand-written `<lang>.ts` files
+ * (~1100 LOC of pure data) and a `LANGUAGE_HOOKS` literal map keyed
+ * by language. Adding language #N meant a new file + import line +
+ * map row. Post-CORE-010, language data lives in
+ * `registry/yaml/<lang>.yaml` and the loader discovers + parses them
+ * lazily. Adding a language is a single-file change.
+ *
+ * `runtime/` is out of scope — those hooks carry `evaluate()`
+ * closures that are not data.
+ */
 import { PROJECT_NAME } from "#src/constants.js";
-import type { HookSpec } from "../hook-spec.js";
-import { TYPESCRIPT_HOOKS } from "./typescript.js";
-import { JAVASCRIPT_HOOKS } from "./javascript.js";
-import { PYTHON_HOOKS } from "./python.js";
-import { GO_HOOKS } from "./go.js";
-import { RUST_HOOKS } from "./rust.js";
-import { JAVA_HOOKS } from "./java.js";
-import { KOTLIN_HOOKS } from "./kotlin.js";
-import { SWIFT_HOOKS } from "./swift.js";
-import { CSHARP_HOOKS } from "./csharp.js";
-import { CPP_HOOKS } from "./cpp.js";
-import { PHP_HOOKS } from "./php.js";
-import { RUBY_HOOKS } from "./ruby.js";
-import { DART_HOOKS } from "./dart.js";
-import { SHELL_HOOKS } from "./shell.js";
-import { GLOBAL_HOOKS } from "./global.js";
+import type { GitHookArtifact, HookArtifact, RuntimeHookArtifact } from "../hook-artifact.js";
+import type { HookLanguage } from "../hook-spec.js";
+import {
+  listAvailableLanguages,
+  loadGlobalHooks,
+  loadLanguageHooks,
+} from "./loader.js";
+import { RUNTIME_HOOKS } from "./runtime/index.js";
 
-const LANGUAGE_HOOKS: Record<string, HookSpec[]> = {
-  typescript: TYPESCRIPT_HOOKS,
-  javascript: JAVASCRIPT_HOOKS,
-  python: PYTHON_HOOKS,
-  go: GO_HOOKS,
-  rust: RUST_HOOKS,
-  java: JAVA_HOOKS,
-  kotlin: KOTLIN_HOOKS,
-  swift: SWIFT_HOOKS,
-  csharp: CSHARP_HOOKS,
-  cpp: CPP_HOOKS,
-  php: PHP_HOOKS,
-  ruby: RUBY_HOOKS,
-  dart: DART_HOOKS,
-  shell: SHELL_HOOKS,
-};
-
-export function getDoctorHook(): HookSpec {
-  return GLOBAL_HOOKS.find((h) => h.name === `${PROJECT_NAME}-doctor`)!;
+export function getGitHooks(): GitHookArtifact[] {
+  const out: GitHookArtifact[] = [...loadGlobalHooks()];
+  for (const lang of listAvailableLanguages()) {
+    out.push(...loadLanguageHooks(lang));
+  }
+  return out;
 }
 
-export function getCommitlintHook(): HookSpec {
-  return GLOBAL_HOOKS.find((h) => h.name === "commitlint")!;
+export function getRuntimeHooks(): RuntimeHookArtifact[] {
+  return [...RUNTIME_HOOKS];
 }
 
-export function getGlobalHooks(): HookSpec[] {
-  return [...GLOBAL_HOOKS];
+export function getAllHooks(): HookArtifact[] {
+  return [...getGitHooks(), ...getRuntimeHooks()];
 }
 
-export function getHooksForLanguage(language: string): HookSpec[] {
+export function getHook(name: string): HookArtifact | null {
+  return getAllHooks().find((h) => h.name === name) ?? null;
+}
+
+export function getDoctorHook(): GitHookArtifact {
+  const hook = loadGlobalHooks().find((h) => h.name === `${PROJECT_NAME}-doctor`);
+  if (!hook) throw new Error("doctor hook missing from global registry");
+  return hook;
+}
+
+export function getCommitlintHook(): GitHookArtifact {
+  const hook = loadGlobalHooks().find((h) => h.name === "commitlint");
+  if (!hook) throw new Error("commitlint hook missing from global registry");
+  return hook;
+}
+
+export function getGlobalHooks(): GitHookArtifact[] {
+  return [...loadGlobalHooks()];
+}
+
+export function getHooksForLanguage(language: string): GitHookArtifact[] {
   const normalized = language.toLowerCase();
-  const hooks = LANGUAGE_HOOKS[normalized] ?? [];
-  return hooks.map((h) => ({ ...h, language: normalized as HookSpec["language"] }));
+  let hooks: GitHookArtifact[];
+  try {
+    hooks = loadLanguageHooks(normalized);
+  } catch {
+    return [];
+  }
+  return hooks.map((h) => ({ ...h, language: normalized as HookLanguage }));
 }
 
 export function getSupportedLanguages(): string[] {
-  return Object.keys(LANGUAGE_HOOKS);
+  return listAvailableLanguages();
+}
+
+export function getDefaultGitHookNames(languages: string[]): string[] {
+  const names = new Set<string>();
+  for (const h of loadGlobalHooks()) if (h.default) names.add(h.name);
+  for (const lang of languages) {
+    const normalized = lang.toLowerCase();
+    let arr: GitHookArtifact[];
+    try {
+      arr = loadLanguageHooks(normalized);
+    } catch {
+      continue;
+    }
+    for (const h of arr) if (h.default) names.add(h.name);
+  }
+  return [...names];
+}
+
+export function getDefaultRuntimeHookNames(): string[] {
+  return RUNTIME_HOOKS.filter((h) => h.default || h.required).map((h) => h.name);
 }

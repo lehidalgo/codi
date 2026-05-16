@@ -17,7 +17,7 @@ description: |
   "write a conventional commit", "pre-commit failed", "hook failed", "commit
   message rejected", "commit-msg hook". Activates on /commit. Do NOT activate
   for pushing to remote (use direct \\\`git push\\\`), creating pull requests
-  (use ${PROJECT_NAME}-artifact-contributor or ${PROJECT_NAME}-branch-finish),
+  (use ${PROJECT_NAME}-dev-artifact-contributor or ${PROJECT_NAME}-branch-finish),
   merging branches (use ${PROJECT_NAME}-branch-finish), or resolving merge
   conflicts.
 category: ${SKILL_CATEGORY.DEVELOPER_TOOLS}
@@ -25,7 +25,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 10
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Commit
@@ -41,7 +42,7 @@ version: 8
 ## Skip When
 
 - User wants to push to remote — use \\\`git push\\\` directly
-- User wants to open a PR — use ${PROJECT_NAME}-artifact-contributor (contribution PRs) or ${PROJECT_NAME}-branch-finish (feature PRs)
+- User wants to open a PR — use ${PROJECT_NAME}-dev-artifact-contributor (contribution PRs) or ${PROJECT_NAME}-branch-finish (feature PRs)
 - User wants to merge or rebase branches — use ${PROJECT_NAME}-branch-finish
 - User has merge conflicts to resolve — resolve manually before re-invoking this skill
 - User wants to amend or rewrite published history — stop and confirm explicitly (destructive)

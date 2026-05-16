@@ -86,7 +86,7 @@ for (const file of files) {
 
       findings.push({ file, line: i + 1, text: line.trim().substring(0, 80) });
     }
-  } catch {}
+  } catch { /* unreadable file — skip it, do not block the commit on tooling noise */ }
 }
 if (findings.length > 0) {
   for (const f of findings) {
@@ -120,7 +120,7 @@ export const FILE_SIZE_CHECK_TEMPLATE = `#!/usr/bin/env node
 import fs from 'fs';
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [{{VENDORED_DIRS_PATTERNS}}, /^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^docs\\//, /^site\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/vendor\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/, /\\.css$/, /\\.svg$/, /\\.md$/, /\\.mdx$/, /\\.txt$/, /\\.rst$/];
+const EXCLUDED = [{{VENDORED_DIRS_PATTERNS}}, /^\\.(clinerules|cursorrules|windsurfrules)$/, /^AGENTS\\.md$/, /^CLAUDE\\.md$/, /^docs\\//, /^site\\//, /-lock\\.json$/, /\\.lock$/, /-lock\\.yaml$/, /^pnpm-lock\\.yaml$/, /\\/assets\\//, /\\/references\\//, /\\/vendor\\//, /\\/scripts\\/office\\//, /\\.xsd$/, /\\.schema\\.json$/, /\\.ttf$/, /\\.woff2?$/, /\\.pdf$/, /\\.html$/, /\\.css$/, /\\.svg$/, /\\.md$/, /\\.mdx$/, /\\.txt$/, /\\.rst$/];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {
@@ -131,7 +131,7 @@ for (const file of files) {
       console.error(\`\${file}: \${lines} lines (max: \${maxLines})\`);
       failed = true;
     }
-  } catch {}
+  } catch { /* unreadable file — skip it; LOC guard does not need to block on transient FS errors */ }
 }
 if (failed) {
   console.error(\`
@@ -367,7 +367,7 @@ if (fs.existsSync(tmplSkillsDir)) {
 
     const indexFile = path.join(skillTemplateDir, 'index.ts');
     let hasStatic = false;
-    try { hasStatic = fs.readFileSync(indexFile, 'utf-8').includes('staticDir'); } catch {}
+    try { hasStatic = fs.readFileSync(indexFile, 'utf-8').includes('staticDir'); } catch { /* skill has no index.ts — assume no static dir declared */ }
 
     // Check template.ts and all *.md files under the skill template directory
     const filesToCheck = [{ file: tmplFile, isTemplate: true }, ...collectMdFiles(skillTemplateDir).map(f => ({ file: f, isTemplate: false }))];
@@ -433,7 +433,7 @@ Diagnostic order — follow these steps before assuming which layer is broken:
             Add: export const staticDir = resolveStaticDir("<skill>", import.meta.url);
          b. The skill is not registered in STATIC_DIR_MAP inside
             src/core/scaffolder/skill-template-loader.ts.
-         c. Stale install — run codi init (or pnpm build + clean + reinstall + generate).
+         c. Stale install — run codi init (or npm run build + clean + reinstall + generate).
      - If the file does NOT exist in source, add it there (or drop the reference).
 
   3. IF SOURCE CIRCUIT: the source template references a file that is genuinely missing.
@@ -580,13 +580,16 @@ const ALLOWED_CATEGORIES = new Set([
   'HANDOFF', 'REVIEW', 'CHANGELOG',
 ]);
 
-const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED', 'src', 'content', '_site', 'generated']);
-const SKIP_FILES = new Set(['.DS_Store']);
+const SKIP_DIRS = new Set(['project', 'codi_docs', 'superpowers', 'DEPRECATED', 'src', 'content', '_site', 'generated', 'adr', 'sessions']);
+// Codi-canonical files. CONTEXT.md is required by \`codi workflow run\` (the
+// project glossary). adr/README.md is the ADR index. They follow project
+// convention, not the timestamped naming scheme.
+const SKIP_FILES = new Set(['.DS_Store', 'CONTEXT.md', 'README.md']);
 const VALID_PATTERN = /^(\\d{8})_(?:\\d{4,6}_)?\\[?([A-Z]+)\\]?_.+$/;
 
 const staged = (() => {
   try {
-    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' })
+    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8', timeout: 5_000 })
       .trim().split('\\n').filter(Boolean);
   } catch { return []; }
 })();
@@ -647,7 +650,7 @@ import { execFileSync } from 'child_process';
 
 const staged = (() => {
   try {
-    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8' })
+    return execFileSync('git', ['diff', '--cached', '--name-only', '--diff-filter=ACMR'], { encoding: 'utf-8', timeout: 5_000 })
       .trim().split('\\n').filter(Boolean);
   } catch { return []; }
 })();

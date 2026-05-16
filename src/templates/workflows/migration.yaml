@@ -1,0 +1,93 @@
+id: migration
+name: Migration
+description: Adaptive migration workflow — phases compress per risk-level + rollback-tested
+version: 4
+phases:
+  intent:
+    gates: [task_described]
+    next: [plan, abandoned]
+    chains:
+      - { skill: discover, role: required, hint: "domain mode if ADRs exist in the area" }
+  plan:
+    gates: [scope_files_listed, plan_artifact_exists, rollback_documented]
+    next: [execute, abandoned]
+    chains:
+      - {
+          skill: plan-writing,
+          role: required,
+          hint: "include rollback path and validation strategy",
+        }
+      - { skill: discover, role: alt-entry, hint: "domain mode for ADR cross-check" }
+      - {
+          skill: security-scan,
+          role: optional,
+          hint: "schema changes — pre-migration security review",
+        }
+      - {
+          skill: quality-gates,
+          role: optional,
+          hint: "CI hook validation before applying schema change",
+        }
+  execute:
+    gates: []
+    next: [data-validation, verify, execute, abandoned]
+    chains:
+      - {
+          skill: worktrees,
+          role: required,
+          hint: "Required for migrations with staging side-effects — clean rollback boundary",
+        }
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "≥3 distinct DDL or backfill steps — sequential mode",
+        }
+      - {
+          skill: debugging,
+          role: optional,
+          hint: "data validation fails + diagnose stalls — MCP-deep tier-2",
+        }
+      - {
+          skill: webapp-testing,
+          role: optional,
+          hint: "downstream consumers exposed via web routes — browser validation",
+        }
+  data-validation:
+    gates: [migration_metrics_captured]
+    next: [verify, execute, abandoned]
+    chains:
+      - {
+          skill: verify-evidence,
+          role: required,
+          hint: "pre/post metrics, row counts, schema diff",
+        }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — migrations are highest-leverage place for review",
+        }
+  verify:
+    gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
+    next: [done, execute, abandoned]
+    chains:
+      - { skill: verify-evidence, role: required }
+      - { skill: test-suite, role: optional, hint: "regression-test suite — post-migration sanity" }
+      - {
+          skill: pr-review,
+          role: optional,
+          hint: "before opening PR — end-to-end review with gh CLI",
+        }
+      - { skill: security-scan, role: optional, hint: "post-migration schema audit" }
+      - { skill: code-review, role: optional, hint: "auto_review flag enabled" }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  rollback_required: true
+  adaptive: true
+  profiles: [schema, data, deep]
+  skip_phases_when:
+    data-validation: { risk_level: low, rollback_tested: true }

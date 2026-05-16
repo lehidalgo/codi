@@ -20,40 +20,39 @@ import { BUILTIN_PRESETS } from "#src/templates/presets/index.js";
 import { BUILTIN_MCP_SERVERS } from "#src/templates/mcp-servers/index.js";
 import { ERROR_CATALOG } from "../output/error-catalog.js";
 import { ALL_ADAPTERS } from "#src/adapters/index.js";
-import { NORMAL_MENU, ADVANCED_MENU } from "#src/cli/hub.js";
+import { NORMAL_MENU, ADVANCED_MENU } from "#src/core/hub-menu.js";
 import { PROJECT_CLI } from "#src/constants.js";
 
 import {
-  // Flags
   renderFlagsTable,
   renderFlagModes,
   renderFlagInstructions,
   renderFlagHooks,
-  // Presets
-  renderPresetTable,
-  renderPresetFlagComparison,
-  // Templates
+} from "./renderers/flag-renderers.js";
+import { renderPresetTable, renderPresetFlagComparison } from "./renderers/preset-renderers.js";
+import {
   renderTemplateCounts,
   renderTemplateCountsCompact,
   renderRuleTemplateList,
   renderSkillTemplatesByCategory,
   extractSkillCategory,
   renderAgentTemplateList,
-  // Infrastructure
+} from "./renderers/template-renderers.js";
+import {
   renderAdapterTable,
   renderSupportedAgents,
   renderErrorCatalog,
   renderHubActions,
   renderMcpServers,
   renderLayerOrder,
-  // Schemas
+} from "./renderers/infrastructure-renderers.js";
+import {
   renderRuleFields,
   renderSkillFields,
   renderAgentFields,
   renderManifestFields,
-  // Coverage
-  renderTestCoverage,
-} from "./section-renderers.js";
+} from "./renderers/schema-renderers.js";
+import { renderTestCoverage } from "./renderers/coverage-renderer.js";
 
 // ---------------------------------------------------------------------------
 // Types

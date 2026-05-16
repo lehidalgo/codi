@@ -17,6 +17,12 @@ import { registerCiCommand } from "./cli/ci.js";
 import { registerWatchCommand } from "./cli/watch.js";
 import { registerRevertCommand } from "./cli/revert.js";
 import { registerBackupCommand } from "./cli/backup.js";
+import { registerMigrateCommand } from "./cli/migrate.js";
+import { registerPluginCommand } from "./cli/plugin.js";
+import { registerBrainCommand } from "./cli/brain.js";
+import { registerQuickAlias, registerWorkflowCommand } from "./cli/workflow.js";
+import { registerPrefsCommand } from "./cli/prefs.js";
+import { registerAgentHookCommand } from "./cli/agent-hooks.js";
 
 import { registerPresetCommand } from "./cli/preset.js";
 import { registerDocsUpdateCommand } from "./cli/docs-update.js";
@@ -27,6 +33,7 @@ import { registerContributeCommand } from "./cli/contribute.js";
 import { registerSkillCommand } from "./cli/skill.js";
 import { registerOnboardCommand } from "./cli/onboard.js";
 import { registerHooksCommand } from "./cli/hooks.js";
+import { registerTeamCommand } from "./cli/team.js";
 import { runCommandCenter } from "./cli/hub.js";
 import { Logger } from "./core/output/logger.js";
 import { PROJECT_NAME } from "./constants.js";
@@ -59,6 +66,13 @@ registerCiCommand(program);
 registerWatchCommand(program);
 registerRevertCommand(program);
 registerBackupCommand(program);
+registerMigrateCommand(program);
+registerPluginCommand(program);
+registerBrainCommand(program);
+registerWorkflowCommand(program);
+registerQuickAlias(program);
+registerPrefsCommand(program);
+registerAgentHookCommand(program);
 
 registerPresetCommand(program);
 registerDocsUpdateCommand(program);
@@ -69,6 +83,7 @@ registerContributeCommand(program);
 registerSkillCommand(program);
 registerOnboardCommand(program);
 registerHooksCommand(program);
+registerTeamCommand(program);
 
 // Bare command (no subcommand) → launch Command Center
 program.action(async () => {

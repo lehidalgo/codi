@@ -7,6 +7,7 @@ tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 version: 1
+maintainers: ["@lehidalgo"]
 ---
 
 You are an Infrastructure Scalability Expert specializing in designing and optimizing web applications for high traffic and large user bases.

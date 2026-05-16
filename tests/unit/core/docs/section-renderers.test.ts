@@ -2,22 +2,25 @@ import { describe, it, expect } from "vitest";
 import type { FlagSpec } from "#src/types/flags.js";
 import type { BuiltinPresetDefinition } from "#src/templates/presets/types.js";
 import type { AgentAdapter } from "#src/types/agent.js";
-import type { HubTopLevelEntry } from "#src/cli/hub.js";
+import type { HubTopLevelEntry } from "#src/core/hub-menu.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
 import { PROJECT_CLI } from "#src/constants.js";
+import { renderFlagsTable, renderFlagModes } from "#src/core/docs/renderers/flag-renderers.js";
 import {
-  renderFlagsTable,
-  renderFlagModes,
   renderTemplateCounts,
   renderTemplateCountsCompact,
+} from "#src/core/docs/renderers/template-renderers.js";
+import {
   renderPresetTable,
   renderPresetFlagComparison,
+} from "#src/core/docs/renderers/preset-renderers.js";
+import {
   renderAdapterTable,
   renderErrorCatalog,
   renderHubActions,
   renderMcpServers,
   renderCliReference,
-} from "#src/core/docs/section-renderers.js";
+} from "#src/core/docs/renderers/infrastructure-renderers.js";
 
 // ---------------------------------------------------------------------------
 // Minimal fixtures

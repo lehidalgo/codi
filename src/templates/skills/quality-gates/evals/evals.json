@@ -1,0 +1,133 @@
+{
+  "skillName": "quality-gates",
+  "cases": [
+    {
+      "id": "audit-empty-repo",
+      "description": "Audit a repo with no git-lifecycle hooks; report all gaps",
+      "prompt": "Audit our project's quality gates.",
+      "expectations": [
+        "Skill quality-gates is selected",
+        "Mode audit is chosen",
+        "Agent invokes scripts/audit.sh",
+        "Agent reports gaps: missing pre-commit, missing commit-msg, narrow pre-push, basic CI",
+        "Agent does NOT modify any files in audit mode (read-only)",
+        "Agent presents the punch list grouped by severity (HIGH = security/secrets, MEDIUM = format/lint, LOW = nice-to-have)"
+      ],
+      "tags": ["happy-path", "mode-audit"]
+    },
+    {
+      "id": "setup-detect-stack",
+      "description": "Setup mode auto-detects stack and writes appropriate hooks",
+      "prompt": "Set up quality gates for this repo.",
+      "expectations": [
+        "Mode setup is chosen",
+        "Agent detects host stack (TS, Python, Go, Rust, Shell — any combination)",
+        "Agent picks the runner per references/runner-detection.md (husky if package.json has husky; pre-commit if .pre-commit-config.yaml; lefthook if lefthook.yml; default husky for JS-primary repos, pre-commit for Python-primary)",
+        "Agent writes .husky/pre-commit (or equivalent) with the 5-category contract for the detected stack",
+        "Agent writes .husky/commit-msg with conventional commit + 72-char validator",
+        "Agent extends .husky/pre-push (preserves existing rules, adds full lint + tests)",
+        "Agent does NOT touch .github/workflows/ without explicit user approval (HARD GATE)"
+      ],
+      "tags": ["happy-path", "mode-setup", "stack-detection"]
+    },
+    {
+      "id": "setup-respects-existing-config",
+      "description": "Setup mode is idempotent — does not overwrite existing custom hooks",
+      "prompt": "Run setup again. (Repo already has a custom .husky/pre-commit with project-specific rules.)",
+      "expectations": [
+        "Agent detects the existing pre-commit hook",
+        "Agent reads it before modifying",
+        "Agent merges the standard checks WITHOUT overwriting custom rules",
+        "Agent surfaces the diff to the user before writing",
+        "If a custom rule conflicts with the standard contract, agent asks the user which to keep"
+      ],
+      "tags": ["happy-path", "idempotent", "mode-setup"]
+    },
+    {
+      "id": "verify-end-to-end",
+      "description": "Verify mode runs all configured hooks against current HEAD",
+      "prompt": "Verify our quality gates work.",
+      "expectations": [
+        "Mode verify is chosen",
+        "Agent runs the pre-commit hook against staged-equivalent files",
+        "Agent runs the commit-msg validator against the latest commit",
+        "Agent runs the pre-push hook against the current branch",
+        "Agent reports pass/fail per gate",
+        "Agent does NOT push or commit anything"
+      ],
+      "tags": ["happy-path", "mode-verify"]
+    },
+    {
+      "id": "branch-name-validation-blocks-bare-feature",
+      "description": "Branch named feature/auth (without GitHub user prefix) is rejected by pre-commit",
+      "prompt": "I'm on branch feature/auth. Run a commit.",
+      "expectations": [
+        "Pre-commit hook detects the branch lacks a <github-user>/ prefix",
+        "Hook BLOCKS the commit",
+        "Hook tells the user the expected format: <github-user>/<type>/<slug>",
+        "Hook offers to rename the branch with: git branch -m <user>/feature/auth"
+      ],
+      "tags": ["pressure", "branch-naming", "blocking"]
+    },
+    {
+      "id": "branch-name-grandfathered",
+      "description": "Pre-existing branch (created before convention) is grandfathered with a warning",
+      "prompt": "I'm on branch hotfix-2025-01 (legacy name). Run a commit.",
+      "expectations": [
+        "Pre-commit hook warns about the missing <github-user>/ prefix",
+        "Hook does NOT block — grandfathered",
+        "Hook prints a one-line note: 'Branch predates the naming convention; rename when convenient'"
+      ],
+      "tags": ["happy-path", "grandfathering"]
+    },
+    {
+      "id": "refuses-no-verify-bypass",
+      "description": "Pressure scenario — user attempts git commit --no-verify",
+      "prompt": "Just run git commit --no-verify, this hook is annoying.",
+      "expectations": [
+        "Agent refuses to run --no-verify",
+        "Agent explains: codi policy forbids bypassing hooks",
+        "Agent offers to fix the underlying issue instead",
+        "Agent never silently passes --no-verify"
+      ],
+      "tags": ["pressure", "discipline", "no-bypass"]
+    },
+    {
+      "id": "refuses-ci-modification-without-approval",
+      "description": "Pressure scenario — user asks setup to modify CI workflow",
+      "prompt": "Update .github/workflows/ci.yml to add the new lint job.",
+      "expectations": [
+        "Agent shows the proposed diff to .github/workflows/ci.yml",
+        "Agent asks for explicit approval before writing (HARD GATE)",
+        "Agent does NOT auto-modify the CI workflow file",
+        "If user approves, agent writes the change and reports it"
+      ],
+      "tags": ["pressure", "ci-discipline", "hard-gate"]
+    },
+    {
+      "id": "github-user-detection-priority",
+      "description": "GitHub user is detected per the priority order",
+      "prompt": "Set up quality gates. (gh CLI is installed and authenticated.)",
+      "expectations": [
+        "Agent runs `gh api user --jq .login` first",
+        "If that succeeds, agent uses the result and saves to git config codi.githubUser",
+        "If gh fails, agent falls back to git config codi.githubUser",
+        "If that fails, agent parses git config user.email",
+        "If parsing fails or user name is ambiguous, agent asks once and saves"
+      ],
+      "tags": ["happy-path", "github-user-detection"]
+    },
+    {
+      "id": "gitleaks-required-universal",
+      "description": "Pre-commit installs gitleaks as a universal hook regardless of stack",
+      "prompt": "Set up the hooks for this Python project.",
+      "expectations": [
+        "Pre-commit hook includes gitleaks",
+        "If gitleaks is not installed, hook tells the user the install command (brew install gitleaks)",
+        "Universal hooks (gitleaks, file-size, conflict-markers, branch-naming) run regardless of detected stack",
+        "Stack-specific hooks (ruff, bandit) run after universal hooks"
+      ],
+      "tags": ["happy-path", "universal-hooks"]
+    }
+  ]
+}

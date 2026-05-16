@@ -1,0 +1,57 @@
+{
+  "skillName": "codi-dev-team-consolidation-workflow",
+  "cases": [
+    {
+      "id": "team-lead-explicit-cycle",
+      "description": "Team lead asks to run the cross-dev consolidation",
+      "prompt": "run team consolidation on the brain.dbs in ./team-brains/",
+      "expectations": [
+        "Activates dev-team-consolidation-workflow skill",
+        "Starts the workflow via `codi run team-consolidation`",
+        "Asks for scope / mode / brains_path during the intent phase",
+        "Does NOT mutate any artifact until the report is written"
+      ]
+    },
+    {
+      "id": "consolidate-team-brains",
+      "description": "Natural-language synonym phrasing for the same intent",
+      "prompt": "consolidate the team brain databases and propose rule improvements",
+      "expectations": [
+        "Activates dev-team-consolidation-workflow skill",
+        "Walks through intent → collect → analyze → consolidate phases",
+        "Produces docs/<ts>_[REPORT]_team-consolidation.md",
+        "Surfaces downstream meta-skills (refine-rules, artifact-contributor) for post-review action"
+      ]
+    },
+    {
+      "id": "cross-dev-analysis-phrasing",
+      "description": "Lead frames it as analysis rather than consolidation",
+      "prompt": "analyze what the team learned across all their brain captures this sprint",
+      "expectations": [
+        "Activates dev-team-consolidation-workflow skill",
+        "Reads per-dev brain.dbs via the schema-reference Aggregate query catalog",
+        "Emits per-dev findings blocks before cross-team consolidation"
+      ]
+    },
+    {
+      "id": "negative-single-brain-ui",
+      "description": "Single-dev brain inspection does NOT trigger the workflow",
+      "prompt": "open the brain UI to look at my recent captures",
+      "expectations": [
+        "Does NOT activate dev-team-consolidation-workflow skill",
+        "Routes to `codi brain ui` instead",
+        "Skips the multi-dev intent / collect ceremony"
+      ]
+    },
+    {
+      "id": "negative-rule-edit-only",
+      "description": "Lone rule edit request does NOT trigger the workflow",
+      "prompt": "edit codi-typescript rule to require strict noUncheckedIndexedAccess",
+      "expectations": [
+        "Does NOT activate dev-team-consolidation-workflow skill",
+        "Routes to rule-creator / refine-rules instead",
+        "Does NOT start a team-consolidation workflow"
+      ]
+    }
+  ]
+}

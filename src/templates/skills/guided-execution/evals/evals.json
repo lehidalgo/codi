@@ -10,7 +10,7 @@
         "Builds a task list via TaskCreate before executing",
         "Presents the full plan with agent-vs-user responsibility split before starting",
         "Executes one step at a time through the 7-phase protocol",
-        "Documents each completed step via codi-step-documenter"
+        "Documents each completed step via codi-dev-step-documenter"
       ]
     },
     {
@@ -21,7 +21,7 @@
         "Activates guided-execution skill",
         "Identifies which steps require user action (credentials, AWS console) vs agent action (IaC files, scripts)",
         "Waits for user confirmation after each user-action step",
-        "Runs codi-evidence-gathering + codi-verification to validate each step"
+        "Runs codi-verify-evidence + codi-verify-evidence to validate each step"
       ]
     },
     {

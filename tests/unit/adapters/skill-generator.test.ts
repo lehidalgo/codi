@@ -520,3 +520,82 @@ describe("buildSkillCatalog", () => {
     expect(result).toContain(`${PROJECT_DIR}/skills/<name>/SKILL.md`);
   });
 });
+
+describe("generateSkillFiles — binary asset hashing", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = join(
+      tmpdir(),
+      `${PROJECT_NAME}-test-binhash-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
+    await mkdir(tmpDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  /**
+   * Regression for the false-positive drift bug: binary skill assets (fonts,
+   * PDFs, archives) were stored with hashContent("") = EMPTY_INPUT_SHA256
+   * because the generator skipped reading their bytes. `codi status` then
+   * compared that placeholder against the real on-disk hash and reported
+   * every binary file as drifted forever, even on a fresh install. The fix
+   * computes a real `hashBuffer(bytes)` for binary entries.
+   */
+  it("computes the real SHA-256 for binary supporting files", async () => {
+    const skill: NormalizedSkill = {
+      name: "fontskill",
+      description: "Skill with font assets",
+      content: "body",
+    };
+    const skillDir = join(tmpDir, ".codi", "skills", "fontskill");
+    await mkdir(join(skillDir, "assets"), { recursive: true });
+
+    const fontBytes = Buffer.from([
+      0x00, 0x01, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x80, 0x00, 0x03, 0x00, 0x20, 0xff, 0xfe, 0xab,
+      0xcd,
+    ]);
+    await writeFile(join(skillDir, "assets", "Test-Regular.ttf"), fontBytes);
+
+    const files = await generateSkillFiles([skill], ".claude/skills", tmpDir, "", "claude-code");
+
+    const fontFile = files.find((f) => f.path.endsWith("Test-Regular.ttf"));
+    expect(fontFile).toBeDefined();
+    expect(fontFile?.binarySrc).toBeDefined();
+
+    // Pre-fix value (must NOT match — proves the bug is fixed)
+    const EMPTY_INPUT_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+    expect(fontFile?.hash).not.toBe(EMPTY_INPUT_SHA256);
+
+    // Post-fix value (matches the real bytes)
+    const { createHash } = await import("node:crypto");
+    const expectedHash = createHash("sha256").update(fontBytes).digest("hex");
+    expect(fontFile?.hash).toBe(expectedHash);
+  });
+
+  it("text supporting files keep hashContent semantics", async () => {
+    const skill: NormalizedSkill = {
+      name: "textskill",
+      description: "Skill with text references",
+      content: "body",
+    };
+    const skillDir = join(tmpDir, ".codi", "skills", "textskill");
+    await mkdir(join(skillDir, "references"), { recursive: true });
+
+    const textContent = "# Reference doc\n\nSome content.";
+    await writeFile(join(skillDir, "references", "doc.md"), textContent, "utf8");
+
+    const files = await generateSkillFiles([skill], ".claude/skills", tmpDir, "", "claude-code");
+
+    const textFile = files.find((f) => f.path.endsWith("doc.md"));
+    expect(textFile).toBeDefined();
+    expect(textFile?.binarySrc).toBeUndefined();
+    expect(textFile?.content).toBe(textContent);
+
+    const { createHash } = await import("node:crypto");
+    const expectedHash = createHash("sha256").update(textContent, "utf8").digest("hex");
+    expect(textFile?.hash).toBe(expectedHash);
+  });
+});

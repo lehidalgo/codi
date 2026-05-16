@@ -18,7 +18,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 11
+version: 13
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Audit & Fix
@@ -63,7 +64,7 @@ Repeat for each pending item in order:
 
 1. Mark the item as in-progress via TaskUpdate.
 2. State clearly: "Processing item N of M: [item description]"
-3. **Invoke ${PROJECT_NAME}-evidence-gathering** — investigate the item. Gather concrete evidence of actual vs intended behavior. Understand the root cause before forming any opinion.
+3. **Invoke ${PROJECT_NAME}-verify-evidence** — investigate the item. Gather concrete evidence of actual vs intended behavior. Understand the root cause before forming any opinion.
 4. **Evaluate the evidence:**
    - If no action is needed: state this clearly, provide the evidence-based justification, mark the task completed, and move to the next item.
    - If a fix is needed: proceed to 2b.
@@ -99,7 +100,7 @@ After user approval:
 
 1. **Implement** the approved fix exactly as proposed. Do not expand scope.
 2. **Validate** — Run the validation plan from the fix proposal. Read the actual output.
-3. **Invoke ${PROJECT_NAME}-verification** — confirm the fix with fresh evidence.
+3. **Invoke ${PROJECT_NAME}-verify-evidence** — confirm the fix with fresh evidence.
 4. **Commit** — Create a commit for this single item. Commit message format:
    \`fix(<scope>): <what was fixed>\`
    Include the item description and validation evidence in the commit body.
@@ -139,8 +140,8 @@ Always show what has been done, what is current, and what comes next.
 
 ## Integration
 
-- Uses ${PROJECT_NAME}-evidence-gathering for structured investigation in Phase 2a.
-- Uses ${PROJECT_NAME}-verification in Phase 3 to confirm fixes.
+- Uses ${PROJECT_NAME}-verify-evidence for structured investigation in Phase 2a.
+- Uses ${PROJECT_NAME}-verify-evidence in Phase 3 to confirm fixes.
 - Uses ${PROJECT_NAME}-debugging when root cause analysis is complex (invoke during 2a if needed).
 - Produces commits that the graph-code MCP can index for future codebase understanding.
 `;

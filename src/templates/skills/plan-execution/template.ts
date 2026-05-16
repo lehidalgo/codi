@@ -6,24 +6,25 @@ description: |
   Execute an approved implementation plan in one of two modes — INLINE
   (sequential checkpoint-driven execution by the primary agent) or
   SUBAGENT (fresh subagent per task with two-stage review). Use after
-  ${PROJECT_NAME}-plan-writer produces an approved plan. Always asks the
+  ${PROJECT_NAME}-plan-writing produces an approved plan. Always asks the
   user to pick the mode — never auto-selects. Activates on phrases like
   "execute this plan", "implement the plan", "run the plan", "walk
   through the plan step by step", "TDD per task", "dispatch subagents
   for each task", "subagent orchestration", "two-stage review",
   "plan execution", "multi-file implementation". Do NOT activate without
   an approved plan (use ${PROJECT_NAME}-brainstorming →
-  ${PROJECT_NAME}-plan-writer first), for trivial single-file edits, for
+  ${PROJECT_NAME}-plan-writing first), for trivial single-file edits, for
   bug investigation without a fix plan (use ${PROJECT_NAME}-debugging),
   for parallel dispatch across INDEPENDENT failure domains (use
-  ${PROJECT_NAME}-dispatching-parallel-agents), or when the baseline test
+  ${PROJECT_NAME}-subagent-orchestration), or when the baseline test
   suite is already failing (fix the baseline first, never execute on red).
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 6
+version: 8
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Plan Execution
@@ -48,15 +49,15 @@ Wait for the user's choice before proceeding. Do not pick a default.
 
 ## Skip When
 
-- No approved plan yet — run ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writer first
+- No approved plan yet — run ${PROJECT_NAME}-brainstorming → ${PROJECT_NAME}-plan-writing first
 - Exploratory or single-file edit that does not warrant a plan — edit directly
 - Bug investigation without a fix plan — use ${PROJECT_NAME}-debugging
-- Parallel dispatch across INDEPENDENT failure domains — use ${PROJECT_NAME}-dispatching-parallel-agents (SUBAGENT mode here is sequential by contract)
+- Parallel dispatch across INDEPENDENT failure domains — use ${PROJECT_NAME}-subagent-orchestration (SUBAGENT mode here is sequential by contract)
 - Baseline test suite is already failing — fix the baseline first, never execute on red
 
 ## Prerequisites (both modes)
 
-1. A plan document in \\\`docs/\\\` (from ${PROJECT_NAME}-plan-writer)
+1. A plan document in \\\`docs/\\\` (from ${PROJECT_NAME}-plan-writing)
 2. ${PROJECT_NAME}-worktrees has set up a clean workspace or branch
 3. Baseline tests confirmed passing
 
@@ -96,7 +97,7 @@ Read the plan document completely. Check for any concerns or blockers. If questi
 3. Do not improvise or add steps not in the task
 4. Apply ${PROJECT_NAME}-tdd for each implementation step
 5. Run the task's verification command
-6. Apply ${PROJECT_NAME}-verification before marking the task complete
+6. Apply ${PROJECT_NAME}-verify-evidence before marking the task complete
 7. Commit as specified in the task
 8. Mark task completed
 
@@ -129,7 +130,7 @@ Dispatch via the Agent tool with a prompt that includes:
 - The design spec section relevant to this task
 - The branch and worktree path
 - Explicit instruction: "Use ${PROJECT_NAME}-tdd. Write the test first, verify it fails, then implement."
-- Explicit instruction: "Use ${PROJECT_NAME}-verification before reporting completion."
+- Explicit instruction: "Use ${PROJECT_NAME}-verify-evidence before reporting completion."
 - What to report back: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
 
 ### Step 3 — Handle Implementer Status
@@ -173,7 +174,7 @@ Choose model complexity based on task:
 
 ### What Never to Do (SUBAGENT)
 
-- Never dispatch multiple implementer subagents in parallel (review is sequential; feedback loops require order — for parallel dispatch across INDEPENDENT failure domains, use ${PROJECT_NAME}-dispatching-parallel-agents instead)
+- Never dispatch multiple implementer subagents in parallel (review is sequential; feedback loops require order — for parallel dispatch across INDEPENDENT failure domains, use ${PROJECT_NAME}-subagent-orchestration instead)
 - Never skip a review stage because "the task was simple"
 - Never proceed with DONE_WITH_CONCERNS without including the concern in review context
 - Never let subagents read plan files directly — extract and provide the specific task text
@@ -189,17 +190,17 @@ Choose model complexity based on task:
 
 ## After All Tasks (both modes)
 
-1. Run full test suite via ${PROJECT_NAME}-verification: report pass/fail with counts
+1. Run full test suite via ${PROJECT_NAME}-verify-evidence: report pass/fail with counts
 2. **SUBAGENT mode only**: dispatch ${PROJECT_NAME}-code-reviewer agent for the complete changeset
 3. Invoke ${PROJECT_NAME}-branch-finish for cleanup and merge options
 
 ## Integration
 
-- **Requires**: ${PROJECT_NAME}-worktrees (workspace), ${PROJECT_NAME}-plan-writer (plan)
-- **Iron-law gates** (wrap every task, both modes): ${PROJECT_NAME}-tdd (RED-GREEN-REFACTOR per task — failing test before any production code) and ${PROJECT_NAME}-verification (fresh evidence before claiming a task done — no weasel words)
+- **Requires**: ${PROJECT_NAME}-worktrees (workspace), ${PROJECT_NAME}-plan-writing (plan)
+- **Iron-law gates** (wrap every task, both modes): ${PROJECT_NAME}-tdd (RED-GREEN-REFACTOR per task — failing test before any production code) and ${PROJECT_NAME}-verify-evidence (fresh evidence before claiming a task done — no weasel words)
 - **On task failure**: ${PROJECT_NAME}-debugging (Phases 1-5) for root-cause investigation; never apply a second fix without completing Phase 1
 - **SUBAGENT-mode review**: ${PROJECT_NAME}-code-reviewer agent for the per-task quality gate (two-stage review)
 - **Invokes after all tasks**: ${PROJECT_NAME}-branch-finish (merge / PR / keep / discard)
 - **Never starts** implementation on main/master without explicit user consent
-- **Parallel sibling**: ${PROJECT_NAME}-dispatching-parallel-agents — for fan-out across INDEPENDENT failure domains (this skill's SUBAGENT mode is sequential by contract)
+- **Parallel sibling**: ${PROJECT_NAME}-subagent-orchestration — for fan-out across INDEPENDENT failure domains (this skill's SUBAGENT mode is sequential by contract)
 `;

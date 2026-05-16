@@ -29,9 +29,7 @@ afterEach(async () => {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function makeInit(
-  overrides: Partial<LedgerInitialization> = {},
-): LedgerInitialization {
+function makeInit(overrides: Partial<LedgerInitialization> = {}): LedgerInitialization {
   return {
     timestamp: "2026-01-01T00:00:00.000Z",
     preset: "standard",
@@ -42,9 +40,7 @@ function makeInit(
   };
 }
 
-function makePreset(
-  overrides: Partial<LedgerActivePreset> = {},
-): LedgerActivePreset {
+function makePreset(overrides: Partial<LedgerActivePreset> = {}): LedgerActivePreset {
   return {
     name: "standard",
     installedAt: "2026-01-01T00:00:00.000Z",
@@ -58,9 +54,7 @@ function makePreset(
   };
 }
 
-function makeGeneratedFile(
-  overrides: Partial<LedgerGeneratedFile> = {},
-): LedgerGeneratedFile {
+function makeGeneratedFile(overrides: Partial<LedgerGeneratedFile> = {}): LedgerGeneratedFile {
   return {
     path: ".claude/rules/architecture.md",
     agent: "claude-code",
@@ -81,9 +75,7 @@ function makeHookFile(overrides: Partial<LedgerHookFile> = {}): LedgerHookFile {
   };
 }
 
-function makeConfigFile(
-  overrides: Partial<LedgerConfigFile> = {},
-): LedgerConfigFile {
+function makeConfigFile(overrides: Partial<LedgerConfigFile> = {}): LedgerConfigFile {
   return {
     path: `${PROJECT_DIR}/state.json`,
     type: "state",
@@ -92,9 +84,7 @@ function makeConfigFile(
   };
 }
 
-function makeOperation(
-  overrides: Partial<LedgerOperation> = {},
-): LedgerOperation {
+function makeOperation(overrides: Partial<LedgerOperation> = {}): LedgerOperation {
   return {
     type: "generate",
     timestamp: "2026-01-01T00:00:00.000Z",
@@ -111,7 +101,7 @@ describe("read", () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.version).toBe("1");
+    expect(result.data.version).toBe("2");
     expect(result.data.initialized).toBeNull();
     expect(result.data.activePreset).toBeNull();
     expect(result.data.files.generated).toEqual([]);
@@ -122,7 +112,7 @@ describe("read", () => {
 
   it("reads and parses valid operations.json", async () => {
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: makeInit(),
       activePreset: makePreset(),
       files: {
@@ -132,8 +122,9 @@ describe("read", () => {
       },
       operations: [makeOperation()],
     };
+    await fs.mkdir(path.join(tmpDir, "state"), { recursive: true });
     await fs.writeFile(
-      path.join(tmpDir, "operations.json"),
+      path.join(tmpDir, "state", "operations.json"),
       JSON.stringify(ledgerData, null, 2),
       "utf8",
     );
@@ -151,11 +142,8 @@ describe("read", () => {
   });
 
   it("returns error for corrupted JSON file", async () => {
-    await fs.writeFile(
-      path.join(tmpDir, "operations.json"),
-      "{ broken json !!!",
-      "utf8",
-    );
+    await fs.mkdir(path.join(tmpDir, "state"), { recursive: true });
+    await fs.writeFile(path.join(tmpDir, "state", "operations.json"), "{ broken json !!!", "utf8");
 
     const result = await manager.read();
 
@@ -171,7 +159,7 @@ describe("read", () => {
 describe("write", () => {
   it("writes data and reads it back correctly", async () => {
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: makeInit(),
       activePreset: makePreset(),
       files: {
@@ -196,7 +184,7 @@ describe("write", () => {
     const nestedManager = new OperationsLedgerManager(nestedDir);
 
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: null,
       activePreset: null,
       files: { generated: [], hooks: [], config: [] },
@@ -206,13 +194,13 @@ describe("write", () => {
     const result = await nestedManager.write(ledgerData);
     expect(result.ok).toBe(true);
 
-    const stat = await fs.stat(path.join(nestedDir, "operations.json"));
+    const stat = await fs.stat(path.join(nestedDir, "state", "operations.json"));
     expect(stat.isFile()).toBe(true);
   });
 
   it("uses atomic write via temp file and rename", async () => {
     const ledgerData: OperationsLedgerData = {
-      version: "1",
+      version: "2",
       initialized: null,
       activePreset: null,
       files: { generated: [], hooks: [], config: [] },
@@ -221,16 +209,13 @@ describe("write", () => {
 
     await manager.write(ledgerData);
 
-    // After successful write, no .tmp files should remain
-    const files = await fs.readdir(tmpDir);
+    // After successful write, no .tmp files should remain in the state dir
+    const files = await fs.readdir(path.join(tmpDir, "state"));
     const tmpFiles = files.filter((f) => f.includes(".tmp."));
     expect(tmpFiles).toHaveLength(0);
 
     // The final file should exist with correct content
-    const content = await fs.readFile(
-      path.join(tmpDir, "operations.json"),
-      "utf8",
-    );
+    const content = await fs.readFile(path.join(tmpDir, "state", "operations.json"), "utf8");
     expect(JSON.parse(content)).toEqual(ledgerData);
   });
 });
@@ -311,12 +296,8 @@ describe("setActivePreset", () => {
     const readResult = await manager.read();
     if (!readResult.ok) return;
     expect(readResult.data.activePreset).toEqual(preset);
-    expect(readResult.data.activePreset?.artifactSelection.rules).toHaveLength(
-      3,
-    );
-    expect(readResult.data.activePreset?.artifactSelection.skills).toHaveLength(
-      2,
-    );
+    expect(readResult.data.activePreset?.artifactSelection.rules).toHaveLength(3);
+    expect(readResult.data.activePreset?.artifactSelection.skills).toHaveLength(2);
   });
 
   it("replaces previous active preset", async () => {
@@ -332,9 +313,7 @@ describe("setActivePreset", () => {
     const readResult = await manager.read();
     if (!readResult.ok) return;
     expect(readResult.data.activePreset?.name).toBe("full");
-    expect(readResult.data.activePreset?.installedAt).toBe(
-      "2026-01-02T00:00:00.000Z",
-    );
+    expect(readResult.data.activePreset?.installedAt).toBe("2026-01-02T00:00:00.000Z");
   });
 });
 
@@ -353,12 +332,8 @@ describe("addGeneratedFiles", () => {
     const readResult = await manager.read();
     if (!readResult.ok) return;
     expect(readResult.data.files.generated).toHaveLength(2);
-    expect(readResult.data.files.generated[0].path).toBe(
-      ".claude/rules/arch.md",
-    );
-    expect(readResult.data.files.generated[1].path).toBe(
-      ".claude/rules/security.md",
-    );
+    expect(readResult.data.files.generated[0].path).toBe(".claude/rules/arch.md");
+    expect(readResult.data.files.generated[1].path).toBe(".claude/rules/security.md");
   });
 
   it("upserts existing file by path and updates updatedAt", async () => {
@@ -379,9 +354,7 @@ describe("addGeneratedFiles", () => {
     const readResult = await manager.read();
     if (!readResult.ok) return;
     expect(readResult.data.files.generated).toHaveLength(1);
-    expect(readResult.data.files.generated[0].updatedAt).toBe(
-      "2026-01-02T12:00:00.000Z",
-    );
+    expect(readResult.data.files.generated[0].updatedAt).toBe("2026-01-02T12:00:00.000Z");
   });
 
   it("handles mix of new and existing files", async () => {
@@ -401,9 +374,7 @@ describe("addGeneratedFiles", () => {
     const readResult = await manager.read();
     if (!readResult.ok) return;
     expect(readResult.data.files.generated).toHaveLength(2);
-    expect(readResult.data.files.generated[0].updatedAt).toBe(
-      "2026-01-03T00:00:00.000Z",
-    );
+    expect(readResult.data.files.generated[0].updatedAt).toBe("2026-01-03T00:00:00.000Z");
     expect(readResult.data.files.generated[1].agent).toBe("cursor");
   });
 });

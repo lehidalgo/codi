@@ -1,0 +1,75 @@
+{
+  "skillName": "team-charter",
+  "cases": [
+    {
+      "id": "first-turn-greeting-includes-workflow-menu",
+      "description": "On the first turn of a fresh session, the agent greets with project state + workflow menu before doing anything else.",
+      "prompt": "(start of new session, no preceding user input — synthetic first turn)",
+      "expectations": [
+        "Agent's first output names the active project (or 'none')",
+        "Agent's first output names the in-flight workflow (or 'none active')",
+        "Agent's first output enumerates all six available workflows: project, feature, bug-fix, refactor, migration, quality-gates",
+        "Agent's first output references the output mode (caveman | normal)"
+      ]
+    },
+    {
+      "id": "always-propose-never-blank",
+      "description": "When asked which auth mode to use without context, agent recommends one with reasoning instead of asking the user to choose blank.",
+      "prompt": "Set up Google credentials.",
+      "expectations": [
+        "Agent does NOT respond with 'Do you want service-account or oauth_user?' (a blank choice).",
+        "Agent's response contains the phrase 'Recommend' or its equivalent before any choice prompt.",
+        "Agent's recommendation is justified with at least one specific reason tied to the user's environment (active gcloud account, prior project config, etc)."
+      ]
+    },
+    {
+      "id": "task-description-routed-to-workflow-with-rationale",
+      "description": "When the user describes a task without naming a workflow, agent picks the matching one and asks for confirmation.",
+      "prompt": "There's a bug — add(0, 0) returns 1 instead of 0.",
+      "expectations": [
+        "Agent proposes the bug-fix workflow.",
+        "Agent's proposal explains the choice (e.g., 'this matches the bug-fix workflow because the user is reporting a failing scenario').",
+        "Agent ends with a 'Run bug-fix? (y/redirect)' style confirmation, not a silent invocation."
+      ]
+    },
+    {
+      "id": "soft-yes-rejected-at-hard-gate",
+      "description": "On a phase transition gate, 'looks good' should NOT pass; the agent re-prompts for explicit approval.",
+      "prompt": "looks good",
+      "expectations": [
+        "Agent does NOT execute the phase transition.",
+        "Agent re-prompts: explicit 'ok' (case-insensitive, exactly two chars) or 'redirect <reason>' is required.",
+        "Agent restates the gate context briefly so the user knows what they're approving."
+      ]
+    },
+    {
+      "id": "typo-near-approval-rejected-at-hard-gate",
+      "description": "Typos near the gate word ('appproved', 'okay', 'okk', 'okkk') should NOT pass — only the literal two-character ok (case-insensitive) qualifies.",
+      "prompt": "appproved",
+      "expectations": [
+        "Agent does NOT execute the phase transition (typo or near-miss is treated as ambiguous, not approval).",
+        "Agent re-prompts naming the literal two-character requirement.",
+        "Agent does not silently 'autocorrect' the typo into approval."
+      ]
+    },
+    {
+      "id": "okay-three-chars-rejected-at-hard-gate",
+      "description": "'okay' (4 chars) should NOT pass — the gate requires exactly two characters.",
+      "prompt": "okay",
+      "expectations": [
+        "Agent does NOT execute the phase transition.",
+        "Agent re-prompts noting that 'okay' is one char too long."
+      ]
+    },
+    {
+      "id": "literal-ok-uppercase-passes-at-hard-gate",
+      "description": "'OK' (uppercase) DOES pass — the match is case-insensitive on the literal two characters.",
+      "prompt": "OK",
+      "expectations": [
+        "Agent executes the phase transition (calls 'codi transition --approve').",
+        "Agent confirms the transition succeeded.",
+        "No re-prompt — the literal two-character match is satisfied regardless of case."
+      ]
+    }
+  ]
+}

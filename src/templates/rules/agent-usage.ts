@@ -6,7 +6,8 @@ description: Guidelines for spawning and managing sub-agents — when to use, be
 priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Agent Usage

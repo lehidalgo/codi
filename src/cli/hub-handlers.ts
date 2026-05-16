@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import * as p from "@clack/prompts";
+import { ARTIFACT_DIR_NAMES } from "../core/artifact-types.js";
 import { formatHuman } from "../core/output/formatter.js";
 import { regenerateConfigs } from "./shared.js";
 import { resolveProjectDir } from "../utils/paths.js";
@@ -323,15 +324,19 @@ export async function handleClean(projectRoot: string): Promise<void> {
 }
 
 export async function handleUpdate(projectRoot: string): Promise<void> {
+  // Derive options from canonical ARTIFACT_DIR_NAMES so a new artifact kind
+  // automatically appears in the update wizard. Labels live alongside the
+  // dir names to keep both in step.
+  const LAYER_LABELS: Record<(typeof ARTIFACT_DIR_NAMES)[number], string> = {
+    rules: "Rules",
+    skills: "Skills",
+    agents: "Agents",
+    "mcp-servers": "MCP servers",
+  };
   const layers = await p.multiselect({
     message: "What to update? (select all for full refresh)",
-    options: [
-      { label: "Rules", value: "rules" },
-      { label: "Skills", value: "skills" },
-      { label: "Agents", value: "agents" },
-      { label: "MCP servers", value: "mcp-servers" },
-    ],
-    initialValues: ["rules", "skills", "agents", "mcp-servers"],
+    options: ARTIFACT_DIR_NAMES.map((dir) => ({ label: LAYER_LABELS[dir], value: dir })),
+    initialValues: [...ARTIFACT_DIR_NAMES],
     required: true,
   });
   if (isCancelled(layers)) return;

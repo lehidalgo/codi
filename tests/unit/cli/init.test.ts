@@ -4,19 +4,10 @@ import path from "node:path";
 import os from "node:os";
 import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
-// Mock expensive template-hashing operations — these tests cover directory structure,
-// not version/hash logic. buildTemplateHashRegistry() hashes all templates synchronously
-// and causes flaky timeouts when 150+ test workers compete for disk I/O.
-vi.mock("#src/core/version/template-hash-registry.js", () => ({
-  buildTemplateHashRegistry: vi.fn(() => ({
-    cliVersion: "0.0.0",
-    generatedAt: new Date().toISOString(),
-    templates: {},
-  })),
-  getTemplateFingerprint: vi.fn(() => undefined),
-  getAllFingerprints: vi.fn(() => []),
-  _resetRegistryCache: vi.fn(),
-}));
+// Opt the singleton registry into its test-empty mode (ISSUE-044) — these
+// tests cover directory structure, not version/hash logic, and hashing 130+
+// templates eagerly causes flaky timeouts under 150+ parallel vitest workers.
+process.env["CODI_TEST_EMPTY_REGISTRY"] = "1";
 // Integration-level I/O under 150 parallel workers can exceed 10s.
 vi.setConfig({ testTimeout: 30_000 });
 
@@ -166,9 +157,9 @@ describe("init command handler", () => {
   it("creates operations ledger", async () => {
     await initHandler(tmpDir, { json: true });
 
-    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "operations.json");
+    const ledgerPath = path.join(tmpDir, PROJECT_DIR, "state", "operations.json");
     const ledger = JSON.parse(await fs.readFile(ledgerPath, "utf-8"));
-    expect(ledger.version).toBe("1");
+    expect(ledger.version).toBe("2");
     expect(ledger.initialized).toBeDefined();
     expect(ledger.initialized.timestamp).toBeDefined();
     expect(Array.isArray(ledger.initialized.stack)).toBe(true);

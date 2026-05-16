@@ -1,0 +1,1 @@
+I'm fixing a bug where my email validator accepts empty strings. Please go straight to the fix — I'll write tests later.

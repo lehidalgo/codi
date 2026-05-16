@@ -98,8 +98,41 @@ export const WATCH_DEBOUNCE_MS = 500;
 export const MAX_BACKUPS = 50;
 
 // --- Managed by ---
+/**
+ * Owners that may appear in the `managed_by:` frontmatter field on every Codi
+ * artifact. The framework owns built-in templates; the user owns local
+ * customisations. Code that needs these literals must import the constants
+ * below rather than typing `"codi"` / `"user"` inline — the guard
+ * `scripts/guard-project-literals.mjs` enforces this and the rule
+ * `codi-code-style.md` documents the policy.
+ */
+export const MANAGED_BY_FRAMEWORK = PROJECT_NAME;
+export const MANAGED_BY_USER = "user" as const;
+export type ManagedBy = typeof MANAGED_BY_FRAMEWORK | typeof MANAGED_BY_USER;
 /** Valid values for the `managed_by` field in artifact frontmatter. */
-export const MANAGED_BY_VALUES = [PROJECT_NAME, "user"] as const;
+export const MANAGED_BY_VALUES = [MANAGED_BY_FRAMEWORK, MANAGED_BY_USER] as const;
+
+// --- Maintainers (ISSUE-056) ---
+/**
+ * GitHub identifier shape allowed in artifact `maintainers:` frontmatter.
+ *
+ *   - `@user`        — a single GitHub username
+ *   - `@org/team`    — an organisation team slug (team slugs cannot contain `.`)
+ *   - `email@host`   — an email address verified on a GitHub account
+ *
+ * The CODEOWNERS spec rejects negated patterns (`!`) and character ranges;
+ * those concerns belong to the .github/CODEOWNERS file itself, not the
+ * per-artifact list.
+ */
+export const MAINTAINER_PATTERN =
+  /^(@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,38})(?:\/[a-zA-Z0-9_-]+)?|[^\s@]+@[^\s@.]+\.[^\s@]+)$/;
+
+/**
+ * Default maintainer applied during the ISSUE-056 backfill. New artifacts
+ * inherit the value via `addArtifactScaffolder` / `rule-creator` /
+ * `skill-creator` so consumers do not have to think about the field.
+ */
+export const DEFAULT_MAINTAINER = "@lehidalgo";
 
 // --- Presets ---
 // Base preset names are derived from flag-presets.ts PRESETS object (source of truth).
@@ -155,6 +188,22 @@ export const ARTIFACT_MANIFEST_FILENAME = "artifact-manifest.json";
 export const REGISTRY_INDEX_FILENAME = "index.json";
 /** Name of the directory that stores configuration backups. */
 export const BACKUPS_DIR = "backups";
+/**
+ * Name of the directory that holds PRECIOUS persistent state — never touched
+ * by `codi init`, `codi generate`, or any orphan-pruning logic. Anything that
+ * lives under `<configDir>/<STATE_DIR>/` survives every regeneration and is
+ * the single home for runtime state (brain DB, ledgers, scaffolder state).
+ */
+export const STATE_DIR = "state";
+/** Filename of the canonical brain SQLite database. */
+export const BRAIN_DB_FILENAME = "brain.db";
+/**
+ * Name of the directory under `~/.codi/` that stores OUT-OF-TREE archives —
+ * snapshots taken before destructive operations (e.g. `clean --all`) that
+ * would otherwise wipe `.codi/backups/` along with everything else. Lives in
+ * the user's home so it survives any deletion under the project root.
+ */
+export const EXTERNAL_ARCHIVE_DIR = "archive";
 
 /**
  * Directories under .codi/ that are NEVER walked by the backup snapshotter.
@@ -191,10 +240,6 @@ export const SUPPORTED_PLATFORMS = [
 ] as const;
 /** YAML-ready inline list for template interpolation. */
 export const SUPPORTED_PLATFORMS_YAML = `[${SUPPORTED_PLATFORMS.join(", ")}]`;
-
-// --- Artifact types ---
-/** All recognised artifact type directory names. */
-export const ARTIFACT_TYPES = ["rules", "skills", "agents"] as const;
 
 // --- Brand category ---
 /** Category label assigned to brand skills. */
@@ -287,9 +332,14 @@ export const CLI_COMMANDS = [
 export const GIT_CLONE_DEPTH = "1";
 
 // --- Flag defaults ---
-/** Default maximum lines-of-code limit enforced on source files via rules. */
-export const DEFAULT_MAX_FILE_LINES = 700;
-/** Maximum lines-of-code limit checked by the pre-commit hook (slightly relaxed). */
+/**
+ * Default maximum lines-of-code limit enforced on source files via rules.
+ * Raised from 700 → 800 (ISSUE-013) to align with the pre-commit hook
+ * and avoid splitting CLI handlers / wizards that naturally sit between
+ * 700 and 800 LOC once `Result<T>` boilerplate is included.
+ */
+export const DEFAULT_MAX_FILE_LINES = 800;
+/** Maximum lines-of-code limit checked by the pre-commit hook. */
 export const PRE_COMMIT_MAX_FILE_LINES = 800;
 
 // --- Per-layer line limits (ACS recommendations) ---

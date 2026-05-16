@@ -1,0 +1,52 @@
+{
+  "skillName": "gate-plan-coverage",
+  "cases": [
+    {
+      "id": "dispatched-by-gate-runner",
+      "description": "Gate runner dispatches this skill at plan→decompose transition",
+      "prompt": "[Internal] Gate runner invokes gate-plan-coverage with plan_artifact_path, workflow_id, intent_summary.",
+      "expectations": [
+        "Skill runs as a forked subagent (disable-model-invocation: true)",
+        "Skill reads the plan markdown",
+        "Skill reads manifest events to extract intent decisions and success criteria",
+        "Skill returns structured JSON conforming to schemas/gate-result.schema.json"
+      ],
+      "tags": ["happy-path", "internal-gate"]
+    },
+    {
+      "id": "every-success-criterion-covered",
+      "description": "Plan must address every success criterion from intent",
+      "prompt": "[Internal] Intent has 5 success criteria; plan covers all 5.",
+      "expectations": [
+        "Skill maps each success criterion to a section/task in the plan",
+        "All 5 covered → verdict pass",
+        "Output lists which criterion maps to which plan section"
+      ],
+      "tags": ["happy-path", "coverage-pass"]
+    },
+    {
+      "id": "missing-criterion-fails-gate",
+      "description": "If plan does not address a criterion, gate fails",
+      "prompt": "[Internal] Intent has criterion 'export must support CSV and JSON'; plan only addresses CSV.",
+      "expectations": [
+        "Skill identifies the missing criterion (JSON export not in plan)",
+        "Verdict is 'fail'",
+        "Output includes the unmet criterion with a one-line gap description",
+        "suggested_action points to the plan section that should cover JSON"
+      ],
+      "tags": ["pressure", "coverage-gap"]
+    },
+    {
+      "id": "strict-json-output",
+      "description": "Output is strictly JSON, never prose",
+      "prompt": "[Internal] Run gate-plan-coverage.",
+      "expectations": [
+        "Output is valid JSON parsable by the gate runner",
+        "Output conforms to schemas/gate-result.schema.json",
+        "Output contains check_id, verdict, summary, evidence, suggested_action, tokens_consumed",
+        "No markdown, prose, or preamble"
+      ],
+      "tags": ["happy-path", "schema-compliance"]
+    }
+  ]
+}

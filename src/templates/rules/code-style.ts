@@ -6,7 +6,8 @@ description: Code style and formatting conventions
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 8
+maintainers: ["@lehidalgo"]
 ---
 
 # Code Style
@@ -75,6 +76,13 @@ GOOD: \`createUser({ name, email, role, team, isActive, notify })\`
 - Dynamic lists (supported agents, preset names, template catalogs, flag keys) must be derived from their source of truth, not duplicated in arrays or sets
 - Configuration values belong in environment variables, config files, or constants modules — not scattered in business logic
 - If you find yourself copying a list from one file to another, extract it to a shared source and import it
+- For identity unions (agent ids, status enums, target keys), declare ONE canonical \`as const\` literal tuple plus a \`type Foo = (typeof FOO_TUPLE)[number]\` alias. Every consumer imports both. Deliberate narrowings encode their constraint with \`satisfies readonly Foo[]\` so a rename at the canonical source fails compilation locally
+- When the canonical literal must be embedded into a generated artifact (script template, YAML emitter, etc.), interpolate \`JSON.stringify(CANONICAL_TUPLE)\` at build time rather than re-typing the literal alongside a stale "Mirrors X" comment
+- Project-name / dir / brand literals (\`.codi\`, \`"codi"\`, \`"Codi"\`, \`managed_by: "codi" | "user"\`) MUST import from \`#src/constants.js\` (\`PROJECT_DIR\`, \`PROJECT_NAME\`, \`PROJECT_NAME_DISPLAY\`, \`MANAGED_BY_FRAMEWORK\`, \`MANAGED_BY_USER\`, type \`ManagedBy\`). The CI guard \`scripts/guard-project-literals.mjs\` enforces this; comments, URLs, and the \`codi-cli\` npm package name are tolerated
+- Artifact-kind literals (\`"rule" | "skill" | "agent" | "mcp-server"\` and the plural-directory variants) MUST import from \`#src/core/artifact-types.js\` (\`ArtifactType\`, \`ARTIFACT_TYPES\`, \`ARTIFACT_DIR_NAMES\`). Subset narrowings use \`Exclude<ArtifactType, …>\`. Supersets (e.g. preset-only \`+ "brand"\`) declare a local extension named explicitly and keep the canonical tuple as the base — never re-type the four kinds inline
+- Scaffolders share pre-flight primitives via \`src/core/scaffolder/common.ts\` (\`validateArtifactName\`, \`ensureDir\`, \`assertNotExists\`, \`writeFileSafe\`, \`replaceNamePlaceholder\`, \`writeArtifactFile\`). New scaffolders MUST compose these helpers; do NOT duplicate the mkdir / conflict-check / write try-catch ladder per artifact kind
+- Route user-facing output through \`Logger.getInstance()\` (\`src/core/output/logger.ts\`) in CLI command handlers, adapters, and core/runtime code — never raw \`console.*\`. \`console.*\` is permitted ONLY in: (a) hook template strings emitted as \`.mjs\` scripts; (b) shipped skill scripts under \`src/templates/skills/<name>/scripts/\`; (c) hook orchestrators (\`src/cli/agent-hooks.ts\`, \`src/runtime/capture/{stop,prompt,tool}-hook.ts\`) where the stderr prefix is Claude Code's protocol contract; (d) JSDoc \`@example\` blocks. The CI guard \`scripts/guard-console-usage.mjs\` enforces the boundary
+- On-disk artifact layout (directory, extension, single-file vs. bundle-directory, frontmatter location) lives in \`ARTIFACT_LAYOUT\` (\`src/core/artifact-types.ts\`). Code that needs the path of an artifact MUST call \`artifactRelativePath(type, name)\` — never reconstruct \`\${dir}/\${name}.md\` inline. The \`as const satisfies Record<ArtifactType, ArtifactLayoutDef>\` enforces exhaustive coverage at compile time
 
 BAD: \`const presets = ['minimal', 'balanced', 'strict']\` (duplicates the preset registry)
 GOOD: \`const presets = getPresetNames()\` (derived from the registry)

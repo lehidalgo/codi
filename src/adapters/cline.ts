@@ -1,7 +1,4 @@
-import { access } from "node:fs/promises";
-import { join } from "node:path";
 import type {
-  AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
@@ -22,15 +19,7 @@ import {
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
 import { CONTEXT_TOKENS_LARGE, MANIFEST_FILENAME } from "../constants.js";
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { defineAdapter } from "./base.js";
 
 /**
  * Adapter for Cline — VS Code AI coding extension.
@@ -39,7 +28,7 @@ async function exists(path: string): Promise<boolean> {
  * Generates `.clinerules` (primary instruction file) and `.cline/skills/`.
  * Does not support MCP server configuration.
  */
-export const clineAdapter: AgentAdapter = {
+export const clineAdapter = defineAdapter({
   id: "cline",
   name: "Cline",
 
@@ -62,11 +51,7 @@ export const clineAdapter: AgentAdapter = {
     maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
 
-  async detect(projectRoot: string): Promise<boolean> {
-    const hasFile = await exists(join(projectRoot, ".clinerules"));
-    const hasDir = await exists(join(projectRoot, ".cline"));
-    return hasFile || hasDir;
-  },
+  detect: { markers: [".clinerules", ".cline"] },
 
   async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
     const flagText = buildFlagInstructions(config.flags);
@@ -141,4 +126,4 @@ export const clineAdapter: AgentAdapter = {
 
     return files;
   },
-};
+});

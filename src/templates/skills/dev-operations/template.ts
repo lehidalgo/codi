@@ -21,15 +21,16 @@ description: |
   edits. Also activate for phrases like "codi generate didn't propagate",
   "my source edit isn't showing up", "three-layer pipeline", "conflict
   resolution". Do NOT activate for writing a new skill from scratch (use
-  ${PROJECT_NAME}-skill-creator), creating a new rule (use
-  ${PROJECT_NAME}-rule-creator), or scaffolding a new agent (use
-  ${PROJECT_NAME}-agent-creator) — those have their own lifecycle workflows.
+  ${PROJECT_NAME}-dev-skill-creator), creating a new rule (use
+  ${PROJECT_NAME}-dev-rule-creator), or scaffolding a new agent (use
+  ${PROJECT_NAME}-dev-agent-creator) — those have their own lifecycle workflows.
 category: ${PLATFORM_CATEGORY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 19
+version: 21
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Operations
@@ -45,11 +46,11 @@ version: 19
 
 ## Skip When
 
-- User wants to **create** a new skill from scratch — use ${PROJECT_NAME}-skill-creator
-- User wants to **create** a new rule from scratch — use ${PROJECT_NAME}-rule-creator
-- User wants to **create** a new agent from scratch — use ${PROJECT_NAME}-agent-creator
-- User wants to package and contribute artifacts to a repo — use ${PROJECT_NAME}-artifact-contributor
-- User wants to diff local vs upstream — use ${PROJECT_NAME}-compare-preset
+- User wants to **create** a new skill from scratch — use ${PROJECT_NAME}-dev-skill-creator
+- User wants to **create** a new rule from scratch — use ${PROJECT_NAME}-dev-rule-creator
+- User wants to **create** a new agent from scratch — use ${PROJECT_NAME}-dev-agent-creator
+- User wants to package and contribute artifacts to a repo — use ${PROJECT_NAME}-dev-artifact-contributor
+- User wants to diff local vs upstream — use ${PROJECT_NAME}-dev-compare-preset
 
 ## Artifact Lifecycle
 
@@ -205,6 +206,7 @@ After writing all resolved files, re-run \`${PROJECT_CLI} generate\`:
 For each item in the payload:
 
 1. Write the file at \`fullPath\` with git-style conflict markers:
+<example>
 \`\`\`
 <<<<<<< current (your version)
 [currentContent]
@@ -212,6 +214,7 @@ For each item in the payload:
 [incomingContent]
 >>>>>>> incoming (new template)
 \`\`\`
+</example>
 
 2. Open the file in the user's editor (use \`$VISUAL\` → \`$EDITOR\` → \`code\` → \`vi\` resolution order).
 
@@ -319,7 +322,7 @@ consumers see the change on their next update.
 
 ## Related Skills
 
-- **${PROJECT_NAME}-compare-preset** — Compare local artifacts against upstream templates
-- **${PROJECT_NAME}-session-recovery** — Recover from repeated agent mistakes during operations
+- **${PROJECT_NAME}-dev-compare-preset** — Compare local artifacts against upstream templates
+- **${PROJECT_NAME}-dev-session-recovery** — Recover from repeated agent mistakes during operations
 `;
 }

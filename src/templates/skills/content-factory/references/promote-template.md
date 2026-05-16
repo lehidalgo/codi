@@ -63,14 +63,14 @@ curl -s <url>/api/templates | grep "${TEMPLATE_NAME}"
 
 ### 7. Record the improvement
 
-Invoke `codi-refine-rules` (REVIEW mode) to log that a new template was added,
+Invoke `codi-dev-refine-rules` (REVIEW mode) to log that a new template was added,
 so the improvement loop can track what changed.
 
 ### 8. Optional — contribute upstream
 
 If the user wants to share or contribute the template upstream, invoke the
-`codi-skill-creator` skill to package it as a proper skill improvement with
-metadata, then use `codi-artifact-contributor` to submit it as a PR or ZIP
+`codi-dev-skill-creator` skill to package it as a proper skill improvement with
+metadata, then use `codi-dev-artifact-contributor` to submit it as a PR or ZIP
 package.
 
 ## What NOT to do

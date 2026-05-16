@@ -7,7 +7,8 @@ priority: medium
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
 language: typescript
-version: 1
+version: 3
+maintainers: ["@lehidalgo"]
 ---
 
 # TypeScript Conventions
@@ -40,8 +41,12 @@ function parse(data: unknown): string {
 - Use named exports — no default exports (improves refactoring and auto-imports)
 - Group imports: external libraries, internal modules, types — makes dependency sources immediately visible
 - Use \`import type\` for type-only imports — keeps runtime bundle clean
-- Do not use index.ts barrel files for re-exporting — they break tree-shaking, inflate bundles, and slow down HMR and test runners
-- Import directly from the source module, not through a barrel
+- Avoid \`index.ts\` barrel files for internal organisation — they break tree-shaking, inflate bundles, slow down HMR and test runners, hide the origin of each symbol, and amplify cache invalidation
+- Import directly from the source file (e.g. \`#src/runtime/brain/db.js\`), not via an organisational barrel
+- Barrels are PERMITTED only at deliberate boundary surfaces, not for internal convenience:
+  - The single public npm-API entry (e.g. \`src/index.ts\`)
+  - Plugin / template / loader registries where the barrel IS the registration contract consumed by a loader (e.g. \`src/templates/skills/<name>/index.ts\` consumed by the skill loader)
+- An organisational barrel is one whose body is purely \`export { ... } from "./file.js"\` lines with no logic, and whose consumers could import the same symbols directly without behavioural change — these are prohibited
 - Never use deep relative imports (2+ levels of \`../\`) — they are fragile, unreadable, and break on file moves; use path aliases instead
 - Never use \`require()\` in TypeScript — use ESM \`import\` or \`createRequire\` from \`node:module\` when dynamic require is unavoidable
 

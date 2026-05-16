@@ -174,6 +174,13 @@ function ruleFeedbackDir(configDir: string): string {
   return path.join(configDir, FEEDBACK_DIR, RULES_FEEDBACK_SUBDIR);
 }
 
+/**
+ * ISSUE-080 — kept as a test-friendly reader. Production rule feedback
+ * now flows through brain.db `captures` (OBSERVATION + CORRECTION rows
+ * tagged via linked_artifacts — see ISSUE-049). This file-based reader
+ * survives so the unit tests of writeRuleFeedback / pruneRuleFeedback can
+ * verify their effects without poking at JSON files directly.
+ */
 export async function readRuleFeedback(configDir: string): Promise<Result<RuleObservation[]>> {
   const dir = ruleFeedbackDir(configDir);
   const log = Logger.getInstance();

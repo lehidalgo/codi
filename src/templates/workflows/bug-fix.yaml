@@ -1,0 +1,88 @@
+id: bug-fix
+name: Bug fix
+description: Adaptive bug-fix workflow — phases compress per dev answers (severity, reproducer state, root cause, scope, exec mode, grill toggle)
+version: 4
+phases:
+  intent:
+    gates: [task_described]
+    next: [reproduce, plan, execute, abandoned]
+    chains:
+      - {
+          skill: discover,
+          role: optional,
+          hint: "ambiguous failure mode OR Q7=yes — wide/sharpen/domain mode",
+        }
+      - { skill: dev-step-documenter, role: optional, hint: "domain terms emerge inline" }
+      - {
+          skill: architecture-review,
+          role: alt-entry,
+          hint: "3-strikes — fix is structural, restructure rather than patch",
+        }
+  reproduce:
+    gates: [reproducer_event_exists]
+    next: [plan, abandoned]
+    chains:
+      - { skill: diagnose, role: required }
+      - {
+          skill: debugging,
+          role: alt-entry,
+          hint: "diagnose 3-strikes fired — escalate to MCP-deep tier-2",
+        }
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "≥2 unrelated failure domains — fan out parallel",
+        }
+  plan:
+    gates: [scope_files_listed, plan_artifact_exists]
+    next: [execute, reproduce, abandoned]
+    chains:
+      - { skill: plan-writing, role: required, hint: "include Hypothesis section" }
+      - { skill: discover, role: optional, hint: "hypotheses compete — mode sharpen" }
+  execute:
+    gates: [tdd_first_test_exists]
+    next: [verify, execute, abandoned]
+    chains:
+      - {
+          skill: plan-execution,
+          role: required,
+          hint: "mode INLINE if Q4=single, SUBAGENT if Q4=multi",
+        }
+      - { skill: tdd, role: required, hint: "regression-test FIRST inside each task" }
+      - { skill: worktrees, role: optional, hint: "≥3 files or significant exploration commits" }
+      - { skill: diagnose, role: optional, hint: "test fails unexpectedly during execute" }
+      - {
+          skill: debugging,
+          role: optional,
+          hint: "diagnose stalls during execute — MCP-deep tier-2",
+        }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — per-task review in SUBAGENT mode",
+        }
+  verify:
+    gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
+    next: [done, execute, abandoned]
+    chains:
+      - { skill: verify-evidence, role: required }
+      - { skill: test-suite, role: optional, hint: "regression-test suite run after fix" }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — required before merge to main",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  tdd_strict: true
+  reproducer_first: true
+  adaptive: true
+  profiles: [quick, standard, deep, incident]
+  skip_phases_when:
+    reproduce: { reproducer_exists: true }
+    plan: { root_cause_known: true }

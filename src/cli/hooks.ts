@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import type { Command } from "commander";
 import { detectStack } from "../core/hooks/stack-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
@@ -10,7 +9,9 @@ import { Logger } from "../core/output/logger.js";
 import { initFromOptions } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import type { DependencyDiagnostic } from "../core/hooks/hook-dependency-checker.js";
-import { PROJECT_CLI } from "../constants.js";
+import { registerHooksListCommand } from "./hooks-list.js";
+import { registerHooksAddCommand } from "./hooks-add.js";
+import { registerHooksRemoveCommand } from "./hooks-remove.js";
 
 interface HooksDoctorOptions extends GlobalOptions {
   fix?: boolean;
@@ -86,19 +87,18 @@ async function hooksDoctorHandler(projectRoot: string, options: HooksDoctorOptio
 }
 
 async function hooksReinstallHandler(projectRoot: string): Promise<void> {
+  // ISSUE-075: call generateHandler directly instead of spawning a fresh
+  // codi-cli process. The subprocess hop added ~300-600ms of node startup
+  // per reinstall + relied on the local binary being on disk. Direct call
+  // shares the parent's module cache, surfaces typed errors, and skips the
+  // npx fallback entirely.
   const logger = Logger.getInstance();
   logger.info("Reinstalling codi pre-commit hooks...");
-  try {
-    execFileSync("node", [`${projectRoot}/node_modules/.bin/${PROJECT_CLI}`, "generate"], {
-      stdio: "inherit",
-      cwd: projectRoot,
-    });
-  } catch {
-    // Fall back to npx if local binary not found
-    execFileSync("npx", [PROJECT_CLI, "generate"], {
-      stdio: "inherit",
-      cwd: projectRoot,
-    });
+  const { generateHandler } = await import("./generate.js");
+  const result = await generateHandler(projectRoot, {});
+  if (!result.success) {
+    for (const e of result.errors) logger.error(`  ${e.message}`);
+    throw new Error("hooks reinstall failed — see errors above");
   }
 }
 
@@ -124,4 +124,8 @@ export function registerHooksCommand(program: Command): void {
       initFromOptions(globalOptions);
       await hooksReinstallHandler(process.cwd());
     });
+
+  registerHooksListCommand(hooksCmd);
+  registerHooksAddCommand(hooksCmd);
+  registerHooksRemoveCommand(hooksCmd);
 }

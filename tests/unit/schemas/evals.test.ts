@@ -96,6 +96,31 @@ describe("EvalsDataSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts minFeedbackForEvolve override (ISSUE-100)", () => {
+    const result = EvalsDataSchema.safeParse({
+      skillName: "review",
+      minFeedbackForEvolve: 5,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.minFeedbackForEvolve).toBe(5);
+  });
+
+  it("rejects non-positive minFeedbackForEvolve", () => {
+    const result = EvalsDataSchema.safeParse({
+      skillName: "review",
+      minFeedbackForEvolve: 0,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects non-integer minFeedbackForEvolve", () => {
+    const result = EvalsDataSchema.safeParse({
+      skillName: "review",
+      minFeedbackForEvolve: 2.5,
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("rejects invalid lastUpdated datetime", () => {
     const result = EvalsDataSchema.safeParse({
       skillName: "commit",

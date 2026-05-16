@@ -13,9 +13,15 @@ export default tseslint.config(
       "src/templates/skills/*/scripts/office/**",
       "src/templates/skills/*/scripts/vendor/**",
       "src/templates/skills/*/scripts/export/**",
-      "src/templates/skills/*/scripts/*.cjs",
-      "src/templates/skills/*/scripts/*.js",
+      "src/templates/skills/*/scripts/**/*.cjs",
+      "src/templates/skills/*/scripts/**/*.js",
       "**/*.xsd",
+      // CORE-016 (resolved): Sprint 2 cleanup completed organically across
+      // CORE-001..015 — runtime/ + tests/runtime/ + scripts/runtime/ are
+      // now lint-clean and re-enabled. The DevLoop staging directory
+      // remains ignored because it ships verbatim to consumer projects
+      // and is governed by its own linting rules.
+      "src/templates/skills-devloop-staging/**",
     ],
   },
   ...tseslint.configs.recommended,

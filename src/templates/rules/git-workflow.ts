@@ -6,7 +6,8 @@ description: Git workflow and commit conventions
 priority: medium
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Git Workflow

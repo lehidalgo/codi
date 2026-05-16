@@ -1,13 +1,16 @@
-import type { MANAGED_BY_VALUES } from "../constants.js";
 import type { ResolvedFlags } from "./flags.js";
+import type { ManagedBy } from "#src/constants.js";
 
 /**
  * Whether this artifact is managed by Codi (from a preset) or by the user directly.
  *
  * - `"codi"` — preset-managed; manual edits will be overwritten on `codi update`.
  * - `"user"` — user-managed; Codi will never overwrite this artifact.
+ *
+ * Re-exported from `#src/constants.js` (canonical source) so consumers can
+ * keep importing from `#src/types/config.js` without a path change.
  */
-export type ManagedBy = (typeof MANAGED_BY_VALUES)[number];
+export type { ManagedBy };
 
 /**
  * The parsed contents of a project's `codi.yaml` manifest file.

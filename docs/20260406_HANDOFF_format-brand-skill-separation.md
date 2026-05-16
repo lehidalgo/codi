@@ -20,7 +20,7 @@
 - **Version**: 2.2.2
 - **Uncommitted changes** (staged/unstaged, not yet committed):
   - `package.json` / `package-lock.json` — exceljs added
-  - `src/templates/skills/skill-creator/template.ts` — v11, dual-runtime docs
+  - `src/templates/skills/dev-skill-creator/template.ts` — v11, dual-runtime docs
   - `src/templates/skills/bbva-brand/template.ts` — version bump
   - `src/templates/skills/codi-brand/template.ts` — version bump
   - `src/templates/skills/rl3-brand/template.ts` — version bump
@@ -40,6 +40,7 @@
 ### Blocking issue
 
 The pre-commit hook runs `vitest run tests/unit tests/integration`. Two self-introspection integration tests are **timing out** (10s and 30s limits) — these appear pre-existing and unrelated to this work. They block the commit. Options:
+
 1. Increase test timeouts in `tests/integration/self-introspection.test.ts` (lines 46, 68)
 2. Ask repo owner if these tests are known-flaky
 3. Confirm with owner whether `--no-verify` is acceptable for this branch
@@ -48,20 +49,20 @@ The pre-commit hook runs `vitest run tests/unit tests/integration`. Two self-int
 
 The full refactor is planned but **zero implementation tasks are done**. The plan has 17 tasks:
 
-| # | Task | Status |
-|---|------|--------|
-| 1 | Add ExcelJS dependency | Blocked (pre-commit timeout) |
-| 2-4 | Migrate brand_tokens.json to v2 (codi, rl3, bbva) | Pending |
-| 5 | Update brand_tokens.ts to v2 shape | Pending |
-| 6 | Bundle Codi default tokens in format skills | Pending |
-| 7-8 | generate_pptx.ts + generate_pptx.py in pptx skill | Pending |
-| 9-10 | generate_docx.ts + generate_docx.py in docx skill | Pending |
-| 11-12 | generate_xlsx.ts + generate_xlsx.py in xlsx skill | Pending |
-| 13 | Delete generator scripts from brand skills | Pending |
-| 14 | Update brand skill routing (runtime detection) | Pending |
-| 15 | Update format skill template.ts with brand+theme prompt | Pending |
-| 16 | Build + reinstall 6 skills + propagate | Pending |
-| 17 | Validate 18 files (3 brands × 3 formats × 2 themes) | Pending |
+| #     | Task                                                    | Status                       |
+| ----- | ------------------------------------------------------- | ---------------------------- |
+| 1     | Add ExcelJS dependency                                  | Blocked (pre-commit timeout) |
+| 2-4   | Migrate brand_tokens.json to v2 (codi, rl3, bbva)       | Pending                      |
+| 5     | Update brand_tokens.ts to v2 shape                      | Pending                      |
+| 6     | Bundle Codi default tokens in format skills             | Pending                      |
+| 7-8   | generate_pptx.ts + generate_pptx.py in pptx skill       | Pending                      |
+| 9-10  | generate_docx.ts + generate_docx.py in docx skill       | Pending                      |
+| 11-12 | generate_xlsx.ts + generate_xlsx.py in xlsx skill       | Pending                      |
+| 13    | Delete generator scripts from brand skills              | Pending                      |
+| 14    | Update brand skill routing (runtime detection)          | Pending                      |
+| 15    | Update format skill template.ts with brand+theme prompt | Pending                      |
+| 16    | Build + reinstall 6 skills + propagate                  | Pending                      |
+| 17    | Validate 18 files (3 brands × 3 formats × 2 themes)     | Pending                      |
 
 ### Key decisions made
 

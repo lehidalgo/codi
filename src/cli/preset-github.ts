@@ -3,6 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import * as p from "@clack/prompts";
 import { safeRm } from "../utils/fs.js";
+import { validateGitRef } from "../utils/git.js";
 import { resolveProjectDir } from "../utils/paths.js";
 import { createCommandResult } from "../core/output/formatter.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
@@ -25,7 +26,7 @@ import { validatePreset } from "../core/preset/preset-validator.js";
 import { scanForPresets } from "../core/preset/preset-scanner.js";
 import { scanDirectory } from "../core/security/content-scanner.js";
 import { promptSecurityFindings } from "../core/security/scan-prompt.js";
-import { execFileAsync } from "../utils/exec.js";
+import { EXEC_TIMEOUTS, execFileWithTimeout } from "../utils/exec.js";
 import { loadPreset } from "../core/preset/preset-loader.js";
 import type { LoadedPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
@@ -86,15 +87,38 @@ export async function installFromGithub(
   const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-preset-gh-${Date.now()}`);
   try {
     const cloneArgs = ["clone", "--depth", GIT_CLONE_DEPTH];
-    if (descriptor.ref) cloneArgs.push("--branch", descriptor.ref);
-    cloneArgs.push(repoUrl, tmpDir);
-    await execFileAsync("git", cloneArgs);
+    if (descriptor.ref) cloneArgs.push("--branch", validateGitRef(descriptor.ref));
+    // `--` ends git's option parsing — protects <repoUrl> <tmpDir> from being
+    // reinterpreted as flags even if a future code path forgets the validator.
+    cloneArgs.push("--", repoUrl, tmpDir);
+    await execFileWithTimeout("git", cloneArgs, { timeoutMs: EXEC_TIMEOUTS.GH_LONG });
 
     let name = extractPresetName(descriptor);
     let sourceDir: string;
 
     if (descriptor.path) {
-      const targetDir = path.join(tmpDir, descriptor.path);
+      // Reject path-traversal: descriptor.path is attacker-influenced (parsed
+      // from the install URL). path.relative + startsWith ".." catches "..",
+      // "../..", etc. without depending on a tree walk.
+      const targetDir = path.resolve(tmpDir, descriptor.path);
+      const rel = path.relative(tmpDir, targetDir);
+      if (rel.startsWith("..") || path.isAbsolute(rel)) {
+        return createCommandResult({
+          success: false,
+          command: "preset install",
+          data: { action: "install", name },
+          errors: [
+            {
+              code: "E_PRESET_PATH_ESCAPE",
+              message: `Preset path "${descriptor.path}" escapes the repository root.`,
+              hint: "Preset paths must be relative and stay within the cloned repo.",
+              severity: "error",
+              context: {},
+            },
+          ],
+          exitCode: EXIT_CODES.GENERAL_ERROR,
+        });
+      }
       try {
         await fs.access(path.join(targetDir, PRESET_MANIFEST_FILENAME));
       } catch {
@@ -233,8 +257,9 @@ export async function installFromGithub(
 
     let commit: string | undefined;
     try {
-      const { stdout } = await execFileAsync("git", ["rev-parse", "HEAD"], {
+      const { stdout } = await execFileWithTimeout("git", ["rev-parse", "HEAD"], {
         cwd: tmpDir,
+        timeoutMs: EXEC_TIMEOUTS.GIT_LOCAL,
       });
       commit = stdout.trim();
     } catch {

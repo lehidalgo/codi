@@ -27,6 +27,13 @@ export const ProjectManifestSchema = z.object({
     .describe(
       "Subset of agent ids to generate configuration for. Omit to generate for all detected agents.",
     ),
+  team_id: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-_]{0,63}$/)
+    .optional()
+    .describe(
+      "ISSUE-053 — slug tagging every row this brain writes for cross-team aggregation (ADR-005, ISSUE-055). Omit for solo / untagged installs.",
+    ),
   layers: z
     .object({
       rules: z

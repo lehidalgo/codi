@@ -8,7 +8,7 @@
  *
  * Why this exists: `.husky/` is gitignored (codi regenerates the hooks it
  * manages, so they are not committed). The pre-push gate has to be set up
- * by every developer's `pnpm install`, not by `codi generate`, because it
+ * by every developer's `npm install`, not by `codi generate`, because it
  * runs the codi-cli test suite — a self-development concern, not a user
  * concern. So we keep the source content here, in a tracked `scripts/` file,
  * and invoke this script from `package.json`'s `prepare` hook chain.
@@ -36,8 +36,8 @@ const PRE_PUSH_CONTENT = `# Codi pre-push gate
 # Do NOT bypass this with \`git push --no-verify\`. Codi's repository policy
 # forbids it (see CLAUDE.md). If a check fails, fix the underlying issue.
 
-pnpm lint
-pnpm test:coverage
+npm run lint
+npm run test:coverage
 `;
 
 if (!existsSync(HUSKY_DIR)) {

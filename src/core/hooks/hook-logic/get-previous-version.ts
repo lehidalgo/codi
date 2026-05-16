@@ -11,6 +11,7 @@ export function getPreviousVersion(ref: string, path: string): PreviousVersionRe
     content = execFileSync("git", ["show", `${ref}:${path}`], {
       encoding: "utf-8",
       stdio: ["ignore", "pipe", "pipe"],
+      timeout: 5_000,
     });
   } catch (err) {
     const e = err as { stderr?: Buffer | string };

@@ -18,7 +18,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 12
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Branch Finish
@@ -53,7 +54,7 @@ Before presenting any options, run the full test suite:
 pnpm test   # or appropriate test command for this project
 \\\`\\\`\\\`
 
-Use ${PROJECT_NAME}-verification: read the full output, confirm all tests pass.
+Use ${PROJECT_NAME}-verify-evidence: read the full output, confirm all tests pass.
 
 If tests fail: "Cannot proceed. Tests are failing: <list failing tests>. Fix the failures before finishing the branch."
 Do NOT offer merge or PR options with failing tests.
@@ -178,6 +179,6 @@ Report: "Branch discarded. All changes deleted."
 ## Integration
 
 - Called by: ${PROJECT_NAME}-plan-execution
-- Uses: ${PROJECT_NAME}-verification (test gate), ${PROJECT_NAME}-commit (merge commit refinement)
+- Uses: ${PROJECT_NAME}-verify-evidence (test gate), ${PROJECT_NAME}-commit (merge commit refinement)
 - ${PROJECT_NAME}-git-workflow rule governs branch naming and PR conventions
 `;

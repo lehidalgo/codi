@@ -18,7 +18,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 10
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Worktrees
@@ -267,4 +268,9 @@ Ready to execute the implementation plan.
 - Creating a worktree in a directory that is not gitignored (pollutes the repo)
 - Skipping baseline test verification on Path B (cannot distinguish new failures from existing ones)
 - Hardcoding the setup command (always auto-detect from project files)
+
+## Additional References
+
+- \\\`references/setup-detection.md\\\` — full detector table (pnpm/npm/yarn, uv/pip, cargo, go) with rationale and JS-package-manager exclusion rule.
+- \\\`references/cleanup.md\\\` — post-workflow \\\`git worktree remove\\\` flow with safety rails on \\\`--force\\\` / \\\`-D\\\`.
 `;

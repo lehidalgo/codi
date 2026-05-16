@@ -29,33 +29,33 @@ are centralized in the content factory.
 
 ## What Was Removed
 
-| Path | Reason |
-|------|--------|
-| `src/templates/skills/codi-brand/scripts/preview-shell.js` (1318 LOC) | Content factory owns the preview server |
-| `src/templates/skills/codi-brand/scripts/server.cjs` (414 LOC) | Content factory owns the HTTP server |
-| `src/templates/skills/codi-brand/scripts/start-server.sh` / `stop-server.sh` | No standalone server anymore |
-| `src/templates/skills/codi-brand/scripts/helper.js` | Live-reload handled by content factory |
-| `src/templates/skills/codi-brand/scripts/frame-template.html` | Iframe shell replaced by content factory app shell |
-| `src/templates/skills/codi-brand/scripts/brand_tokens.json` | Duplicated `brand/tokens.json` |
-| `src/templates/skills/codi-brand/scripts/export/*` | Export pipeline moved to `codi-content-factory/scripts/lib/exports.cjs` + `bundle.cjs` |
-| `src/templates/skills/codi-brand/scripts/ts/*` | TypeScript validators consumed by deleted export pipeline |
-| `src/templates/skills/codi-brand/scripts/vendor/html2canvas.min.js` | Content factory ships its own vendor bundle |
-| `src/templates/skills/codi-brand/scripts/vendor/jszip.min.js` | Same |
-| `src/templates/skills/codi-brand/generators/slides-base.html` | Content factory owns the slide template |
-| `src/templates/skills/codi-brand/generators/document-base.html` | Content factory owns the document template |
-| `src/templates/skills/codi-brand/generators/social-base.html` | Content factory owns the social template |
-| `src/templates/skills/codi-brand/brand/tokens.ts` | TypeScript adapter consumed only by deleted exports |
-| `src/templates/skills/codi-brand/README.md` | Replaced by new `template.ts` body |
+| Path                                                                         | Reason                                                                                 |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/templates/skills/codi-brand/scripts/preview-shell.js` (1318 LOC)        | Content factory owns the preview server                                                |
+| `src/templates/skills/codi-brand/scripts/server.cjs` (414 LOC)               | Content factory owns the HTTP server                                                   |
+| `src/templates/skills/codi-brand/scripts/start-server.sh` / `stop-server.sh` | No standalone server anymore                                                           |
+| `src/templates/skills/codi-brand/scripts/helper.js`                          | Live-reload handled by content factory                                                 |
+| `src/templates/skills/codi-brand/scripts/frame-template.html`                | Iframe shell replaced by content factory app shell                                     |
+| `src/templates/skills/codi-brand/scripts/brand_tokens.json`                  | Duplicated `brand/tokens.json`                                                         |
+| `src/templates/skills/codi-brand/scripts/export/*`                           | Export pipeline moved to `codi-content-factory/scripts/lib/exports.cjs` + `bundle.cjs` |
+| `src/templates/skills/codi-brand/scripts/ts/*`                               | TypeScript validators consumed by deleted export pipeline                              |
+| `src/templates/skills/codi-brand/scripts/vendor/html2canvas.min.js`          | Content factory ships its own vendor bundle                                            |
+| `src/templates/skills/codi-brand/scripts/vendor/jszip.min.js`                | Same                                                                                   |
+| `src/templates/skills/codi-brand/generators/slides-base.html`                | Content factory owns the slide template                                                |
+| `src/templates/skills/codi-brand/generators/document-base.html`              | Content factory owns the document template                                             |
+| `src/templates/skills/codi-brand/generators/social-base.html`                | Content factory owns the social template                                               |
+| `src/templates/skills/codi-brand/brand/tokens.ts`                            | TypeScript adapter consumed only by deleted exports                                    |
+| `src/templates/skills/codi-brand/README.md`                                  | Replaced by new `template.ts` body                                                     |
 
 Total: ~16,000 LOC removed from the codi-brand skill, including vendor bundles.
 
 ## What Was Added
 
-| Path | Purpose |
-|------|---------|
-| `src/templates/skills/codi-brand/assets/logo-dark.svg` | SVG fallback of the CSS gradient wordmark (dark-background contexts) |
+| Path                                                    | Purpose                                                               |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| `src/templates/skills/codi-brand/assets/logo-dark.svg`  | SVG fallback of the CSS gradient wordmark (dark-background contexts)  |
 | `src/templates/skills/codi-brand/assets/logo-light.svg` | SVG fallback of the CSS gradient wordmark (light-background contexts) |
-| `src/templates/skills/codi-brand/LICENSE.txt` | Brand asset usage license |
+| `src/templates/skills/codi-brand/LICENSE.txt`           | Brand asset usage license                                             |
 
 The logos are SVG fallbacks for contexts that cannot render the CSS gradient
 wordmark (PDF metadata, PPTX image embeds, social media open-graph previews).
@@ -156,8 +156,8 @@ exist in the source template will be automatically deleted.
 
 ## References
 
-- [brand-creator template](../src/templates/skills/brand-creator/template.ts) — the schema this migration conforms to
-- [brand-standard.md](../src/templates/skills/brand-creator/references/brand-standard.md) — full brand skill schema reference
+- [brand-creator template](../src/templates/skills/dev-brand-creator/template.ts) — the schema this migration conforms to
+- [brand-standard.md](../src/templates/skills/dev-brand-creator/references/brand-standard.md) — full brand skill schema reference
 - [brand-skill-validate hook](../src/core/hooks/brand-skill-validate-template.ts) — validator enforcing the schema
 - [content-factory brand discovery](../src/templates/skills/content-factory/scripts/lib/brand-discovery.cjs) — how the content factory finds brand skills
 - [codi-brand template.ts](../src/templates/skills/codi-brand/template.ts) — the migrated template body

@@ -37,6 +37,15 @@ export async function readEvals(skillDir: string): Promise<Result<EvalsData>> {
   }
 }
 
+/**
+ * Write the canonical `evals/evals.json` for a skill.
+ *
+ * ISSUE-080: kept as an in-process helper for test seeding. Eval-run
+ * persistence in production now flows through brain.db's `eval_runs`
+ * table (see ISSUE-050 + the `codi brain record-eval-run` subcommand).
+ * Direct file writes only matter when seeding fixtures or hand-editing
+ * an eval suite during skill development.
+ */
 export async function writeEvals(skillDir: string, data: EvalsData): Promise<Result<void>> {
   const filePath = evalsPath(skillDir);
   const dir = path.dirname(filePath);
@@ -58,28 +67,8 @@ export async function writeEvals(skillDir: string, data: EvalsData): Promise<Res
   }
 }
 
-export async function updateEvalResult(
-  skillDir: string,
-  evalId: string,
-  passed: boolean,
-): Promise<Result<void>> {
-  const readResult = await readEvals(skillDir);
-  if (!readResult.ok) return readResult;
-
-  const data = readResult.data;
-  const evalCase = data.cases.find((c) => c.id === evalId);
-  if (!evalCase) {
-    return err([
-      createError("E_FEEDBACK_NOT_FOUND", {
-        path: `eval case "${evalId}" in ${skillDir}`,
-      }),
-    ]);
-  }
-
-  evalCase.passed = passed;
-  evalCase.lastRunAt = new Date().toISOString();
-  return writeEvals(skillDir, data);
-}
+// ISSUE-080 — `updateEvalResult` removed. Pass/fail flips now flow through
+// brain.db `eval_runs` (ISSUE-050) instead of mutating the per-skill JSON.
 
 export async function getEvalsSummary(
   skillDir: string,

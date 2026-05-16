@@ -2,11 +2,12 @@ import { PROJECT_CLI, PROJECT_DIR, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#s
 
 export const template = `---
 name: {{name}}
-description: Continuous artifact improvement — observe patterns, emit CODI-OBSERVATION markers, propose rule/skill improvements with evidence and user approval
+description: Continuous artifact improvement — observe patterns, emit |OBSERVATION:| capture markers, propose rule/skill improvements with evidence and user approval
 priority: low
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 4
+version: 8
+maintainers: ["@lehidalgo"]
 ---
 
 # Continuous Artifact Improvement
@@ -14,17 +15,17 @@ version: 4
 ## Core Principle
 As you work with this codebase, you are both a consumer and an improver of the rules,
 skills, and agents installed by ${PROJECT_NAME_DISPLAY}. When you observe patterns that the current
-configuration does not address, flag them with a marker. The system collects and structures
-these automatically.
+configuration does not address, flag them with a capture marker. The Stop hook persists
+those captures into brain.db where they become evidence for artifact improvement proposals.
 
 ## Your Role
 
 You are the steward of this project's AI configuration. Every interaction is an opportunity
 to make ${PROJECT_NAME_DISPLAY} work better. The improvement loop has these mechanisms:
 
-1. **Observation markers** — emit \`[CODI-OBSERVATION: ...]\` inline in your response when you notice a gap (the Stop hook collects it automatically — you do not write files)
-2. **Local comparison** — use \`/${PROJECT_NAME}-compare-preset\` to identify which local changes are novel vs. already upstream
-3. **Rule refinement** — use \`/${PROJECT_NAME}-refine-rules\` to review collected feedback and propose improvements with human approval
+1. **Observation captures** — end your response with one or more \`|OBSERVATION: "verbatim text"|\` markers (Iron Law 9). The Stop hook persists them into brain.db automatically — you do not write files.
+2. **Local comparison** — use \`/${PROJECT_NAME}-dev-compare-preset\` to identify which local changes are novel vs. already upstream
+3. **Rule refinement** — use \`/${PROJECT_NAME}-dev-refine-rules\` to review collected captures and propose improvements with human approval
 4. **Upstream contribution** — share validated improvements via \`${PROJECT_CLI} contribute\`
 
 ## Source-layer improvements (${PROJECT_NAME_DISPLAY} repo only)
@@ -55,20 +56,25 @@ What makes configuration quality matter:
 
 ## How to Flag an Observation
 
-When you notice a gap, incorrect trigger, outdated guidance, or missing pattern in a ${PROJECT_NAME_DISPLAY} artifact, emit this marker anywhere in your response:
+When you notice a gap, incorrect trigger, outdated guidance, or missing pattern in a ${PROJECT_NAME_DISPLAY} artifact, end your response with the canonical Iron Law 9 capture marker:
 
 \`\`\`
-[CODI-OBSERVATION: <artifact-name> | <category> | <observation text, max 200 chars>]
+|OBSERVATION: "verbatim observation, naming the artifact and the gap"|
 \`\`\`
 
-**Categories:** \`trigger-miss\`, \`trigger-false\`, \`missing-step\`, \`outdated-rule\`, \`missing-example\`, \`user-correction\`, \`wrong-output\`
+The artifact name belongs INSIDE the verbatim text — the brain's P9 detector matches
+captures against the installed artifact catalog automatically. Mention the kind of gap
+in plain prose ("trigger-miss", "outdated-rule", "missing-example", "wrong-output", etc.)
+so the proposal has a clear category.
 
 **Example:**
 \`\`\`
-[CODI-OBSERVATION: ${PROJECT_NAME}-commit | trigger-miss | skill did not activate when user typed /${PROJECT_NAME}-commit directly]
+|OBSERVATION: "${PROJECT_NAME}-commit trigger-miss — skill did not activate when user typed /${PROJECT_NAME}-commit directly"|
 \`\`\`
 
-The Stop hook scans your response, extracts valid markers, and writes structured JSON to \`${PROJECT_DIR}/feedback/\`. You do not touch the file system.
+The Stop hook parses every \`|TYPE: "..."|\` marker on the line, persists captures into
+brain.db (\`captures\` table), and the consolidation pipeline turns repeat observations
+into structured proposals. You do not touch the file system.
 
 ## When to Emit Observations
 
@@ -80,6 +86,47 @@ The Stop hook scans your response, extracts valid markers, and writes structured
 - A rule references a deprecated API, outdated pattern, or superseded best practice
 - A skill should have triggered but did not (or triggered when it should not have)
 - Two skills have overlapping triggers for the same use case — the wrong one activates due to priority rules
+
+## When NOT to Emit a Capture (avoid false positives)
+
+False positives are NOT tolerated — every emitted capture must carry actionable
+signal. Apply this filter BEFORE writing any \`|TYPE: "..."|\` marker:
+
+**Reject as noise:**
+- **Conversational acknowledgements**: "ok", "yeah", "thanks", "got it",
+  "sounds good", "perfect", "cool", "great" — even if the user said them
+  emphatically. They confirm receipt, not content.
+- **Approval / rejection of a proposed action**: "go ahead", "do it", "no don't",
+  "skip that", "yes please". These drive control flow, not knowledge.
+- **Restating the prompt**: quoting the user's literal command back as a PROMPT
+  capture has no value beyond the prompts table itself.
+- **Single-occurrence anecdotes** that lack a pattern. Iron Law 9 captures only
+  travel through P5/P9 detectors when they recur — one-offs add storage cost
+  without payoff.
+- **Generic facts** the agent could derive from the codebase any time
+  ("this project uses TypeScript", "tests are in tests/"). Captures are for
+  things you would otherwise lose.
+- **Ephemeral session state** ("user is currently working on auth flow") —
+  workflow_runs already tracks that.
+
+**Emit only when:**
+- The user states a domain rule, prohibition, preference, decision, or
+  correction with **concrete content** the agent should remember next session.
+- The agent has a non-obvious insight the user won't otherwise see again.
+- An observation has **at least one specific actor named** — an artifact,
+  file path, technology, or recurring pattern (≥ 2 occurrences observed).
+
+**Worked example — what NOT to capture:**
+
+> User: "yeah looks good"
+> Agent: ❌ Do NOT emit \`|FEEDBACK: "yeah looks good"|\` — the verbatim
+>   carries no semantic content beyond approval. Process the approval, move
+>   on without capture.
+
+> User: "no quiero que hagas sobre ingeniería"
+> Agent: ✅ Emit \`|PREFERENCE: "no overengineering — keep changes minimal,
+>   scoped to what was asked, no speculative abstractions"|\` — concrete,
+>   reusable, names the actionable principle.
 
 ## Skill Trigger Overlap — Iterate Before Resuming
 

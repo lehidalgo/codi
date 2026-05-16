@@ -1,7 +1,4 @@
-import { access } from "node:fs/promises";
-import { join } from "node:path";
 import type {
-  AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
@@ -22,15 +19,7 @@ import {
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
 import { CONTEXT_TOKENS_SMALL, MANIFEST_FILENAME } from "../constants.js";
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { defineAdapter } from "./base.js";
 
 /**
  * Adapter for Windsurf — Codeium's AI editor.
@@ -39,7 +28,7 @@ async function exists(path: string): Promise<boolean> {
  * Generates `.windsurfrules` (primary instruction file) and `.windsurf/skills/`.
  * Does not support MCP server configuration.
  */
-export const windsurfAdapter: AgentAdapter = {
+export const windsurfAdapter = defineAdapter({
   id: "windsurf",
   name: "Windsurf",
 
@@ -62,9 +51,7 @@ export const windsurfAdapter: AgentAdapter = {
     maxContextTokens: CONTEXT_TOKENS_SMALL,
   } satisfies AgentCapabilities,
 
-  async detect(projectRoot: string): Promise<boolean> {
-    return exists(join(projectRoot, ".windsurfrules"));
-  },
+  detect: { markers: [".windsurfrules"] },
 
   async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
     const flagText = buildFlagInstructions(config.flags);
@@ -142,4 +129,4 @@ export const windsurfAdapter: AgentAdapter = {
 
     return files;
   },
-};
+});

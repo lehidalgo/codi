@@ -1,7 +1,4 @@
-import { access } from "node:fs/promises";
-import { join } from "node:path";
 import type {
-  AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
@@ -26,24 +23,15 @@ import {
   buildMcpEnvExample,
 } from "./section-builder.js";
 import { extractDenyRules, buildStrongTextRestrictions } from "./permission-builder.js";
-import { Logger } from "../core/output/logger.js";
+import { NULL_LOGGER } from "../types/logger.js";
 import {
   CONTEXT_TOKENS_LARGE,
   MANIFEST_FILENAME,
   MCP_FILENAME,
-  PROJECT_DIR,
   MAX_ARTIFACT_CHARS,
 } from "../constants.js";
-import {
-  buildSkillTrackerScript,
-  buildSkillObserverScript,
-  buildLauncherFile,
-  launcherCommand,
-  SKILL_TRACKER_FILENAME,
-  SKILL_OBSERVER_FILENAME,
-  LAUNCHER_FILENAME,
-  HOOKS_SUBDIR,
-} from "../core/hooks/heartbeat-hooks.js";
+import { buildHeartbeatArtifacts, launcherCommand } from "./heartbeat-emission.js";
+import { defineAdapter } from "./base.js";
 
 interface CopilotHookCommand {
   type: "command";
@@ -59,15 +47,6 @@ interface CopilotHooksConfig {
     sessionStart?: CopilotHookCommand[];
     sessionEnd?: CopilotHookCommand[];
   };
-}
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -153,21 +132,14 @@ const COPILOT_PATHS = {
 } as const;
 
 function buildCopilotHooksFiles(): GeneratedFile[] {
-  const trackerScript = buildSkillTrackerScript();
-  const trackerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`;
-
-  const observerScript = buildSkillObserverScript();
-  const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
-
-  const launcher = buildLauncherFile();
-  const launcherPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${LAUNCHER_FILENAME}`;
+  const heartbeat = buildHeartbeatArtifacts({ emitTracker: true, emitObserver: true });
 
   // Copilot's hook schema requires both `bash` and `powershell` fields. Codi
   // targets macOS + Linux only (see README) — emitting the same launcher
   // invocation in both slots satisfies the schema without claiming Windows
   // support that does not exist elsewhere in the framework.
-  const trackerCmd = launcherCommand(`"${launcherPath}"`, `"${trackerPath}"`);
-  const observerCmd = launcherCommand(`"${launcherPath}"`, `"${observerPath}"`);
+  const trackerCmd = launcherCommand(`"${heartbeat.launcherPath}"`, `"${heartbeat.trackerPath}"`);
+  const observerCmd = launcherCommand(`"${heartbeat.launcherPath}"`, `"${heartbeat.observerPath}"`);
 
   const copilotHooks: CopilotHooksConfig = {
     version: 1,
@@ -195,24 +167,7 @@ function buildCopilotHooksFiles(): GeneratedFile[] {
   const hooksContent = JSON.stringify(copilotHooks, null, 2);
 
   return [
-    {
-      path: trackerPath,
-      content: trackerScript,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(trackerScript),
-    },
-    {
-      path: observerPath,
-      content: observerScript,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(observerScript),
-    },
-    {
-      path: launcher.path,
-      content: launcher.content,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(launcher.content),
-    },
+    ...heartbeat.files,
     {
       path: COPILOT_PATHS.hooksFile,
       content: hooksContent,
@@ -235,7 +190,7 @@ function buildCopilotHooksFiles(): GeneratedFile[] {
  * - `.vscode/mcp.json` (MCP server configuration)
  * - `.github/hooks/codi-hooks.json` (Copilot hooks)
  */
-export const copilotAdapter: AgentAdapter = {
+export const copilotAdapter = defineAdapter({
   id: "copilot",
   name: "GitHub Copilot",
 
@@ -258,15 +213,17 @@ export const copilotAdapter: AgentAdapter = {
     maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
 
-  async detect(projectRoot: string): Promise<boolean> {
-    const hasInstructions = await exists(join(projectRoot, COPILOT_PATHS.instructionFile));
-    const hasPrompts = await exists(join(projectRoot, COPILOT_PATHS.prompts));
-    const hasAgents = await exists(join(projectRoot, COPILOT_PATHS.agents));
-    const hasSkills = await exists(join(projectRoot, COPILOT_PATHS.skills));
-    return hasInstructions || hasPrompts || hasAgents || hasSkills;
+  detect: {
+    markers: [
+      COPILOT_PATHS.instructionFile,
+      COPILOT_PATHS.prompts,
+      COPILOT_PATHS.agents,
+      COPILOT_PATHS.skills,
+    ],
   },
 
-  async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
+  async generate(config: NormalizedConfig, options: GenerateOptions): Promise<GeneratedFile[]> {
+    const log = options.log ?? NULL_LOGGER;
     const files: GeneratedFile[] = [];
 
     // --- 1. Main instruction file: .github/copilot-instructions.md ---
@@ -371,7 +328,7 @@ export const copilotAdapter: AgentAdapter = {
       ...(await generateSkillFiles(
         regularSkills,
         COPILOT_PATHS.skills,
-        _options.projectRoot,
+        options.projectRoot,
         "",
         "copilot",
       )),
@@ -395,7 +352,7 @@ export const copilotAdapter: AgentAdapter = {
       for (const [serverName, server] of Object.entries(enabledMcp.servers)) {
         for (const [key, val] of Object.entries(server.env ?? {})) {
           if (typeof val === "string" && !/^\$\{[A-Z_]+\}$/.test(val) && val.length > 20) {
-            Logger.getInstance().warn(
+            log.warn(
               `MCP server "${serverName}" env.${key} looks like a raw secret. Use \${VAR_NAME} placeholders.`,
             );
           }
@@ -431,4 +388,4 @@ export const copilotAdapter: AgentAdapter = {
 
     return files;
   },
-};
+});

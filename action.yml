@@ -1,0 +1,54 @@
+name: "Codi"
+description: "Install, generate, and validate Codi configuration for AI coding agents in CI."
+author: "lehidalgo"
+branding:
+  icon: "cpu"
+  color: "blue"
+
+# ISSUE-091 — first cut of the GitHub Marketplace action wrapper.
+#
+# Wraps the codi-cli npm package as a composite action. Consumers in
+# their workflow.yaml do:
+#
+#     - uses: lehidalgo/codi@v3
+#       with:
+#         command: 'generate --check'
+#
+# The Marketplace listing is published by tagging a release (v3, v3.0,
+# v3.0.0) — see docs/[GUIDE]_marketplace-publish.md.
+
+inputs:
+  command:
+    description: |
+      Codi subcommand + flags to run, e.g. `generate --check`,
+      `docs --validate`, `doctor`. Defaults to `generate --check` so the
+      step verifies the per-agent output is up-to-date without mutating
+      tracked files.
+    required: false
+    default: "generate --check"
+  version:
+    description: |
+      Codi-cli npm version to install. Defaults to `latest`. Pin a
+      specific release (e.g. `3.0.1`) for reproducible CI builds.
+    required: false
+    default: "latest"
+  working-directory:
+    description: "Run the codi command from this directory. Defaults to the workspace root."
+    required: false
+    default: "${{ github.workspace }}"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install codi-cli
+      shell: bash
+      env:
+        CODI_VERSION: ${{ inputs.version }}
+      run: npm install --global "codi-cli@$CODI_VERSION"
+
+    - name: Run codi
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        CODI_COMMAND: ${{ inputs.command }}
+      run: codi $CODI_COMMAND

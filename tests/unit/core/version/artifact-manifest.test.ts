@@ -9,7 +9,7 @@ import {
   bootstrapManifestFromState,
 } from "#src/core/version/artifact-manifest.js";
 import { PROJECT_NAME, PROJECT_DIR, ARTIFACT_MANIFEST_FILENAME } from "#src/constants.js";
-import type { ExistingSelections } from "#src/cli/init-wizard.js";
+import type { ExistingSelections } from "#src/core/version/types.js";
 
 const ARTIFACT_VERSION = 1;
 

@@ -44,13 +44,13 @@ browser app renders them as cards you can preview, iterate on, and export.
 
 ## What you can build
 
-| Output | Format | Typical use |
-|--------|--------|-------------|
-| **Social card** — single image | 1:1 / 4:5 / 9:16 / OG 1200×630 | LinkedIn post, Instagram feed, Twitter card |
-| **Carousel** — multiple linked cards | 4:5 or 9:16 | LinkedIn carousel, Instagram carousel, IG story set |
-| **Slide deck** — 16:9 presentation | 1280×720 | Webinars, pitches, internal updates |
-| **Document** — A4 pages | 794×1123 | Blog post, technical docs, guide, one-pager |
-| **Full campaign** — one topic, many variants | All of the above | Launch post distilled into blog + LinkedIn + Instagram + TikTok + Twitter |
+| Output                                       | Format                         | Typical use                                                               |
+| -------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------- |
+| **Social card** — single image               | 1:1 / 4:5 / 9:16 / OG 1200×630 | LinkedIn post, Instagram feed, Twitter card                               |
+| **Carousel** — multiple linked cards         | 4:5 or 9:16                    | LinkedIn carousel, Instagram carousel, IG story set                       |
+| **Slide deck** — 16:9 presentation           | 1280×720                       | Webinars, pitches, internal updates                                       |
+| **Document** — A4 pages                      | 794×1123                       | Blog post, technical docs, guide, one-pager                               |
+| **Full campaign** — one topic, many variants | All of the above               | Launch post distilled into blog + LinkedIn + Instagram + TikTok + Twitter |
 
 Every output is a self-contained HTML file you can also open in any browser.
 
@@ -70,11 +70,11 @@ you are publishing one topic across many platforms, use the campaign pipeline.
 
 ## Prerequisites
 
-| Dependency | Install | Purpose |
-|------------|---------|---------|
-| Node.js 18+ | required | runs the server |
+| Dependency            | Install                           | Purpose            |
+| --------------------- | --------------------------------- | ------------------ |
+| Node.js 18+           | required                          | runs the server    |
 | Playwright (optional) | `npx playwright install chromium` | PNG and PDF export |
-| A modern browser | required | opens the app |
+| A modern browser      | required                          | opens the app      |
 
 The server has zero npm dependencies at runtime — `scripts/server.cjs` is a
 self-contained bundle.
@@ -190,6 +190,7 @@ server and given you the URL.
 distillation, just one image.
 
 Say:
+
 > "Make me an Instagram post about our 2.0 release."
 
 The agent will:
@@ -212,6 +213,7 @@ You:
 **You want** a 16:9 slide deck for a talk or webinar.
 
 Say:
+
 > "Build me a 10-slide deck about API caching strategies."
 
 The agent will:
@@ -237,6 +239,7 @@ You:
 product one-pager.
 
 Say:
+
 > "Write a technical guide about setting up edge caching with Cloudflare."
 
 The agent will:
@@ -264,6 +267,7 @@ You:
 This is the most powerful journey — it runs the full anchor → distill pipeline.
 
 Say one of:
+
 > "Create a campaign about how we cut API latency 80% with edge caching."
 >
 > "I want a blog post plus a LinkedIn carousel, Instagram story, and TikTok
@@ -317,6 +321,7 @@ journeys.
 checks whether any variants are now out of date and asks:
 
 > "The anchor changed since I distilled these variants:
+>
 > - 10-linkedin-carousel.html (was rev 1, now rev 3)
 > - 20-instagram-feed.html (was rev 1, now rev 3)
 >
@@ -339,6 +344,7 @@ agent reads `/api/state`, finds the `activeCard` entry, and edits only the
 matching element by its `data-index`.
 
 Say, while looking at a specific card:
+
 > "Make this headline shorter and bolder."
 > "Change the background color on this page."
 > "Add a bullet to the card I am viewing."
@@ -360,10 +366,11 @@ number. The "active card" mechanism only kicks in for deictic language
 **You want** your content to use your company's colors, fonts, logo, and voice.
 
 Prerequisite: a brand skill is installed in your project (any skill folder
-with `brand/tokens.json`). Use the `codi-brand-creator` skill to build one if
+with `brand/tokens.json`). Use the `codi-dev-brand-creator` skill to build one if
 you do not have one yet.
 
 Say, at the start of a session:
+
 > "Use the Codi brand for this content."
 
 The agent will:
@@ -388,11 +395,11 @@ writes after activation inherits the brand automatically.
 Exports are **context-aware** — the sidebar button set changes based on the
 type of content you have open:
 
-| Content type | Buttons shown | Default |
-|--------------|---------------|---------|
-| Social card | Export PNG (current), Export PDF (all) | PNG |
-| Slide deck | Export PPTX (all), Export PDF (all), Export PNG (current) | PPTX |
-| Document | Export PDF (all), Export DOCX (all), Export PNG (current) | PDF |
+| Content type | Buttons shown                                             | Default |
+| ------------ | --------------------------------------------------------- | ------- |
+| Social card  | Export PNG (current), Export PDF (all)                    | PNG     |
+| Slide deck   | Export PPTX (all), Export PDF (all), Export PNG (current) | PPTX    |
+| Document     | Export PDF (all), Export DOCX (all), Export PNG (current) | PDF     |
 
 **PNG** uses Playwright at 2× resolution for crisp output.
 **PDF** renders slides to a multi-page PDF server-side via Playwright.
@@ -423,6 +430,7 @@ All exports land in `<projectDir>/exports/`.
 from it.
 
 Say:
+
 > "Save this project as a new template called 'edge-caching-report'."
 
 The agent will:
@@ -465,15 +473,15 @@ in sync.
 
 ### Sidebar (left, scrollable)
 
-| Control | What it does |
-|---------|--------------|
-| **Format** | Six buttons: 1:1, 4:5, 9:16, OG, 16:9, A4. Switches the canvas dimensions for all cards. Documents always render at A4. |
-| **Handle** | `@username` placeholder. The agent replaces `@handle` in generated content with your value. |
-| **Zoom** | 15% - 120% slider. Scales the preview cards. Default 40%. |
-| **Logo** | ON/OFF toggle plus size and X/Y sliders. Adds a logo overlay to every card. |
-| **Content files** | List of HTML files in the active project. Anchor files show an `ANCHOR` badge. Click to load. |
-| **Export** | Context-aware export buttons (see Journey G). |
-| **Activity log** | Timestamped server events and WebSocket status. Green dot = connected. |
+| Control           | What it does                                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Format**        | Six buttons: 1:1, 4:5, 9:16, OG, 16:9, A4. Switches the canvas dimensions for all cards. Documents always render at A4. |
+| **Handle**        | `@username` placeholder. The agent replaces `@handle` in generated content with your value.                             |
+| **Zoom**          | 15% - 120% slider. Scales the preview cards. Default 40%.                                                               |
+| **Logo**          | ON/OFF toggle plus size and X/Y sliders. Adds a logo overlay to every card.                                             |
+| **Content files** | List of HTML files in the active project. Anchor files show an `ANCHOR` badge. Click to load.                           |
+| **Export**        | Context-aware export buttons (see Journey G).                                                                           |
+| **Activity log**  | Timestamped server events and WebSocket status. Green dot = connected.                                                  |
 
 ### Main area
 
@@ -543,105 +551,105 @@ All endpoints run on the same port as the web app. Routes are grouped by concern
 
 ### App assets
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/` | GET | Serve the web app HTML shell |
-| `/static/*` | GET | Serve `app.css`, `app.js` |
-| `/vendor/*` | GET | Serve `html2canvas`, `jszip` |
+| Route       | Method | Purpose                      |
+| ----------- | ------ | ---------------------------- |
+| `/`         | GET    | Serve the web app HTML shell |
+| `/static/*` | GET    | Serve `app.css`, `app.js`    |
+| `/vendor/*` | GET    | Serve `html2canvas`, `jszip` |
 
 ### Projects and sessions
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/create-project` | POST | Create and activate a new project — body `{name, type}`. `type` is required and must be one of `social`, `slides`, `document`. Returns `{projectDir, contentDir, stateDir, exportsDir}` |
-| `/api/open-project` | POST | Activate an existing project — body `{projectDir}` |
-| `/api/sessions` | GET | List all projects in the workspace |
-| `/api/session-status` | POST | Persist project status — body `{sessionDir, status}` where status is `draft`, `in-progress`, `review`, or `done` |
+| Route                 | Method | Purpose                                                                                                                                                                                 |
+| --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/create-project` | POST   | Create and activate a new project — body `{name, type}`. `type` is required and must be one of `social`, `slides`, `document`. Returns `{projectDir, contentDir, stateDir, exportsDir}` |
+| `/api/open-project`   | POST   | Activate an existing project — body `{projectDir}`                                                                                                                                      |
+| `/api/sessions`       | GET    | List all projects in the workspace                                                                                                                                                      |
+| `/api/session-status` | POST   | Persist project status — body `{sessionDir, status}` where status is `draft`, `in-progress`, `review`, or `done`                                                                        |
 
 ### Files and content
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/files` | GET | List HTML files in the active project's `content/` |
-| `/api/content?file=X` | GET | Return raw HTML for a content file |
-| `/api/session-content?session=&file=` | GET | Serve a file from a specific project |
-| `/api/content-metadata?kind=&id=` | GET | Unified descriptor for templates and sessions: `{kind, id, name, type, format, cardCount, status, createdAt, modifiedAt, readOnly, source}`. `readOnly=true` for built-in templates |
-| `/api/content-list` | GET | Debug/utility — every content descriptor the server knows about, templates and sessions merged |
-| `/api/clone-template-to-session` | POST | Copy a built-in template into a new editable session — body `{templateId, name?}`. Use before applying any `persist-style` edit when the content is a template |
+| Route                                 | Method | Purpose                                                                                                                                                                             |
+| ------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/files`                          | GET    | List HTML files in the active project's `content/`                                                                                                                                  |
+| `/api/content?file=X`                 | GET    | Return raw HTML for a content file                                                                                                                                                  |
+| `/api/session-content?session=&file=` | GET    | Serve a file from a specific project                                                                                                                                                |
+| `/api/content-metadata?kind=&id=`     | GET    | Unified descriptor for templates and sessions: `{kind, id, name, type, format, cardCount, status, createdAt, modifiedAt, readOnly, source}`. `readOnly=true` for built-in templates |
+| `/api/content-list`                   | GET    | Debug/utility — every content descriptor the server knows about, templates and sessions merged                                                                                      |
+| `/api/clone-template-to-session`      | POST   | Copy a built-in template into a new editable session — body `{templateId, name?}`. Use before applying any `persist-style` edit when the content is a template                      |
 
 ### State and selection
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/state` | GET | Aggregate state: `{mode, contentId, activeFile, activeFilePath, activePreset, activeSessionDir, status, activeCard, brief, activeBrand}`. `mode` is `template`, `mywork`, or `null`. Use `contentId` and `activeFilePath` as the authoritative identifiers — never reconstruct paths from name fragments |
-| `/api/active-file` | GET/POST | Which file is currently loaded |
-| `/api/active-card` | GET | The card currently highlighted in Preview: `{index, total, dataType, dataIdx, file, timestamp}` |
-| `/api/active-card` | POST | App-only — the browser posts this when you click a card or use arrow keys |
-| `/api/preset` | GET/POST | Which Gallery preset was picked — `{id, name, type, timestamp}` |
+| Route              | Method   | Purpose                                                                                                                                                                                                                                                                                                  |
+| ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/state`       | GET      | Aggregate state: `{mode, contentId, activeFile, activeFilePath, activePreset, activeSessionDir, status, activeCard, brief, activeBrand}`. `mode` is `template`, `mywork`, or `null`. Use `contentId` and `activeFilePath` as the authoritative identifiers — never reconstruct paths from name fragments |
+| `/api/active-file` | GET/POST | Which file is currently loaded                                                                                                                                                                                                                                                                           |
+| `/api/active-card` | GET      | The card currently highlighted in Preview: `{index, total, dataType, dataIdx, file, timestamp}`                                                                                                                                                                                                          |
+| `/api/active-card` | POST     | App-only — the browser posts this when you click a card or use arrow keys                                                                                                                                                                                                                                |
+| `/api/preset`      | GET/POST | Which Gallery preset was picked — `{id, name, type, timestamp}`                                                                                                                                                                                                                                          |
 
 ### Live inspection
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/active-element` | GET | The DOM element the user most recently clicked in the preview — full context (selector, tag, id, classes, attributes, text, outerHTML snippet, bounding rect, computed styles, parent chain, and a `context` field carrying `{kind, id, name, file, cardIndex, readOnly}`). `null` if no click yet |
-| `/api/active-elements` | GET | Multi-select set of Cmd/Ctrl-clicked elements — `{count, selections:[...]}` |
-| `/api/active-elements` | DELETE | Clear the multi-select set |
-| `/api/inspect-events?since=<seq>` | GET | Ring buffer of preview interactions (clicks, inputs, submits, scrolls). Poll with `?since=<lastSeq>` for incremental updates |
-| `/api/eval` | POST | Run JavaScript inside the currently-previewed HTML page — body `{js, timeoutMs?}`. Returns `{ok, result, error}`. Ephemeral — changes revert on reload. Disable with env `CONTENT_FACTORY_ALLOW_EVAL=0` |
+| Route                             | Method | Purpose                                                                                                                                                                                                                                                                                            |
+| --------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/active-element`             | GET    | The DOM element the user most recently clicked in the preview — full context (selector, tag, id, classes, attributes, text, outerHTML snippet, bounding rect, computed styles, parent chain, and a `context` field carrying `{kind, id, name, file, cardIndex, readOnly}`). `null` if no click yet |
+| `/api/active-elements`            | GET    | Multi-select set of Cmd/Ctrl-clicked elements — `{count, selections:[...]}`                                                                                                                                                                                                                        |
+| `/api/active-elements`            | DELETE | Clear the multi-select set                                                                                                                                                                                                                                                                         |
+| `/api/inspect-events?since=<seq>` | GET    | Ring buffer of preview interactions (clicks, inputs, submits, scrolls). Poll with `?since=<lastSeq>` for incremental updates                                                                                                                                                                       |
+| `/api/eval`                       | POST   | Run JavaScript inside the currently-previewed HTML page — body `{js, timeoutMs?}`. Returns `{ok, result, error}`. Ephemeral — changes revert on reload. Disable with env `CONTENT_FACTORY_ALLOW_EVAL=0`                                                                                            |
 
 ### Style persistence
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/persist-style` | POST | Persist a style edit to the card source file — body `{targetSelector, patches}`. The server assigns a stable `data-cf-id`, writes it into the HTML, and upserts a CSS rule in a bounded `/* === cf:user-edits === */` region. Returns `409` with a `cloneSuggestion` payload when the target is read-only (template). Idempotent: re-applying the same edit is a no-op |
-| `/api/persist-style` | DELETE | Revert a persisted edit — query `?cfId=<id>&project=<dir>&file=<basename>`. Removes the rule and strips the `data-cf-id` attribute if no other rule references it |
-| `/api/persist-style` | GET | List persisted edits for a card — query `?project=<dir>&file=<basename>`. Returns `{count, rules:[{selector, declarations:[...]}]}` |
+| Route                | Method | Purpose                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/persist-style` | POST   | Persist a style edit to the card source file — body `{targetSelector, patches}`. The server assigns a stable `data-cf-id`, writes it into the HTML, and upserts a CSS rule in a bounded `/* === cf:user-edits === */` region. Returns `409` with a `cloneSuggestion` payload when the target is read-only (template). Idempotent: re-applying the same edit is a no-op |
+| `/api/persist-style` | DELETE | Revert a persisted edit — query `?cfId=<id>&project=<dir>&file=<basename>`. Removes the rule and strips the `data-cf-id` attribute if no other rule references it                                                                                                                                                                                                      |
+| `/api/persist-style` | GET    | List persisted edits for a card — query `?project=<dir>&file=<basename>`. Returns `{count, rules:[{selector, declarations:[...]}]}`                                                                                                                                                                                                                                    |
 
 ### Campaign brief and anchor revisions
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/brief` | GET | Return the active project's `brief.json` or `null` |
-| `/api/brief` | POST | Write the brief — body is an arbitrary JSON object (no schema enforcement). Returns 400 if no project is active |
-| `/api/distill-status` | GET | Anchor revision and per-variant staleness: `{anchor:{file,revision,status}, variants:[{file,format,derivedFromRevision,status,staleBy}], stale:[files]}`. Use at the start of every iteration turn to detect stale variants |
-| `/api/anchor/revise` | POST | Bump `brief.anchor.revision` and mark variants with `derivedFromRevision < new revision` as `status: "stale"`. Optional body `{reason?}` |
-| `/api/anchor/approve` | POST | Set `brief.anchor.status = "approved"`, record `approvedAt`. Idempotent. Call only when the user explicitly approves the anchor |
+| Route                 | Method | Purpose                                                                                                                                                                                                                     |
+| --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/brief`          | GET    | Return the active project's `brief.json` or `null`                                                                                                                                                                          |
+| `/api/brief`          | POST   | Write the brief — body is an arbitrary JSON object (no schema enforcement). Returns 400 if no project is active                                                                                                             |
+| `/api/distill-status` | GET    | Anchor revision and per-variant staleness: `{anchor:{file,revision,status}, variants:[{file,format,derivedFromRevision,status,staleBy}], stale:[files]}`. Use at the start of every iteration turn to detect stale variants |
+| `/api/anchor/revise`  | POST   | Bump `brief.anchor.revision` and mark variants with `derivedFromRevision < new revision` as `status: "stale"`. Optional body `{reason?}`                                                                                    |
+| `/api/anchor/approve` | POST   | Set `brief.anchor.status = "approved"`, record `approvedAt`. Idempotent. Call only when the user explicitly approves the anchor                                                                                             |
 
 Variant metadata uses camelCase throughout — `derivedFromRevision`, `derivedFrom`, `createdAt`. Older references may show snake_case; camelCase is authoritative.
 
 ### Box Layout validation
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/validate-card` | POST | Validate one card — body `{project, file, cardIndex, force?}`. Returns `{ok, pass, score, violations:[{rule, severity, path, message, fix}], summary, fixInstructions}`. Cached by SHA-1 of HTML + dimensions + preset |
-| `/api/validate-cards?project=&file=` | GET | Batch validate every card in a file — `{ok, pass, cards:[...], failingCards:[...]}` |
-| `/api/validation-config?project=<dir>[&file=<basename>]` | GET | Resolved config cascade with `source` map showing which scope produced each field. Cascade: type-default → user default → session → per-file |
-| `/api/validation-config` | PATCH | Merge a partial patch — body `{project|user:true, patch}`. Returns the new resolved config |
-| `/api/validation-config/toggle` | POST | Flip a layer on or off — body `{project, layer, value}`. Layers: `all` (master), `endpoint`, `badge`, `agentDiscipline`, `exportPreflight`, `statusGate` |
-| `/api/validation-config/ignore-violation` | POST | Add a per-file exemption — body `{project, file, rule, selector?, cardIndex?}` |
-| `/api/validator-health` | GET | `{degraded, workers, cacheSize, cacheHits, cacheMisses, avgLatencyMs, lastError}`. `degraded: true` means Playwright is missing and all layers default to pass |
+| Route                                                    | Method | Purpose                                                                                                                                                                                                                |
+| -------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `/api/validate-card`                                     | POST   | Validate one card — body `{project, file, cardIndex, force?}`. Returns `{ok, pass, score, violations:[{rule, severity, path, message, fix}], summary, fixInstructions}`. Cached by SHA-1 of HTML + dimensions + preset |
+| `/api/validate-cards?project=&file=`                     | GET    | Batch validate every card in a file — `{ok, pass, cards:[...], failingCards:[...]}`                                                                                                                                    |
+| `/api/validation-config?project=<dir>[&file=<basename>]` | GET    | Resolved config cascade with `source` map showing which scope produced each field. Cascade: type-default → user default → session → per-file                                                                           |
+| `/api/validation-config`                                 | PATCH  | Merge a partial patch — body `{project                                                                                                                                                                                 | user:true, patch}`. Returns the new resolved config |
+| `/api/validation-config/toggle`                          | POST   | Flip a layer on or off — body `{project, layer, value}`. Layers: `all` (master), `endpoint`, `badge`, `agentDiscipline`, `exportPreflight`, `statusGate`                                                               |
+| `/api/validation-config/ignore-violation`                | POST   | Add a per-file exemption — body `{project, file, rule, selector?, cardIndex?}`                                                                                                                                         |
+| `/api/validator-health`                                  | GET    | `{degraded, workers, cacheSize, cacheHits, cacheMisses, avgLatencyMs, lastError}`. `degraded: true` means Playwright is missing and all layers default to pass                                                         |
 
 ### Templates
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/templates` | GET | List all stock and brand templates with metadata |
-| `/api/template?file=X[&brand=Y]` | GET | Serve a single template HTML file |
+| Route                            | Method | Purpose                                          |
+| -------------------------------- | ------ | ------------------------------------------------ |
+| `/api/templates`                 | GET    | List all stock and brand templates with metadata |
+| `/api/template?file=X[&brand=Y]` | GET    | Serve a single template HTML file                |
 
 ### Brands
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/brands` | GET | List installed brand skills (those with `brand/tokens.json`) |
-| `/api/active-brand` | POST | Set or clear the active brand — body `{name}` or `{}` to clear |
-| `/api/brand/:name/assets/*` | GET | Serve a file from a brand skill's `assets/` — use these URLs for logos and fonts in generated HTML |
+| Route                       | Method | Purpose                                                                                            |
+| --------------------------- | ------ | -------------------------------------------------------------------------------------------------- |
+| `/api/brands`               | GET    | List installed brand skills (those with `brand/tokens.json`)                                       |
+| `/api/active-brand`         | POST   | Set or clear the active brand — body `{name}` or `{}` to clear                                     |
+| `/api/brand/:name/assets/*` | GET    | Serve a file from a brand skill's `assets/` — use these URLs for logos and fonts in generated HTML |
 
 ### Export
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/export-png` | POST | Render a card to 2× PNG via Playwright — body `{html, width, height}` |
-| `/api/export-pdf` | POST | Render slides to a multi-page PDF — body `{slides:[{html,width,height}]}` |
+| Route             | Method | Purpose                                                                   |
+| ----------------- | ------ | ------------------------------------------------------------------------- |
+| `/api/export-png` | POST   | Render a card to 2× PNG via Playwright — body `{html, width, height}`     |
+| `/api/export-pdf` | POST   | Render slides to a multi-page PDF — body `{slides:[{html,width,height}]}` |
 
 PPTX and DOCX export run in the browser via PptxGenJS and client-side Pandoc — no dedicated server endpoints. PNG screenshots for PPTX slides and DOCX figures still route through `/api/export-png`.
 
@@ -662,7 +670,10 @@ Drop a `.html` file in `generators/templates/`. It must include a
 `<meta name="codi:template">` tag in `<head>`:
 
 ```html
-<meta name="codi:template" content='{"id":"my-template","name":"My Template","type":"social","format":{"w":1080,"h":1080}}'>
+<meta
+  name="codi:template"
+  content='{"id":"my-template","name":"My Template","type":"social","format":{"w":1080,"h":1080}}'
+/>
 ```
 
 Required fields: `id` (kebab-case), `name` (human-readable), `type`
@@ -696,7 +707,7 @@ The agent discovers brands via `GET /api/brands`, activates one via
 6. Writes copy using `voice.tone`, `voice.phrases_use`, and avoiding
    `voice.phrases_avoid`
 
-Use the `codi-brand-creator` skill to build a brand package.
+Use the `codi-dev-brand-creator` skill to build a brand package.
 
 ---
 
@@ -724,7 +735,7 @@ path is always where the logo lives).
 
 Both the in-page preview overlay and exported HTML inline the resolved
 SVG, so exports are self-contained (no external `<img src>`). The overlay
-size tracks the inspector's size slider; see *Logo defaults* below for the
+size tracks the inspector's size slider; see _Logo defaults_ below for the
 format-derived starting value.
 
 ---
@@ -752,16 +763,16 @@ parallel notification channel.
 
 The remediation is content-type aware:
 
-| Type | Overflow > 15% | Overflow ≤ 15% |
-|------|----------------|----------------|
-| `document` | paginate (add a new `.doc-page` sibling) | tighten |
-| `slides` | split into multiple slides at the next section break | tighten |
-| `social` | tighten (single canvas, no pagination) | tighten |
+| Type       | Overflow > 15%                                       | Overflow ≤ 15% |
+| ---------- | ---------------------------------------------------- | -------------- |
+| `document` | paginate (add a new `.doc-page` sibling)             | tighten        |
+| `slides`   | split into multiple slides at the next section break | tighten        |
+| `social`   | tighten (single canvas, no pagination)               | tighten        |
 
 **Pagination contract** — a multi-page document is a sequence of sibling
 `.doc-page` elements inside `.doc-container`. Each `.doc-page` is its own
 canvas (e.g. `794×1123` for A4) and ships its own header and footer. The
-validator measures *per page*, not the whole document; adding pages
+validator measures _per page_, not the whole document; adding pages
 legitimately resolves overflow only when every page fits.
 
 The canvas-root `overflow: hidden` that templates ship for export is
@@ -778,11 +789,11 @@ Rule source: `scripts/lib/box-layout/rules/r11-canvas-fit.cjs`.
 The overlay logo size defaults to 20% of the active canvas's shortest
 side, positioned at top-right (x=85%, y=15%):
 
-| Format | Canvas | Default size |
-|--------|--------|--------------|
-| Document (A4) | 794 × 1123 | 159 px |
-| Social (square) | 1080 × 1080 | 216 px |
-| Slides (16:9) | 1280 × 720 | 144 px |
+| Format          | Canvas      | Default size |
+| --------------- | ----------- | ------------ |
+| Document (A4)   | 794 × 1123  | 159 px       |
+| Social (square) | 1080 × 1080 | 216 px       |
+| Slides (16:9)   | 1280 × 720  | 144 px       |
 
 Switching the active format recomputes the size automatically — until the
 user moves the size slider, at which point the flag `logo.userOverridden`
@@ -797,12 +808,12 @@ project, file, and card. Two tabs with different URLs show independent
 states. The agent can construct a URL directly and send it to the user for
 deep-linking.
 
-| Param | Meaning |
-|-------|---------|
-| `kind` | `template` or `session` |
-| `id` | Stable content id (template id or session dir basename) |
-| `file` | Content file basename (e.g. `social.html`) |
-| `card` | Active card index, 0-based (default 0) |
+| Param  | Meaning                                                 |
+| ------ | ------------------------------------------------------- |
+| `kind` | `template` or `session`                                 |
+| `id`   | Stable content id (template id or session dir basename) |
+| `file` | Content file basename (e.g. `social.html`)              |
+| `card` | Active card index, 0-based (default 0)                  |
 
 Example (template):
 
@@ -862,13 +873,13 @@ Every generated card passes through the vendored Box Layout validator
 before the agent ships it. Five layers enforce spacing, hierarchy, and
 structural consistency:
 
-| Layer | Purpose |
-|-------|---------|
-| L1 | Primitive validation via `POST /api/validate-card` |
-| L2 | Pass/fail score badges on preview cards |
-| L3 | Agent discipline — every `persist-style` write triggers a validate-and-fix loop |
-| L4 | Export preflight — blocks export of cards below threshold |
-| L5 | Session-status gate — blocks `done` status when any card fails |
+| Layer | Purpose                                                                         |
+| ----- | ------------------------------------------------------------------------------- |
+| L1    | Primitive validation via `POST /api/validate-card`                              |
+| L2    | Pass/fail score badges on preview cards                                         |
+| L3    | Agent discipline — every `persist-style` write triggers a validate-and-fix loop |
+| L4    | Export preflight — blocks export of cards below threshold                       |
+| L5    | Session-status gate — blocks `done` status when any card fails                  |
 
 Default thresholds:
 
@@ -898,13 +909,13 @@ Content Factory softly uses the external `marketing-skills` plugin if it is
 installed. If not, the workflow and outputs are identical — the only
 difference is whether extra LLM passes refine the copy.
 
-| Phase | Skill invoked if present |
-|-------|--------------------------|
-| Intake | `content-strategy` — validate topic and audience fit |
-| Anchor (blog / docs) | `copywriting` → `humanizer` |
-| Anchor (deck) | `launch-strategy` (if present) → `humanizer` |
-| Distillation | `social-content` — one call per platform → `humanizer` |
-| Optional | `ad-creative`, `email-sequence` for paid or email variants |
+| Phase                | Skill invoked if present                                   |
+| -------------------- | ---------------------------------------------------------- |
+| Intake               | `content-strategy` — validate topic and audience fit       |
+| Anchor (blog / docs) | `copywriting` → `humanizer`                                |
+| Anchor (deck)        | `launch-strategy` (if present) → `humanizer`               |
+| Distillation         | `social-content` — one call per platform → `humanizer`     |
+| Optional             | `ad-creative`, `email-sequence` for paid or email variants |
 
 If you want to force inline generation even when the plugin is installed,
 say "do not use marketing skills for this campaign" — the agent will skip
@@ -949,7 +960,7 @@ too empty" and it will rewrite the card applying the density rules.
 
 ### Cards look clipped or have content falling off the edge
 
-- The preview *shows* overflow (it used to clip silently) — content
+- The preview _shows_ overflow (it used to clip silently) — content
   visibly extends past the canvas when it doesn't fit
 - Run `GET /api/validate-cards?project=<dir>&file=<file>` — any R11
   "Canvas Fit" violation names the overflowing page and prescribes the

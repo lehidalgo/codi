@@ -13,23 +13,24 @@ The current artifact versioning system stores the same fact ("artifact X is at v
 
 ### 2.1 The triggering incident
 
-On 2026-04-26, codi-cli@2.13.0 was published to npm. A subset of users hit a fatal "Template registry integrity check failed" error when running `codi` (bare) or `codi init`. The error blamed `codi-rule-creator` and `codi-agent-creator` for "content changed without artifact version bump (current 11, previous 11)".
+On 2026-04-26, codi-cli@2.13.0 was published to npm. A subset of users hit a fatal "Template registry integrity check failed" error when running `codi` (bare) or `codi init`. The error blamed `codi-dev-rule-creator` and `codi-dev-agent-creator` for "content changed without artifact version bump (current 11, previous 11)".
 
 Investigation showed:
+
 - The published tarball is bytewise identical to a clean local rebuild.
 - The runtime hash matches the recorded baseline hash on a freshly installed clean prefix on the same Node version (v24.15.0) the failing users ran.
 - The bug could not be reproduced from the artifact alone — it requires some local state we cannot see on the failing users' machines.
 
 ### 2.2 Audit findings
 
-| Finding | Severity |
-|---|---|
-| Runtime check at `cli.ts:79` and `init.ts:135` blocks end users for a contributor-side process violation | High — UX guarantee broken |
-| `codi-version-bump.mjs` hook is shipped to user projects via `codi init` but its regex hardcodes `src/templates/...`, never matching `.codi/...` paths — dead code on every consumer | High — second-layer enforcement is missing entirely |
-| `codi-artifact-validate.mjs` hook validates YAML schema but not version bumps, so users can edit `.codi/X` content without bumping and the system never notices | Medium — silent drift in user state |
-| `pnpm test` regenerates `artifact-version-baseline.json` as a side-effect of running tests; a contributor who runs the full suite locally and commits silently rewrites the baseline | Medium — bypasses the policy without warning |
+| Finding                                                                                                                                                                                                                             | Severity                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Runtime check at `cli.ts:79` and `init.ts:135` blocks end users for a contributor-side process violation                                                                                                                            | High — UX guarantee broken                                                 |
+| `codi-version-bump.mjs` hook is shipped to user projects via `codi init` but its regex hardcodes `src/templates/...`, never matching `.codi/...` paths — dead code on every consumer                                                | High — second-layer enforcement is missing entirely                        |
+| `codi-artifact-validate.mjs` hook validates YAML schema but not version bumps, so users can edit `.codi/X` content without bumping and the system never notices                                                                     | Medium — silent drift in user state                                        |
+| `pnpm test` regenerates `artifact-version-baseline.json` as a side-effect of running tests; a contributor who runs the full suite locally and commits silently rewrites the baseline                                                | Medium — bypasses the policy without warning                               |
 | No CI gate for the registry check on PRs or pre-publish — the only protection between contributor mistake and broken release was the pre-commit hook (skippable via --no-verify) and the runtime check on users (now being removed) | High — would create a hole if runtime check is removed without replacement |
-| The `version` field on `.codi/` artifacts is informational only; `upgrade-detector.ts` uses content hashes, not version numbers, to drive drift detection | Insight — clarifies what the version field is actually for |
+| The `version` field on `.codi/` artifacts is informational only; `upgrade-detector.ts` uses content hashes, not version numbers, to drive drift detection                                                                           | Insight — clarifies what the version field is actually for                 |
 
 ### 2.3 What the version field is actually for
 
@@ -85,23 +86,23 @@ flowchart LR
   REMOTE --> CI[CI gate<br/>belt-and-suspenders]
 ```
 
-| Layer | Action | Bypass-proof | Speed |
-|---|---|---|---|
-| Pre-commit (1st check) | Auto-bump version, update manifest, re-stage | No (--no-verify) | Instant |
-| Pre-push | Verify all artifact changes have version bump in the push range | No (--no-verify but rarer) | Under 1 second |
-| CI on PR | Same verification, server-side | Yes | About 2 minutes |
-| Pre-publish (codi repo only) | Same verification, before npm publish | Almost (npm --ignore-scripts is the only theoretical bypass) | About 10 seconds |
+| Layer                        | Action                                                          | Bypass-proof                                                 | Speed            |
+| ---------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------ | ---------------- |
+| Pre-commit (1st check)       | Auto-bump version, update manifest, re-stage                    | No (--no-verify)                                             | Instant          |
+| Pre-push                     | Verify all artifact changes have version bump in the push range | No (--no-verify but rarer)                                   | Under 1 second   |
+| CI on PR                     | Same verification, server-side                                  | Yes                                                          | About 2 minutes  |
+| Pre-publish (codi repo only) | Same verification, before npm publish                           | Almost (npm --ignore-scripts is the only theoretical bypass) | About 10 seconds |
 
 ### 4.3 Dual-mode hook behavior
 
 The pre-commit hook is mode-aware. Mode is determined per-staged-file:
 
-| Staged path | Mode | Behavior |
-|---|---|---|
-| `src/templates/{skills,agents}/X/template.ts` or `src/templates/rules/X.ts` | source | Diff staged content vs `git show HEAD:path`. If content changed and version did not increase, bump in-place plus re-stage. |
-| `.codi/{rules,skills,agents}/X/...` AND frontmatter `managed_by: user` | user-managed | Same as source, plus update the entry in `.codi/artifact-manifest.json` (contentHash and installedArtifactVersion). |
-| `.codi/{rules,skills,agents}/X/...` AND frontmatter `managed_by: codi` | codi-managed | Reject the commit with: "This artifact is managed by codi and will be overwritten on update. Fork it: `codi add <type> <name> --as <new-name>`" |
-| Other paths | skip | No-op |
+| Staged path                                                                 | Mode         | Behavior                                                                                                                                        |
+| --------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/templates/{skills,agents}/X/template.ts` or `src/templates/rules/X.ts` | source       | Diff staged content vs `git show HEAD:path`. If content changed and version did not increase, bump in-place plus re-stage.                      |
+| `.codi/{rules,skills,agents}/X/...` AND frontmatter `managed_by: user`      | user-managed | Same as source, plus update the entry in `.codi/artifact-manifest.json` (contentHash and installedArtifactVersion).                             |
+| `.codi/{rules,skills,agents}/X/...` AND frontmatter `managed_by: codi`      | codi-managed | Reject the commit with: "This artifact is managed by codi and will be overwritten on update. Fork it: `codi add <type> <name> --as <new-name>`" |
+| Other paths                                                                 | skip         | No-op                                                                                                                                           |
 
 A single commit can span multiple modes (the codi repo edits both `src/templates/` and `.codi/` together when self-hosting); each path is processed independently.
 
@@ -111,74 +112,74 @@ The pre-push hook applies only the verification side: for every artifact file ch
 
 Pre-commit hook:
 
-| Condition | Rule |
-|---|---|
-| File is newly added (no `git show HEAD:path` entry) | Treat as new artifact. If `version:` is present in staged content, leave it alone (could be any value, including 1). If absent, inject `version: 1`. For user-managed `.codi/` paths, add a manifest entry. |
-| `git show HEAD:path` fails because `HEAD` does not exist (very first commit) | Skip version-bump check entirely; print `[version-bump] no HEAD yet — first commit, skipping`. Allow commit. |
-| Frontmatter missing on a `.codi/` artifact path | Reject with `✗ [version-bump] artifact missing frontmatter: <path>`. Caller fixes and retries. |
-| Frontmatter present but `managed_by` field absent on a `.codi/` artifact | Treat as `managed_by: user` (default). Document this default in `parseVersionFromFrontmatter` companion helper. |
-| Frontmatter is malformed YAML (cannot parse) | Reject with `✗ [version-bump] malformed frontmatter: <path> — <yaml error>`. Exit 1. |
-| File deletion staged | Remove entry from `.codi/artifact-manifest.json` if user-managed. No version-bump concern. |
-| File rename | Treat as delete-plus-add: remove old manifest entry, evaluate new path under normal rules. |
-| Manual version regression (staged `version:` < HEAD `version:`) | Reject with `✗ [version-bump] version regression on <path>: <head> → <staged>` |
+| Condition                                                                    | Rule                                                                                                                                                                                                        |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File is newly added (no `git show HEAD:path` entry)                          | Treat as new artifact. If `version:` is present in staged content, leave it alone (could be any value, including 1). If absent, inject `version: 1`. For user-managed `.codi/` paths, add a manifest entry. |
+| `git show HEAD:path` fails because `HEAD` does not exist (very first commit) | Skip version-bump check entirely; print `[version-bump] no HEAD yet — first commit, skipping`. Allow commit.                                                                                                |
+| Frontmatter missing on a `.codi/` artifact path                              | Reject with `✗ [version-bump] artifact missing frontmatter: <path>`. Caller fixes and retries.                                                                                                              |
+| Frontmatter present but `managed_by` field absent on a `.codi/` artifact     | Treat as `managed_by: user` (default). Document this default in `parseVersionFromFrontmatter` companion helper.                                                                                             |
+| Frontmatter is malformed YAML (cannot parse)                                 | Reject with `✗ [version-bump] malformed frontmatter: <path> — <yaml error>`. Exit 1.                                                                                                                        |
+| File deletion staged                                                         | Remove entry from `.codi/artifact-manifest.json` if user-managed. No version-bump concern.                                                                                                                  |
+| File rename                                                                  | Treat as delete-plus-add: remove old manifest entry, evaluate new path under normal rules.                                                                                                                  |
+| Manual version regression (staged `version:` < HEAD `version:`)              | Reject with `✗ [version-bump] version regression on <path>: <head> → <staged>`                                                                                                                              |
 
 Pre-push hook (per-ref handling — git protocol delivers `<local_ref> <local_oid> <remote_ref> <remote_oid>` per ref on stdin):
 
-| Push shape | Rule |
-|---|---|
-| Normal fast-forward (`remote_oid` non-zero, `local_oid` non-zero, ancestor relationship) | Diff `remote_oid..local_oid`. Verify each artifact change in that range has a version bump. |
-| New branch (`remote_oid` is `0000000000000000000000000000000000000000`) | Use `git merge-base local_oid origin/HEAD` (resolves to default branch tip) as the diff base. If no merge-base, use `local_oid` itself (single-commit walk). |
-| Force-push / non-fast-forward | Treat same as fast-forward: diff `remote_oid..local_oid`. The diff still contains content additions/changes; if any artifact change lacks a bump, reject. |
-| Branch deletion (`local_oid` is all zeros) | Skip — nothing to verify. |
-| Multiple refs in one push | Each ref is independent — verify each, accumulate errors, fail-fast on first invalid ref. |
-| Tag pushes | Skip — tags do not modify artifacts. |
+| Push shape                                                                               | Rule                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Normal fast-forward (`remote_oid` non-zero, `local_oid` non-zero, ancestor relationship) | Diff `remote_oid..local_oid`. Verify each artifact change in that range has a version bump.                                                                  |
+| New branch (`remote_oid` is `0000000000000000000000000000000000000000`)                  | Use `git merge-base local_oid origin/HEAD` (resolves to default branch tip) as the diff base. If no merge-base, use `local_oid` itself (single-commit walk). |
+| Force-push / non-fast-forward                                                            | Treat same as fast-forward: diff `remote_oid..local_oid`. The diff still contains content additions/changes; if any artifact change lacks a bump, reject.    |
+| Branch deletion (`local_oid` is all zeros)                                               | Skip — nothing to verify.                                                                                                                                    |
+| Multiple refs in one push                                                                | Each ref is independent — verify each, accumulate errors, fail-fast on first invalid ref.                                                                    |
+| Tag pushes                                                                               | Skip — tags do not modify artifacts.                                                                                                                         |
 
 ### 4.4 Component inventory
 
 #### Files to delete
 
-| File | Reason |
-|---|---|
-| `src/core/version/artifact-version-baseline.json` | Stored hash cache — replaced by git history |
-| `src/core/version/artifact-version-baseline.ts` | `checkArtifactVersionBaseline()` obsolete |
-| `tests/release/generate-baseline.test.ts` | Side-effect "test" that mutates source during `pnpm test` |
-| `src/core/scaffolder/template-registry-check.ts` | Runtime aggregator. The "template loadable" portion (lines 14-41 of the existing file: iterate `AVAILABLE_*_TEMPLATES`, ensure each loads with non-empty content) is preserved as a new `templates-loadable` check inside `src/cli/doctor.ts`. The baseline-comparison portion (line 43, `checkArtifactVersionBaseline(...)`) is dropped entirely — git history replaces it. After extraction, the file is deleted. |
+| File                                              | Reason                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/version/artifact-version-baseline.json` | Stored hash cache — replaced by git history                                                                                                                                                                                                                                                                                                                                                                         |
+| `src/core/version/artifact-version-baseline.ts`   | `checkArtifactVersionBaseline()` obsolete                                                                                                                                                                                                                                                                                                                                                                           |
+| `tests/release/generate-baseline.test.ts`         | Side-effect "test" that mutates source during `pnpm test`                                                                                                                                                                                                                                                                                                                                                           |
+| `src/core/scaffolder/template-registry-check.ts`  | Runtime aggregator. The "template loadable" portion (lines 14-41 of the existing file: iterate `AVAILABLE_*_TEMPLATES`, ensure each loads with non-empty content) is preserved as a new `templates-loadable` check inside `src/cli/doctor.ts`. The baseline-comparison portion (line 43, `checkArtifactVersionBaseline(...)`) is dropped entirely — git history replaces it. After extraction, the file is deleted. |
 
 #### Code to delete inside surviving files
 
-| Location | Change |
-|---|---|
-| `src/cli.ts:33,79-89` | Remove import + `checkTemplateRegistry()` call + early exit |
-| `src/cli/init.ts:43,133-140` | Remove import + call + exit |
-| `package.json` `scripts.baseline:update` | Delete |
+| Location                                 | Change                                                      |
+| ---------------------------------------- | ----------------------------------------------------------- |
+| `src/cli.ts:33,79-89`                    | Remove import + `checkTemplateRegistry()` call + early exit |
+| `src/cli/init.ts:43,133-140`             | Remove import + call + exit                                 |
+| `package.json` `scripts.baseline:update` | Delete                                                      |
 
 #### Files to keep unchanged
 
-| File | Role |
-|---|---|
-| `src/core/version/template-hash-registry.ts` | Still computes runtime hashes for `upgrade-detector.ts` |
-| `src/core/version/upgrade-detector.ts` | User-facing drift detection at `codi update` time |
-| `src/core/version/artifact-manifest.ts` | Tracks user installed state in `.codi/artifact-manifest.json` |
-| `src/core/version/artifact-version.ts` | Frontmatter parsing helpers used everywhere |
+| File                                         | Role                                                          |
+| -------------------------------------------- | ------------------------------------------------------------- |
+| `src/core/version/template-hash-registry.ts` | Still computes runtime hashes for `upgrade-detector.ts`       |
+| `src/core/version/upgrade-detector.ts`       | User-facing drift detection at `codi update` time             |
+| `src/core/version/artifact-manifest.ts`      | Tracks user installed state in `.codi/artifact-manifest.json` |
+| `src/core/version/artifact-version.ts`       | Frontmatter parsing helpers used everywhere                   |
 
 #### Files to modify
 
-| File | Change |
-|---|---|
+| File                                      | Change                                                                                                          |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `src/core/hooks/version-bump-template.ts` | Rewrite as dual-layer, managed_by-aware, git-history-based. Single template, three modes per the matrix in 4.3. |
-| `src/core/hooks/hook-config-generator.ts` | Wire pre-push hook alongside pre-commit. Move version-bump to first position in pre-commit chain. |
-| `src/core/hooks/hook-installer.ts` | Install the new `codi-version-verify.mjs` template at `.git/hooks/`. |
-| `.husky/pre-commit` | Reorder so `codi-version-bump.mjs` runs first, before lint/tsc/tests. |
-| `src/cli/doctor.ts` | Add checks: `pre-commit-hook-installed`, `pre-push-hook-installed`. Warns when missing or unwired. |
+| `src/core/hooks/hook-config-generator.ts` | Wire pre-push hook alongside pre-commit. Move version-bump to first position in pre-commit chain.               |
+| `src/core/hooks/hook-installer.ts`        | Install the new `codi-version-verify.mjs` template at `.git/hooks/`.                                            |
+| `.husky/pre-commit`                       | Reorder so `codi-version-bump.mjs` runs first, before lint/tsc/tests.                                           |
+| `src/cli/doctor.ts`                       | Add checks: `pre-commit-hook-installed`, `pre-push-hook-installed`. Warns when missing or unwired.              |
 
 #### Files to add
 
-| File | Role |
-|---|---|
-| `src/core/hooks/version-verify-pre-push-template.ts` | New template producing `.git/hooks/codi-version-verify.mjs`. Read-only verification of push range. |
-| `scripts/verify-artifact-versions.mjs` | Shared CLI used by both pre-push and CI step |
-| `.github/workflows/ci.yml` step | Calls `scripts/verify-artifact-versions.mjs` on PRs against `main` and `develop` |
-| `src/core/hooks/hook-logic/` (TS module) | Pure functions extracted from the templates: `getPreviousVersion`, `detectMode`, `bumpVersion`, `verifyRange`, `updateManifest`. Unit-testable. |
+| File                                                 | Role                                                                                                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core/hooks/version-verify-pre-push-template.ts` | New template producing `.git/hooks/codi-version-verify.mjs`. Read-only verification of push range.                                              |
+| `scripts/verify-artifact-versions.mjs`               | Shared CLI used by both pre-push and CI step                                                                                                    |
+| `.github/workflows/ci.yml` step                      | Calls `scripts/verify-artifact-versions.mjs` on PRs against `main` and `develop`                                                                |
+| `src/core/hooks/hook-logic/` (TS module)             | Pure functions extracted from the templates: `getPreviousVersion`, `detectMode`, `bumpVersion`, `verifyRange`, `updateManifest`. Unit-testable. |
 
 ### 4.5 Data flow — contributor edits source template
 
@@ -366,15 +367,15 @@ Phase 2 is one PR, on its own feature branch off `develop`, large but self-conta
 
 ## 7. Risks and mitigations
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Removing the runtime check leaves a window where a broken bundle reaches users | Low | High | Phase 2 ships pre-publish CI gate before runtime check is removed in the same PR; new gates strictly stricter than what they replace |
-| `git show HEAD:path` performance on very large repos | Very low | Low | Single-file reads are O(1) with packfile indexes; even on a 10k-template repo this is sub-second |
-| Dual-mode hook complexity causes bugs in mode detection | Low | Medium | Mode detection is pure-function with unit tests; integration tests cover all four mode outcomes |
-| Users on older codi-cli versions still hit the v2.13.0 bug | Medium | Low | v2.13.1 hotfix already shipped to give them a clean reinstall path; the diagnostic message addition lets us debug if issue recurs |
-| `codi update` overwrites a user-managed artifact whose hash was bumped via auto-bump | Low | Low | `upgrade-detector.ts` already classifies managed_by-user as user-managed and never auto-overwrites; tested behavior |
-| Pre-push hook rejects valid pushes due to a bug in range diffing (new branch, force-push, etc.) | Low | Medium | Cover all push-range edge cases in integration tests: new branch, fast-forward, non-fast-forward, deleted branch |
-| Contributors who rely on `pnpm baseline:update` are confused when it's gone | Low | Low | Removal noted in CHANGELOG; pre-commit hook handles regen automatically; no contributor action needed |
+| Risk                                                                                            | Likelihood | Impact | Mitigation                                                                                                                           |
+| ----------------------------------------------------------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Removing the runtime check leaves a window where a broken bundle reaches users                  | Low        | High   | Phase 2 ships pre-publish CI gate before runtime check is removed in the same PR; new gates strictly stricter than what they replace |
+| `git show HEAD:path` performance on very large repos                                            | Very low   | Low    | Single-file reads are O(1) with packfile indexes; even on a 10k-template repo this is sub-second                                     |
+| Dual-mode hook complexity causes bugs in mode detection                                         | Low        | Medium | Mode detection is pure-function with unit tests; integration tests cover all four mode outcomes                                      |
+| Users on older codi-cli versions still hit the v2.13.0 bug                                      | Medium     | Low    | v2.13.1 hotfix already shipped to give them a clean reinstall path; the diagnostic message addition lets us debug if issue recurs    |
+| `codi update` overwrites a user-managed artifact whose hash was bumped via auto-bump            | Low        | Low    | `upgrade-detector.ts` already classifies managed_by-user as user-managed and never auto-overwrites; tested behavior                  |
+| Pre-push hook rejects valid pushes due to a bug in range diffing (new branch, force-push, etc.) | Low        | Medium | Cover all push-range edge cases in integration tests: new branch, fast-forward, non-fast-forward, deleted branch                     |
+| Contributors who rely on `pnpm baseline:update` are confused when it's gone                     | Low        | Low    | Removal noted in CHANGELOG; pre-commit hook handles regen automatically; no contributor action needed                                |
 
 ## 8. Open questions
 

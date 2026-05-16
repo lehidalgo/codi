@@ -88,16 +88,7 @@ const TEXT_EXTENSIONS = new Set([
   ".pl",
 ]);
 
-const CODE_EXTENSIONS = new Set([
-  ".py",
-  ".sh",
-  ".bash",
-  ".js",
-  ".ts",
-  ".mjs",
-  ".rb",
-  ".pl",
-]);
+const CODE_EXTENSIONS = new Set([".py", ".sh", ".bash", ".js", ".ts", ".mjs", ".rb", ".pl"]);
 
 const CONFIG_EXTENSIONS = new Set([".yaml", ".yml", ".json", ".toml"]);
 
@@ -196,9 +187,7 @@ export function matchPatterns(
   return findings;
 }
 
-function computeVerdict(
-  summary: Record<ScanSeverity, number>,
-): ScanSeverity | "pass" {
+function computeVerdict(summary: Record<ScanSeverity, number>): ScanSeverity | "pass" {
   if (summary.critical > 0) return "critical";
   if (summary.high > 0) return "high";
   if (summary.medium > 0) return "medium";
@@ -221,9 +210,7 @@ function computeSummary(findings: ScanFinding[]): Record<ScanSeverity, number> {
 // File Type Validation
 // ---------------------------------------------------------------------------
 
-export async function validateFileType(
-  filePath: string,
-): Promise<ScanFinding | null> {
+export async function validateFileType(filePath: string): Promise<ScanFinding | null> {
   const ext = extname(filePath).toLowerCase();
 
   let header: Buffer;
@@ -322,130 +309,98 @@ function checkContentSizes(files: FileInfo[]): ScanFinding[] {
 // Public API: Scan a directory
 // ---------------------------------------------------------------------------
 
-export async function scanDirectory(dir: string): Promise<ScanReport> {
-  const findings: ScanFinding[] = [];
+/**
+ * ISSUE-077 — extracted from the inner loop of scanDirectory. Concentrates
+ * the per-file pattern-matching policy in one place so the orchestrator
+ * stays under the 30-LOC cap. Returns the findings accumulated for one file.
+ */
+async function scanFile(file: { path: string; relativePath: string }): Promise<ScanFinding[]> {
+  const ext = extname(file.path).toLowerCase();
+  const out: ScanFinding[] = [];
 
+  if (BINARY_EXTENSIONS.has(ext) || !TEXT_EXTENSIONS.has(ext)) {
+    const ftFinding = await validateFileType(file.path);
+    if (ftFinding) {
+      ftFinding.file = file.relativePath;
+      out.push(ftFinding);
+    }
+    return out;
+  }
+
+  let content: string;
+  try {
+    content = await readFile(file.path, "utf-8");
+  } catch {
+    return out;
+  }
+
+  if (ext === ".md") {
+    out.push(
+      ...matchPatterns(content, file.relativePath, INJECTION_PATTERNS, "prompt_injection", true),
+    );
+    out.push(
+      ...matchPatterns(content, file.relativePath, EXFIL_PATTERNS, "data_exfiltration", false),
+    );
+  }
+  if (CODE_EXTENSIONS.has(ext)) {
+    out.push(
+      ...matchPatterns(content, file.relativePath, SCRIPT_PATTERNS, "malicious_script", false),
+    );
+    out.push(
+      ...matchPatterns(content, file.relativePath, EXFIL_PATTERNS, "data_exfiltration", false),
+    );
+    out.push(
+      ...matchPatterns(
+        content,
+        file.relativePath,
+        DEPENDENCY_PATTERNS,
+        "suspicious_dependency",
+        false,
+      ),
+    );
+  }
+  // MCP server configs can embed arbitrary commands in command/args fields.
+  if (CONFIG_EXTENSIONS.has(ext)) {
+    out.push(
+      ...matchPatterns(content, file.relativePath, SCRIPT_PATTERNS, "malicious_script", false),
+    );
+    out.push(
+      ...matchPatterns(content, file.relativePath, EXFIL_PATTERNS, "data_exfiltration", false),
+    );
+  }
+  return out;
+}
+
+function dirNotFoundReport(dir: string): ScanReport {
+  return {
+    target: dir,
+    scannedAt: new Date().toISOString(),
+    filesScanned: 0,
+    verdict: "critical",
+    findings: [
+      {
+        severity: "critical",
+        category: "content_size",
+        file: dir,
+        pattern: "dir_not_found",
+        description: `Directory not found: ${dir}`,
+      },
+    ],
+    summary: { critical: 1, high: 0, medium: 0, low: 0 },
+  };
+}
+
+export async function scanDirectory(dir: string): Promise<ScanReport> {
   try {
     await access(dir);
   } catch {
-    const summary = { critical: 1, high: 0, medium: 0, low: 0 };
-    return {
-      target: dir,
-      scannedAt: new Date().toISOString(),
-      filesScanned: 0,
-      verdict: "critical",
-      findings: [
-        {
-          severity: "critical",
-          category: "content_size",
-          file: dir,
-          pattern: "dir_not_found",
-          description: `Directory not found: ${dir}`,
-        },
-      ],
-      summary,
-    };
+    return dirNotFoundReport(dir);
   }
-
   const files = await collectFiles(dir, dir);
-  findings.push(...checkContentSizes(files));
-
+  const findings: ScanFinding[] = [...checkContentSizes(files)];
   for (const file of files) {
-    const ext = extname(file.path).toLowerCase();
-
-    if (BINARY_EXTENSIONS.has(ext) || !TEXT_EXTENSIONS.has(ext)) {
-      const ftFinding = await validateFileType(file.path);
-      if (ftFinding) {
-        ftFinding.file = file.relativePath;
-        findings.push(ftFinding);
-      }
-      continue;
-    }
-
-    let content: string;
-    try {
-      content = await readFile(file.path, "utf-8");
-    } catch {
-      continue;
-    }
-
-    // Prompt injection + exfiltration on markdown
-    if (ext === ".md") {
-      findings.push(
-        ...matchPatterns(
-          content,
-          file.relativePath,
-          INJECTION_PATTERNS,
-          "prompt_injection",
-          true,
-        ),
-      );
-      findings.push(
-        ...matchPatterns(
-          content,
-          file.relativePath,
-          EXFIL_PATTERNS,
-          "data_exfiltration",
-          false,
-        ),
-      );
-    }
-
-    // Script + exfiltration on code files
-    if (CODE_EXTENSIONS.has(ext)) {
-      findings.push(
-        ...matchPatterns(
-          content,
-          file.relativePath,
-          SCRIPT_PATTERNS,
-          "malicious_script",
-          false,
-        ),
-      );
-      findings.push(
-        ...matchPatterns(
-          content,
-          file.relativePath,
-          EXFIL_PATTERNS,
-          "data_exfiltration",
-          false,
-        ),
-      );
-      findings.push(
-        ...matchPatterns(
-          content,
-          file.relativePath,
-          DEPENDENCY_PATTERNS,
-          "suspicious_dependency",
-          false,
-        ),
-      );
-    }
-
-    // Script + exfiltration on config files (YAML/JSON/TOML)
-    // MCP server configs can embed arbitrary commands in command/args fields
-    if (CONFIG_EXTENSIONS.has(ext)) {
-      findings.push(
-        ...matchPatterns(
-          content,
-          file.relativePath,
-          SCRIPT_PATTERNS,
-          "malicious_script",
-          false,
-        ),
-      );
-      findings.push(
-        ...matchPatterns(
-          content,
-          file.relativePath,
-          EXFIL_PATTERNS,
-          "data_exfiltration",
-          false,
-        ),
-      );
-    }
+    findings.push(...(await scanFile(file)));
   }
-
   const summary = computeSummary(findings);
   return {
     target: dir,
@@ -486,47 +441,17 @@ export function scanSkillFile(filePath: string, content: string): ScanReport {
   }
 
   // Prompt injection
-  findings.push(
-    ...matchPatterns(
-      content,
-      fileName,
-      INJECTION_PATTERNS,
-      "prompt_injection",
-      true,
-    ),
-  );
+  findings.push(...matchPatterns(content, fileName, INJECTION_PATTERNS, "prompt_injection", true));
 
   // Data exfiltration
-  findings.push(
-    ...matchPatterns(
-      content,
-      fileName,
-      EXFIL_PATTERNS,
-      "data_exfiltration",
-      false,
-    ),
-  );
+  findings.push(...matchPatterns(content, fileName, EXFIL_PATTERNS, "data_exfiltration", false));
 
   // Malicious scripts (markdown can contain shell commands)
-  findings.push(
-    ...matchPatterns(
-      content,
-      fileName,
-      SCRIPT_PATTERNS,
-      "malicious_script",
-      false,
-    ),
-  );
+  findings.push(...matchPatterns(content, fileName, SCRIPT_PATTERNS, "malicious_script", false));
 
   // Dependency patterns
   findings.push(
-    ...matchPatterns(
-      content,
-      fileName,
-      DEPENDENCY_PATTERNS,
-      "suspicious_dependency",
-      false,
-    ),
+    ...matchPatterns(content, fileName, DEPENDENCY_PATTERNS, "suspicious_dependency", false),
   );
 
   const summary = computeSummary(findings);

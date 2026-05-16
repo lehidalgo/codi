@@ -2,8 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SkillTestManifestSchema } from "#src/schemas/index.js";
-
+import { SkillTestManifestSchema } from "#src/schemas/skill-test.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SKILLS_DIR = join(__dirname, "../../../src/templates/skills");
 

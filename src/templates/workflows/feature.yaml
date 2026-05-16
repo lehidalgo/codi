@@ -1,0 +1,101 @@
+id: feature
+name: Feature
+description: Adaptive feature workflow — phases compress per dev answers (complexity, design existence, scope, exec mode, tdd-strict, grill toggle)
+version: 4
+phases:
+  intent:
+    gates: [task_described]
+    next: [plan, execute, abandoned]
+    chains:
+      - {
+          skill: discover,
+          role: required,
+          hint: "wide mode — skip when designExists=true AND grill=false",
+        }
+      - { skill: dev-step-documenter, role: optional, hint: "domain terms emerge inline" }
+      - {
+          skill: plan-execution,
+          role: alt-entry,
+          hint: "designExists=true AND scope=single — fast-path direct to execute",
+        }
+  plan:
+    gates: [scope_files_listed, plan_artifact_exists]
+    next: [decompose, execute, abandoned]
+    chains:
+      - { skill: plan-writing, role: required }
+      - { skill: discover, role: alt-entry, hint: "plan needs sharpening — mode sharpen" }
+      - {
+          skill: dev-gate-plan-coverage,
+          role: optional,
+          hint: "before proposing transition to decompose",
+        }
+      - {
+          skill: dev-gate-deep-modules,
+          role: optional,
+          hint: "structural concerns surface in plan review",
+        }
+  decompose:
+    gates: []
+    next: [execute, plan, abandoned]
+    chains:
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "≥3 slices — fan out parallel or sequential",
+        }
+  execute:
+    gates: [tdd_first_test_exists]
+    next: [verify, execute, abandoned]
+    chains:
+      - {
+          skill: plan-execution,
+          role: required,
+          hint: "mode INLINE for scope=single, SUBAGENT for scope=multi",
+        }
+      - { skill: tdd, role: required, hint: "regression test on new behaviour" }
+      - { skill: worktrees, role: optional, hint: "≥1 hour or ≥3 commits — keep main clean" }
+      - {
+          skill: subagent-orchestration,
+          role: optional,
+          hint: "independent slices parallel; ≥3 dependent slices sequential",
+        }
+      - { skill: diagnose, role: optional, hint: "test fails unexpectedly during execute" }
+      - {
+          skill: debugging,
+          role: optional,
+          hint: "diagnose stalls during execute — MCP-deep tier-2",
+        }
+      - {
+          skill: webapp-testing,
+          role: optional,
+          hint: "browser-driven validation when changes touch web routes",
+        }
+      - { skill: code-review, role: optional, hint: "auto_review flag enabled in config" }
+  verify:
+    gates: [validation_passes, no_unresolved_scope_proposals, all_planned_files_modified]
+    next: [done, execute, abandoned]
+    chains:
+      - { skill: verify-evidence, role: required }
+      - { skill: test-suite, role: optional, hint: "regression-test suite run after feature lands" }
+      - {
+          skill: pr-review,
+          role: optional,
+          hint: "before opening PR — end-to-end review with gh CLI",
+        }
+      - {
+          skill: code-review,
+          role: optional,
+          hint: "auto_review flag enabled — required before merge to main",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  tdd_strict: true
+  adaptive: true
+  profiles: [prototype, standard, deep]
+  skip_phases_when:
+    decompose: { complexity: trivial }

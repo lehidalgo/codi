@@ -17,7 +17,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 8
+version: 10
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Codebase Explore
@@ -33,7 +34,7 @@ version: 8
 ## Skip When
 
 - User wants a bug fixed, not just explored — use ${PROJECT_NAME}-debugging
-- User wants new code written — use ${PROJECT_NAME}-plan-writer
+- User wants new code written — use ${PROJECT_NAME}-plan-writing
 - User wants tests run — use ${PROJECT_NAME}-test-suite
 - User wants an onboarding doc produced — use ${PROJECT_NAME}-codebase-onboarding
 - User asks to perform an edit, refactor, or migration — explore first, then route to the right action skill

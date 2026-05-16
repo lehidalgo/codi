@@ -19,13 +19,17 @@ description: |
   test coverage), one-liner fixes with zero design ambiguity, content creation
   tasks (articles, decks, documents, carousels — use ${PROJECT_NAME}-content-factory
   which has its own adaptive intake), or content with fully specified
-  requirements.
+  requirements. Skip when a ${PROJECT_NAME} workflow is already active —
+  inside a workflow, ${PROJECT_NAME}-discover is canonical (modes wide /
+  sharpen / domain). Use this skill for greenfield exploration BEFORE any
+  workflow exists.
 category: ${SKILL_CATEGORY.DEVELOPER_WORKFLOW}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 17
+version: 20
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Brainstorming
@@ -126,7 +130,7 @@ After design is approved, identify the pipeline and tell the user which one was 
 
 | Task Type | Detection Signals | Next Skill |
 |-----------|-------------------|------------|
-| **Implementation** | New feature, bug fix, refactor, API change, database change | \\\`${PROJECT_NAME}-plan-writer\\\` |
+| **Implementation** | New feature, bug fix, refactor, API change, database change | \\\`${PROJECT_NAME}-plan-writing\\\` |
 | **Content** | Blog post, report, deck, documentation, README | Appropriate content skill (\\\`${PROJECT_NAME}-content-factory\\\` / \\\`${PROJECT_NAME}-project-documentation\\\`) |
 | **Quality** | Security audit, code review, test coverage | Skip brainstorming entirely - go directly to quality skill |
 
@@ -159,7 +163,7 @@ Wait for explicit approval. If changes are requested: make them, re-run the self
 ## Invoking the Next Skill
 
 For implementation tasks:
-> "Invoking ${PROJECT_NAME}-plan-writer to create the implementation plan."
+> "Invoking ${PROJECT_NAME}-plan-writing to create the implementation plan."
 
 For content tasks:
 > "Invoking [skill name] to generate the content."

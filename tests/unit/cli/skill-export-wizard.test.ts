@@ -1,3 +1,12 @@
+// ISSUE-044 — boundary mocks only.
+// @clack/prompts is the TTY library; mocking it is the standard boundary
+// pattern. The three first-party mocks below inject synthetic test data
+// in lieu of populating a real .codi/skills/ tree per test:
+//   - utils/paths (pure path resolution)
+//   - core/skill/skill-export#listAvailableSkills (reads from disk)
+//   - core/config/parser#parseSkillFile (parses YAML)
+// They behave as "synthetic input" boundaries (the role a fixture file
+// would otherwise play), not as substitutes for the wizard's own logic.
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { runSkillExportWizard } from "#src/cli/skill-export-wizard.js";
 
@@ -46,9 +55,7 @@ describe("runSkillExportWizard", () => {
     const result = await runSkillExportWizard("/tmp");
 
     expect(result).toBeNull();
-    expect(mockCancel).toHaveBeenCalledWith(
-      expect.stringContaining("No skills found"),
-    );
+    expect(mockCancel).toHaveBeenCalledWith(expect.stringContaining("No skills found"));
   });
 
   it("returns null when user cancels skill selection", async () => {
@@ -93,9 +100,7 @@ describe("runSkillExportWizard", () => {
       data: { description: "desc" },
     } as never);
 
-    mockSelect
-      .mockResolvedValueOnce("my-skill")
-      .mockResolvedValueOnce("standard");
+    mockSelect.mockResolvedValueOnce("my-skill").mockResolvedValueOnce("standard");
     mockText.mockResolvedValueOnce(Symbol.for("cancel"));
     mockIsCancel
       .mockReturnValueOnce(false) // skill
@@ -114,9 +119,7 @@ describe("runSkillExportWizard", () => {
       data: { description: "desc" },
     } as never);
 
-    mockSelect
-      .mockResolvedValueOnce("my-skill")
-      .mockResolvedValueOnce("standard");
+    mockSelect.mockResolvedValueOnce("my-skill").mockResolvedValueOnce("standard");
     mockText.mockResolvedValueOnce("./dist");
     mockConfirm.mockResolvedValueOnce(false);
     mockIsCancel.mockReturnValue(false);
@@ -133,9 +136,7 @@ describe("runSkillExportWizard", () => {
       data: { description: "A useful skill" },
     } as never);
 
-    mockSelect
-      .mockResolvedValueOnce("my-skill")
-      .mockResolvedValueOnce("claude-plugin");
+    mockSelect.mockResolvedValueOnce("my-skill").mockResolvedValueOnce("claude-plugin");
     mockText.mockResolvedValueOnce("./output");
     mockConfirm.mockResolvedValueOnce(true);
     mockIsCancel.mockReturnValue(false);
@@ -157,9 +158,7 @@ describe("runSkillExportWizard", () => {
       data: { description: longDesc },
     } as never);
 
-    mockSelect
-      .mockResolvedValueOnce("verbose-skill")
-      .mockResolvedValueOnce("standard");
+    mockSelect.mockResolvedValueOnce("verbose-skill").mockResolvedValueOnce("standard");
     mockText.mockResolvedValueOnce("./dist");
     mockConfirm.mockResolvedValueOnce(true);
     mockIsCancel.mockReturnValue(false);
@@ -175,9 +174,7 @@ describe("runSkillExportWizard", () => {
     mockListSkills.mockResolvedValue(["broken-skill"]);
     mockParseSkillFile.mockRejectedValue(new Error("parse error"));
 
-    mockSelect
-      .mockResolvedValueOnce("broken-skill")
-      .mockResolvedValueOnce("standard");
+    mockSelect.mockResolvedValueOnce("broken-skill").mockResolvedValueOnce("standard");
     mockText.mockResolvedValueOnce("./dist");
     mockConfirm.mockResolvedValueOnce(true);
     mockIsCancel.mockReturnValue(false);

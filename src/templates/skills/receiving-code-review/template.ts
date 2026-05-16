@@ -16,13 +16,14 @@ description: |
   a review on an uncommitted diff (use ${PROJECT_NAME}-code-review), for
   PRODUCING a full PR review (use ${PROJECT_NAME}-pr-review), or for the
   initial completeness check on your own work before review (use
-  ${PROJECT_NAME}-verification).
+  ${PROJECT_NAME}-verify-evidence).
 category: ${SKILL_CATEGORY.CODE_QUALITY}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 2
+version: 4
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Receiving a Code Review
@@ -44,9 +45,9 @@ The defining signal: someone else is making a claim about code YOU wrote. The de
 
 - Producing a review on someone else's uncommitted diff — use **${PROJECT_NAME}-code-review**
 - Producing a full PR review with severity-ranked findings + gh post — use **${PROJECT_NAME}-pr-review**
-- Initial completeness check on your own work BEFORE any reviewer sees it — use **${PROJECT_NAME}-verification**
+- Initial completeness check on your own work BEFORE any reviewer sees it — use **${PROJECT_NAME}-verify-evidence**
 - Fixing a bug the user identifies (no review involved) — use **${PROJECT_NAME}-debugging**
-- Multi-file refactor in response to feedback — apply the discipline here, then use **${PROJECT_NAME}-plan-writer** for the change
+- Multi-file refactor in response to feedback — apply the discipline here, then use **${PROJECT_NAME}-plan-writing** for the change
 
 ## The Iron Law
 
@@ -162,8 +163,8 @@ Verification means checking against the design spec or architectural decision re
 
 - **${PROJECT_NAME}-code-review** — the producing-side counterpart for an uncommitted diff. Always points HERE for the consuming case.
 - **${PROJECT_NAME}-pr-review** — the producing-side counterpart for a full GitHub PR. Always points HERE for the consuming case.
-- **${PROJECT_NAME}-verification** — upstream gate. Use this to verify your OWN work BEFORE any reviewer sees it. Distinct from this skill, which fires AFTER feedback arrives.
+- **${PROJECT_NAME}-verify-evidence** — upstream gate. Use this to verify your OWN work BEFORE any reviewer sees it. Distinct from this skill, which fires AFTER feedback arrives.
 - **${PROJECT_NAME}-debugging** — when verification reveals the reviewer was right about a real bug, hand off to debugging Phase 4 to fix the root cause and write a regression test.
-- **${PROJECT_NAME}-plan-writer** — when accepted feedback requires multi-file changes, write a plan first; do not apply changes ad-hoc.
+- **${PROJECT_NAME}-plan-writing** — when accepted feedback requires multi-file changes, write a plan first; do not apply changes ad-hoc.
 - **${PROJECT_NAME}-tdd** — when accepted feedback exposes a missing test, write the failing test FIRST per RED-GREEN-REFACTOR.
 `;

@@ -16,7 +16,16 @@ import { join, sep } from "node:path";
 
 const SRC = "src/templates/skills";
 const DEST = "dist/templates/skills";
-const SUBDIRS = ["assets", "references", "scripts", "agents", "brand", "generators", "templates", "evals"];
+const SUBDIRS = [
+  "assets",
+  "references",
+  "scripts",
+  "agents",
+  "brand",
+  "generators",
+  "templates",
+  "evals",
+];
 
 let copied = 0;
 
@@ -52,3 +61,31 @@ for (const skill of readdirSync(SRC)) {
 }
 
 console.log(`Copied ${copied} skill asset directories/files to ${DEST}`);
+
+// Copy consolidation prompt templates (Item 4 of v3 closure plan).
+const CONSOLIDATION_SRC = "src/templates/consolidation";
+const CONSOLIDATION_DEST = "dist/templates/consolidation";
+if (existsSync(CONSOLIDATION_SRC)) {
+  cpSync(CONSOLIDATION_SRC, CONSOLIDATION_DEST, { recursive: true });
+  const tmplCount = readdirSync(CONSOLIDATION_SRC).filter((f) => f.endsWith(".md.tmpl")).length;
+  console.log(`Copied ${tmplCount} consolidation prompt templates to ${CONSOLIDATION_DEST}`);
+}
+
+// Copy workflow definition YAMLs (F2 of v3 zero closure).
+const WORKFLOWS_SRC = "src/templates/workflows";
+const WORKFLOWS_DEST = "dist/templates/workflows";
+if (existsSync(WORKFLOWS_SRC)) {
+  cpSync(WORKFLOWS_SRC, WORKFLOWS_DEST, { recursive: true });
+  const yamlCount = readdirSync(WORKFLOWS_SRC).filter((f) => f.endsWith(".yaml")).length;
+  console.log(`Copied ${yamlCount} workflow definitions to ${WORKFLOWS_DEST}`);
+}
+
+// Copy JSON schemas (F9 of v3 zero closure). The runtime resolves schemas via
+// `import.meta.url` so dist needs the same `schemas/` subtree alongside the
+// bundled chunks; without this, `codi workflow run` ENOENTs on first event.
+const SCHEMAS_SRC = "src/schemas";
+const SCHEMAS_DEST = "dist/schemas";
+if (existsSync(SCHEMAS_SRC)) {
+  cpSync(SCHEMAS_SRC, SCHEMAS_DEST, { recursive: true });
+  console.log(`Copied JSON schemas to ${SCHEMAS_DEST}`);
+}

@@ -61,10 +61,21 @@ export interface ApplyResult {
  * {@link generate} remains available for pure-render use cases (tests,
  * dry-run reporting) that must not touch state.
  *
- * Order of operations: render → write → detect-orphans → delete-orphans →
- * update-state. If any step before update-state fails, state is not updated,
- * so the next successful run re-detects and prunes the same orphans.
- * Reconciliation is idempotent and self-healing.
+ * Order of operations (CORE-002): render → write → detect-orphans →
+ * delete-orphans → atomic-state-commit (remove old agents + add new
+ * agents fused into one mutation).
+ *
+ * Crash-recovery model: every transition is convergent.
+ * - Crash mid-delete: state still lists everything; next run re-tries delete.
+ * - Crash between delete and commit: files gone, state stale; next run's
+ *   `detectOrphans` sees ENOENT, classifies as clean orphan, and trims
+ *   state (see state.ts:detectOrphans ENOENT branch).
+ * - Crash during commit: state.atomicMutate releases the lock without
+ *   writing; state unchanged; next run re-runs the full pipeline.
+ *
+ * Reconciliation is idempotent and self-healing. Two parallel
+ * `codi generate` runs serialize through `state.atomicMutate`'s
+ * cross-process lock.
  */
 export async function applyConfiguration(
   config: NormalizedConfig,
@@ -141,12 +152,23 @@ export async function applyConfiguration(
   const removedAgentIds = prevAgentIds.filter((id) => !nextAgentIds.has(id));
   const prunedDirs = await pruneEmptyAdapterDirs(projectRoot, pruned, removedAgentIds);
 
+  // CORE-002: fuse `removeAgents` + `updateAgentsBatch` into one atomicMutate
+  // call so the state mutation is a single transaction under the
+  // cross-process lock. Pre-fix, these were two separate locked writes;
+  // a crash between them left state with one mutation applied but not
+  // the other.
   let stateUpdated = false;
   try {
-    if (removedAgentIds.length > 0) {
-      await stateManager.removeAgents(removedAgentIds);
-    }
-    const updateResult = await stateManager.updateAgentsBatch(agentUpdates);
+    const updateResult = await stateManager.atomicMutate((state) => {
+      for (const id of removedAgentIds) {
+        if (id in state.agents) delete state.agents[id];
+      }
+      for (const [agentId, files] of Object.entries(agentUpdates)) {
+        state.agents[agentId] = files;
+      }
+      state.lastGenerated = new Date().toISOString();
+      return state;
+    });
     stateUpdated = updateResult.ok;
     if (!updateResult.ok) {
       log.warn("State update failed; orphan detection may be incomplete on next run.");

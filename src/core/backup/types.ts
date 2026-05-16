@@ -23,6 +23,15 @@ export interface SnapshotOptions {
   includePreExisting?: boolean;
   /** Retention strategy when at MAX_BACKUPS. Default: "auto". */
   retention?: RetentionStrategy;
+  /**
+   * Write the snapshot OUTSIDE the project's `.codi/backups/` to a global
+   * archive at `~/.codi/archive/<project-hash>/<timestamp>/`. Required when
+   * the destructive operation that triggered the backup is about to wipe
+   * `.codi/` itself (e.g. `clean --all`); without this the snapshot lives
+   * inside the very directory being deleted and cannot be recovered.
+   * Default: false.
+   */
+  external?: boolean;
 }
 
 export interface BackupManifestEntry {

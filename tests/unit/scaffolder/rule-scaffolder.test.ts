@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { createRule } from "#src/core/scaffolder/rule-scaffolder.js";
 import { prefixedName, PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
 describe("rule scaffolder", () => {
   let tmpDir: string;

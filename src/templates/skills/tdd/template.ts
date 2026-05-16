@@ -3,6 +3,9 @@ import { PROJECT_NAME, SUPPORTED_PLATFORMS_YAML, SKILL_CATEGORY } from "#src/con
 export const template = `---
 name: {{name}}
 description: |
+  DECISION TREE — Implementing NEW behavior with failing-test-first cycle?
+  → this skill. Running existing suite → ${PROJECT_NAME}-test-suite. Browser
+  tests → ${PROJECT_NAME}-webapp-testing. Human-paired QA → ${PROJECT_NAME}-guided-qa-testing.
   Test-Driven Development discipline. Use when implementing any feature,
   bug fix, refactor, or behavior change. Enforces RED-GREEN-REFACTOR with
   iron-law verification (no production code without a failing test first).
@@ -20,7 +23,8 @@ compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 10
+version: 14
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — TDD
@@ -45,7 +49,7 @@ Thinking "skip TDD just this once"? Stop. That is rationalization.
 - User wants to backfill tests for existing code only — use ${PROJECT_NAME}-test-suite
 - User is debugging an existing failing test — use ${PROJECT_NAME}-debugging
 - User wants dead-code cleanup without behavior change — use ${PROJECT_NAME}-refactoring
-- User is planning the feature, not implementing it yet — use ${PROJECT_NAME}-plan-writer
+- User is planning the feature, not implementing it yet — use ${PROJECT_NAME}-plan-writing
 
 ## The Iron Law
 
@@ -287,9 +291,17 @@ Cannot check all boxes? TDD was skipped. Start over.
 
 When adding mocks or test utilities, read \\\`\${CLAUDE_SKILL_DIR}[[/references/testing-anti-patterns.md]]\\\` to avoid common pitfalls such as testing mock behavior instead of real behavior, adding test-only methods to production classes, and mocking without understanding dependencies.
 
+## Additional References
+
+- \\\`references/cycle-examples.md\\\` — full RED-GREEN-REFACTOR walkthroughs.
+- \\\`references/bug-fix-tdd.md\\\` — TDD applied to bug-fix scenarios (failing test reproduces the bug first).
+- \\\`references/checklist.md\\\` — pre-completion checklist before claiming TDD done.
+- \\\`references/rationalizations.md\\\` — counter table for common excuses to skip the Iron Law.
+- \\\`references/test-quality.md\\\` — quality patterns: minimal, clear, real code over mocks.
+
 ## Integration
 
 Use **${PROJECT_NAME}-debugging** when bugs surface during TDD — write a failing test reproducing the bug first, then follow the TDD cycle. The test proves the fix and prevents regression.
 
-Use **${PROJECT_NAME}-verification** before claiming any task complete — the verification checklist above must pass in full.
+Use **${PROJECT_NAME}-verify-evidence** before claiming any task complete — the verification checklist above must pass in full.
 `;

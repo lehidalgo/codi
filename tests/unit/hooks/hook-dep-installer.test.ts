@@ -3,6 +3,13 @@ import { logMissingDeps, installMissingDeps } from "#src/core/hooks/hook-dep-ins
 import type { DependencyCheck } from "#src/core/hooks/hook-dependency-checker.js";
 import type { Logger } from "#src/core/output/logger.js";
 
+// ISSUE-044 — boundary mocks only.
+// @clack/prompts is the external TTY library. `utils/exec` wraps
+// child_process and the SUT (`installMissingDeps`) shells out to real
+// `npm install` / `pip install` — running it for real in a test worker
+// would install packages into the host machine. Mocking exec is the
+// "don't fork a subprocess" boundary, equivalent to mocking `node:child_process`
+// directly. No internal SUT module is mocked here.
 vi.mock("@clack/prompts", () => ({
   confirm: vi.fn(),
   isCancel: vi.fn().mockReturnValue(false),

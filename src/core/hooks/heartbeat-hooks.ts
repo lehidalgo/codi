@@ -7,7 +7,7 @@
  * skill-observer — Stop hook (synchronous): scans the transcript for
  *                  [CODI-OBSERVATION: ...] markers and writes structured JSON to
  *                  .codi/feedback/. When 5+ observations accumulate, outputs an
- *                  additionalContext hint to prompt the user to run /codi-refine-rules.
+ *                  additionalContext hint to prompt the user to run /codi-dev-refine-rules.
  *
  * Both scripts are written to .codi/hooks/ during `codi generate`.
  * Claude Code wires them via .claude/settings.json; Codex via .codex/hooks.json.
@@ -96,7 +96,7 @@ async function main() {
   fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
 
   let state = { session_id: sessionId, skills: [] };
-  try { state = JSON.parse(fs.readFileSync(sessionFile, 'utf-8')); } catch {}
+  try { state = JSON.parse(fs.readFileSync(sessionFile, 'utf-8')); } catch { /* missing or corrupt session file — start fresh */ }
   if (!Array.isArray(state.skills)) state.skills = [];
 
   if (!state.skills.some(s => s.name === skillName)) {
@@ -156,11 +156,11 @@ async function main() {
     const s = JSON.parse(fs.readFileSync(sessionFile, 'utf-8'));
     sessionId = s.session_id ?? 'unknown';
     if (!Array.isArray(s.skills) || s.skills.length === 0) {
-      try { fs.unlinkSync(sessionFile); } catch {}
+      try { fs.unlinkSync(sessionFile); } catch { /* already gone — fine, this is a cleanup */ }
       console.log('{}'); process.exit(0);
     }
   } catch {
-    try { fs.unlinkSync(sessionFile); } catch {}
+    try { fs.unlinkSync(sessionFile); } catch { /* already gone — fine, this is a cleanup */ }
     console.log('{}'); process.exit(0);
   }
 
@@ -221,19 +221,19 @@ async function main() {
         fs.writeFileSync(path.join(feedbackDir, filename), JSON.stringify(feedback, null, 2), 'utf-8');
         wrote++;
       }
-    } catch { /* non-critical */ }
+    } catch { /* feedback write failure is non-critical — the observation is in the brain.db already */ }
   }
 
   // Step 4: clear session state (always)
-  try { fs.unlinkSync(sessionFile); } catch {}
+  try { fs.unlinkSync(sessionFile); } catch { /* already gone — fine, this is a cleanup */ }
 
   // Step 5: check threshold and emit hint
   if (wrote > 0) {
     let count = 0;
-    try { count = fs.readdirSync(feedbackDir).filter(f => f.endsWith('.json')).length; } catch {}
+    try { count = fs.readdirSync(feedbackDir).filter(f => f.endsWith('.json')).length; } catch { /* feedback dir missing — count stays 0, hint suppressed */ }
     if (count >= HINT_THRESHOLD) {
       console.log(JSON.stringify({
-        additionalContext: \`[${PROJECT_NAME_DISPLAY}] \${count} observations in ${PROJECT_DIR}/feedback/ — run /${PROJECT_NAME}-refine-rules to review\`,
+        additionalContext: \`[${PROJECT_NAME_DISPLAY}] \${count} observations in ${PROJECT_DIR}/feedback/ — run /${PROJECT_NAME}-dev-refine-rules to review\`,
       }));
       process.exit(0);
     }

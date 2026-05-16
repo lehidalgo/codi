@@ -1,0 +1,51 @@
+id: project
+name: Project
+description: Adaptive project bootstrap workflow — phases compress per mode (greenfield/incremental/absorb) and noSheet
+version: 3
+phases:
+  intent:
+    gates: [task_described, sheet_creds_present]
+    next: [discover, abandoned]
+    chains:
+      - {
+          skill: dev-sheets-sync,
+          role: required,
+          hint: "Google Sheet creds elicited; --no-sheet skips this",
+        }
+      - { skill: dev-team-charter, role: optional, hint: "team setup at project bootstrap" }
+  discover:
+    gates: []
+    next: [decompose, abandoned]
+    chains:
+      - { skill: discover, role: required, hint: "wide mode — Goals + draft Stories from sources" }
+      - {
+          skill: brainstorming,
+          role: alt-entry,
+          hint: "elicitation tone preferred over structured discover",
+        }
+  decompose:
+    gates: []
+    next: [sync, done, discover, abandoned]
+    chains:
+      - { skill: plan-writing, role: required, hint: "PRD mode — Stories with acceptance criteria" }
+      - { skill: roadmap, role: optional, hint: "multi-feature long-horizon planning" }
+  sync:
+    gates: []
+    next: [done, decompose, abandoned]
+    chains:
+      - {
+          skill: dev-sheets-sync,
+          role: required,
+          hint: "caller=bootstrap — push Goals/Stories to Sheet",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  adaptive: true
+  profiles: [no-sheet, standard, absorb]
+  skip_phases_when:
+    sync: { no_sheet: true }

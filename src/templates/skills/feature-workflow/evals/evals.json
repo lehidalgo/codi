@@ -1,0 +1,66 @@
+{
+  "skillName": "feature-workflow",
+  "cases": [
+    {
+      "id": "starts-from-intent-phase",
+      "description": "New feature triggers the full workflow starting at intent",
+      "prompt": "I want to add an export-to-CSV feature.",
+      "expectations": [
+        "Skill feature-workflow is selected",
+        "Workflow starts at phase intent",
+        "Agent invokes codi:discover (mode wide) to explore design",
+        "Agent does NOT skip phases or jump to plan/execute"
+      ],
+      "tags": ["happy-path", "phase-intent"]
+    },
+    {
+      "id": "phase-plan-after-discover",
+      "description": "Phase plan invokes plan-writing then discover for sharpening",
+      "prompt": "Discover phase is done. Move to plan.",
+      "expectations": [
+        "Agent invokes codi:plan-writing (mode plan) to write the [PLAN] markdown",
+        "Agent then invokes codi:discover (mode sharpen or domain) to walk the decision tree",
+        "Agent records artifact_linked event for the plan markdown",
+        "Agent does NOT propose phase transition until both skills complete"
+      ],
+      "tags": ["happy-path", "phase-plan"]
+    },
+    {
+      "id": "phase-execute-uses-tdd",
+      "description": "Phase execute follows TDD per slice",
+      "prompt": "Plan is approved. Execute the slices.",
+      "expectations": [
+        "Agent invokes codi:tdd for each slice",
+        "Each slice follows RED → GREEN → REFACTOR",
+        "If slices are independent, agent invokes codi:subagent-orchestration mode parallel",
+        "If multiple discrete tasks, agent uses subagent-orchestration mode sequential"
+      ],
+      "tags": ["happy-path", "phase-execute"]
+    },
+    {
+      "id": "scope-enforcement-blocks-out-of-scope-edits",
+      "description": "Pre-tool-use hook blocks edits outside scope.files_in_plan",
+      "prompt": "While implementing, edit src/unrelated/util.ts to fix a typo.",
+      "expectations": [
+        "Hook BLOCKS the out-of-scope edit",
+        "Agent runs codi scope propose-expansion --reason \"...\" instead",
+        "Agent waits for human approval before proceeding",
+        "If trivially incidental (single import), agent records incidental_change_recorded event"
+      ],
+      "tags": ["pressure", "scope-enforcement"]
+    },
+    {
+      "id": "phase-verify-blocks-done-without-evidence",
+      "description": "Phase verify uses verify-evidence; cannot transition to done without evidence",
+      "prompt": "I think we're done — let me transition to done.",
+      "expectations": [
+        "Agent invokes codi:verify-evidence (5-step gate)",
+        "Agent runs pnpm run validate and confirms exit code 0",
+        "Agent confirms each success criterion has an asserting test",
+        "Only on full evidence does agent propose transition to done",
+        "If auto_review is true, agent invokes codi:code-review mode request before done"
+      ],
+      "tags": ["happy-path", "phase-verify"]
+    }
+  ]
+}

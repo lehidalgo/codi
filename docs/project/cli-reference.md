@@ -20,22 +20,22 @@ Launched by `codi init` (interactive mode) or from the Command Center. Guides yo
 
 ### Steps
 
-| Step | Prompt | Details |
-|------|--------|---------|
-| 1. Languages | Multiselect | Choose project languages for pre-commit hooks. Pre-selects detected stack. |
-| 2. Agents | Multiselect | Target agents: `claude-code`, `cursor`, `codex`, `windsurf`, `cline`. Pre-selects detected agents. |
-| 3. Config Mode | Select one | `preset` / `custom` / `zip` import / `github` import |
-| 4. Artifacts | Conditional | Preset: choose a built-in preset. Custom: select individual rules, skills, agents, MCP servers. |
+| Step           | Prompt      | Details                                                                                            |
+| -------------- | ----------- | -------------------------------------------------------------------------------------------------- |
+| 1. Languages   | Multiselect | Choose project languages for pre-commit hooks. Pre-selects detected stack.                         |
+| 2. Agents      | Multiselect | Target agents: `claude-code`, `cursor`, `codex`, `windsurf`, `cline`. Pre-selects detected agents. |
+| 3. Config Mode | Select one  | `preset` / `custom` / `zip` import / `github` import                                               |
+| 4. Artifacts   | Conditional | Preset: choose a built-in preset. Custom: select individual rules, skills, agents, MCP servers.    |
 
 ### Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| `space` | Toggle selection |
-| `a` | Select / deselect all |
-| Arrow keys | Move up / down |
-| `enter` | Confirm |
-| `ctrl+c` | Go back (exit at first step) |
+| Key        | Action                       |
+| ---------- | ---------------------------- |
+| `space`    | Toggle selection             |
+| `a`        | Select / deselect all        |
+| Arrow keys | Move up / down               |
+| `enter`    | Confirm                      |
+| `ctrl+c`   | Go back (exit at first step) |
 
 ---
 
@@ -51,11 +51,11 @@ Initialize a new `.codi/` configuration directory.
 codi init [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--force` | Reinitialize even if `.codi/` exists |
-| `--agents <agents...>` | Specify agent IDs (skips wizard) |
-| `--preset <preset>` | Flag preset name (skips wizard) |
+| Option                 | Description                          |
+| ---------------------- | ------------------------------------ |
+| `--force`              | Reinitialize even if `.codi/` exists |
+| `--agents <agents...>` | Specify agent IDs (skips wizard)     |
+| `--preset <preset>`    | Flag preset name (skips wizard)      |
 
 ```sh
 # Interactive wizard
@@ -75,10 +75,10 @@ Add resources to the `.codi/` configuration. Supported types: `rule`, `skill`, `
 codi add <type> [name] [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `-t, --template <name>` | Use a built-in template |
-| `--all` | Add all available templates of this type |
+| Option                  | Description                              |
+| ----------------------- | ---------------------------------------- |
+| `-t, --template <name>` | Use a built-in template                  |
+| `--all`                 | Add all available templates of this type |
 
 When `name` is omitted in interactive mode, launches a search wizard.
 
@@ -99,11 +99,11 @@ Generate agent configuration files from `.codi/`. Alias: `gen`.
 codi generate [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--agent <agents...>` | Generate for specific agents only |
-| `--dry-run` | Show what would be generated without writing |
-| `--force` | Force regeneration even if unchanged |
+| Option                | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `--agent <agents...>` | Generate for specific agents only            |
+| `--dry-run`           | Show what would be generated without writing |
+| `--force`             | Force regeneration even if unchanged         |
 
 ```sh
 codi generate --agent claude-code --dry-run
@@ -116,46 +116,46 @@ codi gen --force
 
 Manage configuration presets.
 
-| Subcommand | Synopsis | Description |
-|------------|----------|-------------|
-| `create [name]` | `codi preset create my-setup` | Create a new preset scaffold |
-| `list` | `codi preset list --builtin` | List installed presets |
+| Subcommand         | Synopsis                           | Description                               |
+| ------------------ | ---------------------------------- | ----------------------------------------- |
+| `create [name]`    | `codi preset create my-setup`      | Create a new preset scaffold              |
+| `list`             | `codi preset list --builtin`       | List installed presets                    |
 | `install <source>` | `codi preset install ./preset.zip` | Install from ZIP, GitHub URL, or registry |
-| `export <name>` | `codi preset export my-setup` | Export as ZIP file |
-| `validate <name>` | `codi preset validate my-setup` | Validate structure and schema |
-| `remove <name>` | `codi preset remove my-setup` | Remove an installed preset |
-| `edit <name>` | `codi preset edit my-setup` | Interactively edit artifact selection |
-| `update` | `codi preset update --dry-run` | Update installed presets to latest |
+| `export <name>`    | `codi preset export my-setup`      | Export as ZIP file                        |
+| `validate <name>`  | `codi preset validate my-setup`    | Validate structure and schema             |
+| `remove <name>`    | `codi preset remove my-setup`      | Remove an installed preset                |
+| `edit <name>`      | `codi preset edit my-setup`        | Interactively edit artifact selection     |
+| `update`           | `codi preset update --dry-run`     | Update installed presets to latest        |
 
 **`create` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option          | Description                        |
+| --------------- | ---------------------------------- |
 | `--interactive` | Launch interactive creation wizard |
 
 **`list` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option      | Description              |
+| ----------- | ------------------------ |
 | `--builtin` | Include built-in presets |
 
 **`install` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option          | Description                 |
+| --------------- | --------------------------- |
 | `--from <repo>` | Git repository URL (legacy) |
 
 **`export` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option              | Description                    |
+| ------------------- | ------------------------------ |
 | `--format <format>` | Export format (default: `zip`) |
-| `--output <path>` | Output path (default: `.`) |
+| `--output <path>`   | Output path (default: `.`)     |
 
 **`update` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option      | Description                            |
+| ----------- | -------------------------------------- |
 | `--dry-run` | Show what would change without writing |
 
 ```sh
@@ -176,8 +176,8 @@ Show drift status for generated agent files. Reports in-sync, drifted, and missi
 codi status
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option   | Description                                             |
+| -------- | ------------------------------------------------------- |
 | `--diff` | Show colored unified diffs for drifted preset artifacts |
 
 Also uses the global `--json` flag for machine-readable output.
@@ -192,8 +192,8 @@ Check project health: config validity, version compatibility, hook installation,
 codi doctor [options]
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option | Description                                 |
+| ------ | ------------------------------------------- |
 | `--ci` | Exit non-zero on any failure (for CI/hooks) |
 
 ```sh
@@ -222,8 +222,8 @@ Verify that an agent loaded its configuration correctly. Shows the verification 
 codi verify [options]
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option               | Description                                              |
+| -------------------- | -------------------------------------------------------- |
 | `--check <response>` | Validate a pasted agent response against expected values |
 
 ```sh
@@ -244,8 +244,8 @@ Run full compliance report: doctor + status + verification combined.
 codi compliance [options]
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option | Description                  |
+| ------ | ---------------------------- |
 | `--ci` | Exit non-zero on any failure |
 
 ```sh
@@ -274,8 +274,8 @@ Watch `.codi/` for changes and auto-regenerate agent configs. Requires `auto_gen
 codi watch [options]
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option   | Description                       |
+| -------- | --------------------------------- |
 | `--once` | Run one generation cycle and exit |
 
 Long-running process. Press **Ctrl+C** to stop.
@@ -299,15 +299,15 @@ Each built-in template carries an `artifactVersion` stamp. `codi update` compare
 codi update [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--preset <preset>` | Reset all flags to a preset |
-| `--from <repo>` | Pull artifacts from a GitHub repo (e.g., `org/team-config`) |
-| `--rules` | Refresh template-managed rules |
-| `--skills` | Refresh template-managed skills |
-| `--agents` | Refresh template-managed agents |
-| `--mcp-servers` | Refresh template-managed MCP servers |
-| `--dry-run` | Show what would change without writing |
+| Option              | Description                                                 |
+| ------------------- | ----------------------------------------------------------- |
+| `--preset <preset>` | Reset all flags to a preset                                 |
+| `--from <repo>`     | Pull artifacts from a GitHub repo (e.g., `org/team-config`) |
+| `--rules`           | Refresh template-managed rules                              |
+| `--skills`          | Refresh template-managed skills                             |
+| `--agents`          | Refresh template-managed agents                             |
+| `--mcp-servers`     | Refresh template-managed MCP servers                        |
+| `--dry-run`         | Show what would change without writing                      |
 
 ```sh
 codi update --rules --skills
@@ -325,11 +325,11 @@ Remove generated agent config files. Without `--all`, preserves `.codi/` and hoo
 codi clean [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--all` | Remove everything including `.codi/` and hooks (full uninstall) |
-| `--dry-run` | Show what would be deleted without deleting |
-| `--force` | Skip confirmation |
+| Option      | Description                                                     |
+| ----------- | --------------------------------------------------------------- |
+| `--all`     | Remove everything including `.codi/` and hooks (full uninstall) |
+| `--dry-run` | Show what would be deleted without deleting                     |
+| `--force`   | Skip confirmation                                               |
 
 ```sh
 codi clean --dry-run
@@ -346,10 +346,10 @@ Restore generated files from a previous backup. Backups are created automaticall
 codi revert [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--list` | Show available backups |
-| `--last` | Restore the most recent backup |
+| Option                 | Description                            |
+| ---------------------- | -------------------------------------- |
+| `--list`               | Show available backups                 |
+| `--last`               | Restore the most recent backup         |
 | `--backup <timestamp>` | Restore a specific backup by timestamp |
 
 ```sh
@@ -364,41 +364,41 @@ codi revert --backup 2026-03-30T10:00:00Z
 
 Manage skills: export, feedback, stats, evolve, versions.
 
-| Subcommand | Synopsis | Description |
-|------------|----------|-------------|
-| `export [name]` | `codi skill export my-skill` | Package for distribution |
-| `feedback` | `codi skill feedback --skill my-skill` | List usage feedback |
-| `stats [name]` | `codi skill stats` | Show skill health dashboard |
-| `evolve <name>` | `codi skill evolve my-skill` | Generate improvement prompt from feedback |
-| `versions <name>` | `codi skill versions my-skill` | Manage version history |
+| Subcommand        | Synopsis                               | Description                               |
+| ----------------- | -------------------------------------- | ----------------------------------------- |
+| `export [name]`   | `codi skill export my-skill`           | Package for distribution                  |
+| `feedback`        | `codi skill feedback --skill my-skill` | List usage feedback                       |
+| `stats [name]`    | `codi skill stats`                     | Show skill health dashboard               |
+| `evolve <name>`   | `codi skill evolve my-skill`           | Generate improvement prompt from feedback |
+| `versions <name>` | `codi skill versions my-skill`         | Manage version history                    |
 
 **`export` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option              | Description                         |
+| ------------------- | ----------------------------------- |
 | `--format <format>` | Export format (default: `standard`) |
-| `--output <path>` | Output directory (default: `.`) |
-| `--interactive` | Launch interactive wizard |
+| `--output <path>`   | Output directory (default: `.`)     |
+| `--interactive`     | Launch interactive wizard           |
 
 **`feedback` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option           | Description          |
+| ---------------- | -------------------- |
 | `--skill <name>` | Filter by skill name |
-| `--limit <n>` | Show last N entries |
+| `--limit <n>`    | Show last N entries  |
 
 **`evolve` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option      | Description                           |
+| ----------- | ------------------------------------- |
 | `--dry-run` | Print prompt without saving a version |
 
 **`versions` options:**
 
-| Option | Description |
-|--------|-------------|
+| Option                | Description                            |
+| --------------------- | -------------------------------------- |
 | `--restore <version>` | Restore SKILL.md from a version number |
-| `--diff <v1,v2>` | Show diff between two versions |
+| `--diff <v1,v2>`      | Show diff between two versions         |
 
 ---
 
@@ -433,17 +433,17 @@ Interactive wizard to share artifacts via GitHub PR or ZIP export. Select artifa
 codi contribute [--repo <owner/repo>] [--branch <name>]
 ```
 
-| Option | Description |
-|--------|-------------|
+| Option                | Description                                                                                         |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
 | `--repo <owner/repo>` | Target GitHub repository (accepts `owner/repo` or full HTTPS URL). Skips the repo selection prompt. |
-| `--branch <name>` | Target branch for the PR base. If omitted, Codi detects the repo's default branch automatically. |
+| `--branch <name>`     | Target branch for the PR base. If omitted, Codi detects the repo's default branch automatically.    |
 
 **Behavior by repo state:**
 
-| Repo state | Method |
-|-----------|--------|
-| Has commits | Fork the target repo, push a `contrib/add-<name>` branch to your fork, open a PR |
-| Empty (no commits) | Push an initial commit directly to the target branch - no fork or PR needed |
+| Repo state         | Method                                                                           |
+| ------------------ | -------------------------------------------------------------------------------- |
+| Has commits        | Fork the target repo, push a `contrib/add-<name>` branch to your fork, open a PR |
+| Empty (no commits) | Push an initial commit directly to the target branch - no fork or PR needed      |
 
 **Private repo prerequisites:**
 
@@ -464,16 +464,17 @@ Generate and validate documentation.
 codi docs [options]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--json` | Output JSON skill catalog to stdout |
-| `--html` | Generate HTML skill catalog site (default) |
-| `--generate` | Regenerate code-driven doc sections |
-| `--validate` | Check if docs are in sync with code |
-| `--output <path>` | Output file path |
+| Option            | Description                                                                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `--catalog-json`  | Output JSON skill catalog to stdout (renamed from `--json` in ISSUE-073 to avoid collision with the global `-j/--json` output flag) |
+| `--html`          | Generate HTML skill catalog site (default)                                                                                          |
+| `--generate`      | Regenerate code-driven doc sections                                                                                                 |
+| `--validate`      | Check if docs are in sync with code                                                                                                 |
+| `--catalog`       | Generate artifact catalog markdown pages and meta JSON                                                                              |
+| `--output <path>` | Output file path                                                                                                                    |
 
 ```sh
-codi docs --json
+codi docs --catalog-json
 codi docs --html
 codi docs --validate
 ```
@@ -496,12 +497,12 @@ No command-specific options.
 
 Available on all commands.
 
-| Option | Description |
-|--------|-------------|
-| `-j, --json` | Output as JSON (for scripting) |
-| `-v, --verbose` | Verbose/debug output |
-| `-q, --quiet` | Suppress non-essential output |
-| `--no-color` | Disable colored output |
+| Option          | Description                    |
+| --------------- | ------------------------------ |
+| `-j, --json`    | Output as JSON (for scripting) |
+| `-v, --verbose` | Verbose/debug output           |
+| `-q, --quiet`   | Suppress non-essential output  |
+| `--no-color`    | Disable colored output         |
 
 `--verbose` and `--quiet` are mutually exclusive.
 
@@ -509,14 +510,14 @@ Available on all commands.
 
 ## Exit Codes
 
-| Code | Constant | Meaning |
-|------|----------|---------|
-| `0` | `SUCCESS` | Command completed successfully |
-| `1` | `GENERAL_ERROR` | General error or validation failure |
-| `2` | `CONFIG_INVALID` | Configuration schema validation failed |
-| `3` | `CONFIG_NOT_FOUND` | No `.codi/` directory found |
-| `5` | `GENERATION_FAILED` | Agent config generation failed |
-| `7` | `DRIFT_DETECTED` | Generated files drifted from source |
-| `9` | `DOCTOR_FAILED` | Health check or CI validation failed |
-| `12` | `VERIFY_MISMATCH` | Agent verification token mismatch |
-| `13` | `PRESET_ERROR` | Preset operation failed |
+| Code | Constant            | Meaning                                |
+| ---- | ------------------- | -------------------------------------- |
+| `0`  | `SUCCESS`           | Command completed successfully         |
+| `1`  | `GENERAL_ERROR`     | General error or validation failure    |
+| `2`  | `CONFIG_INVALID`    | Configuration schema validation failed |
+| `3`  | `CONFIG_NOT_FOUND`  | No `.codi/` directory found            |
+| `5`  | `GENERATION_FAILED` | Agent config generation failed         |
+| `7`  | `DRIFT_DETECTED`    | Generated files drifted from source    |
+| `9`  | `DOCTOR_FAILED`     | Health check or CI validation failed   |
+| `12` | `VERIFY_MISMATCH`   | Agent verification token mismatch      |
+| `13` | `PRESET_ERROR`      | Preset operation failed                |

@@ -19,33 +19,65 @@ interface ZodFieldInfo {
   defaultValue: unknown | undefined;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any --
-   Zod _def is intentionally untyped; we cast through `any` for introspection.
-   Zod v4 uses `_def.type` (string) instead of v3's `_def.typeName`. */
+/**
+ * ISSUE-071 — typed view of the private `_def` shape Zod exposes for
+ * introspection. Zod does not export this shape publicly; we hand-type the
+ * subset the renderer needs so the rest of the file can avoid `any`.
+ *
+ * v3 uses `typeName` (e.g. "ZodString"); v4 uses `type` (e.g. "string").
+ * Both keys may be present; readers check `type` first, then fall back.
+ */
+interface ZodDefShape {
+  readonly type?: string;
+  readonly typeName?: string;
+  readonly defaultValue?: unknown | (() => unknown);
+  readonly innerType?: z.ZodTypeAny;
+  readonly values?: unknown[];
+  readonly value?: unknown;
+  readonly entries?: Record<string, string>;
+  readonly options?: z.ZodTypeAny[];
+  readonly shape?: Record<string, z.ZodTypeAny>;
+}
+
+/**
+ * Standalone shape (not `extends z.ZodTypeAny`) — Zod's own `_def` type is
+ * `$ZodTypeDef` which is incompatible with our optional view. We treat
+ * Zod fields opaquely from the outside and reach into _def via this cast.
+ */
+interface ZodFieldWithDef {
+  readonly _def?: ZodDefShape;
+  readonly element?: z.ZodTypeAny;
+  readonly shape?: Record<string, z.ZodTypeAny>;
+}
+
+function asField(field: z.ZodTypeAny): ZodFieldWithDef {
+  return field as unknown as ZodFieldWithDef;
+}
 
 export function extractZodFieldInfo(field: z.ZodTypeAny): ZodFieldInfo {
-  let current: any = field;
+  let current: ZodFieldWithDef = asField(field);
   let isOptional = false;
   let defaultValue: unknown | undefined = undefined;
 
   // Unwrap wrappers to get to the terminal type
   for (let depth = 0; depth < 10; depth++) {
-    const defType = current._def?.type as string | undefined;
-    // Also check v3-style typeName for compatibility
-    const typeName = current._def?.typeName as string | undefined;
-    const kind = defType ?? typeName;
+    const kind = current._def?.type ?? current._def?.typeName;
 
     if (kind === "default" || kind === "ZodDefault") {
       // Zod v4: _def.defaultValue is a plain value
       // Zod v3: _def.defaultValue is a function
-      const dv = current._def.defaultValue;
-      defaultValue = typeof dv === "function" ? dv() : dv;
-      current = current._def.innerType;
+      const dv = current._def?.defaultValue;
+      defaultValue = typeof dv === "function" ? (dv as () => unknown)() : dv;
+      const inner = current._def?.innerType;
+      if (!inner) break;
+      current = asField(inner);
       continue;
     }
     if (kind === "optional" || kind === "ZodOptional") {
       isOptional = true;
-      current = current._def.innerType;
+      const inner = current._def?.innerType;
+      if (!inner) break;
+      current = asField(inner);
       continue;
     }
     break;
@@ -58,10 +90,8 @@ export function extractZodFieldInfo(field: z.ZodTypeAny): ZodFieldInfo {
   };
 }
 
-function resolveTypeName(field: any): string {
-  const defType = field._def?.type as string | undefined;
-  const typeName = field._def?.typeName as string | undefined;
-  const kind = defType ?? typeName;
+function resolveTypeName(field: ZodFieldWithDef): string {
+  const kind = field._def?.type ?? field._def?.typeName;
 
   switch (kind) {
     case "string":
@@ -76,24 +106,24 @@ function resolveTypeName(field: any): string {
     case "literal":
     case "ZodLiteral": {
       // Zod v4: _def.values is an array
-      const vals = field._def.values ?? [field._def.value];
+      const vals = field._def?.values ?? [field._def?.value];
       return `\`"${String(vals[0])}"\``;
     }
     case "enum":
     case "ZodEnum": {
       // Zod v4: _def.entries is Record<string, string>
       // Zod v3: _def.values is string[]
-      const entries = field._def.entries;
+      const entries = field._def?.entries;
       const values = entries
         ? (Object.values(entries) as string[])
-        : ((field._def.values as string[]) ?? []);
+        : ((field._def?.values as string[] | undefined) ?? []);
       return values.map((v) => `\`${v}\``).join(" \\| ");
     }
     case "array":
     case "ZodArray": {
-      // Zod v4: field.element; Zod v3: field._def.type
-      const element = field.element ?? field._def.type;
-      const inner = element ? resolveTypeName(element) : "unknown";
+      // Zod v4: field.element; Zod v3: field._def.type holds the element type
+      const element = field.element ?? (field._def?.type as unknown as z.ZodTypeAny | undefined);
+      const inner = element ? resolveTypeName(asField(element)) : "unknown";
       return `${inner}[]`;
     }
     case "record":
@@ -101,8 +131,8 @@ function resolveTypeName(field: any): string {
       return "Record<string, string>";
     case "union":
     case "ZodUnion": {
-      const options = (field._def.options as any[]) ?? [];
-      return options.map(resolveTypeName).join(" \\| ");
+      const options = field._def?.options ?? [];
+      return options.map((o) => resolveTypeName(asField(o))).join(" \\| ");
     }
     case "object":
     case "ZodObject":
@@ -111,8 +141,6 @@ function resolveTypeName(field: any): string {
       return kind ?? "unknown";
   }
 }
-
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ---------------------------------------------------------------------------
 // Generic schema → Markdown table
@@ -175,17 +203,16 @@ function flattenShape(
     const fullKey = prefix ? `${prefix}.${key}` : key;
     const info = extractZodFieldInfo(field as z.ZodTypeAny);
 
-    // If terminal type is object, recurse into its shape
-    const inner = unwrapToTerminal(field as z.ZodTypeAny);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod _def is untyped
-    const innerDef = (inner as any)._def;
-    const innerKind = (innerDef?.type ?? innerDef?.typeName) as string | undefined;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod v4 shape access
-    const nestedShape = (inner as any).shape ?? innerDef?.shape;
+    // If terminal type is object, recurse into its shape (ISSUE-071: typed view).
+    const inner = asField(unwrapToTerminal(field as z.ZodTypeAny));
+    const innerDef = inner._def;
+    const innerKind = innerDef?.type ?? innerDef?.typeName;
+    // Zod v3 sometimes hands back a thunk; v4 hands the record directly.
+    const nestedShape: unknown = inner.shape ?? innerDef?.shape;
     if ((innerKind === "object" || innerKind === "ZodObject") && nestedShape) {
       const resolvedShape =
         typeof nestedShape === "function"
-          ? (nestedShape() as z.ZodRawShape)
+          ? ((nestedShape as () => z.ZodRawShape)() as z.ZodRawShape)
           : (nestedShape as z.ZodRawShape);
       const desc = descriptions[fullKey] ?? "";
       const req = info.isOptional ? "No" : "Yes";

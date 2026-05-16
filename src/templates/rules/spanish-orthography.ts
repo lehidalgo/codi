@@ -6,7 +6,8 @@ description: Spanish language orthography enforcement — accents, tildes, punct
 priority: low
 alwaysApply: false
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Spanish Orthography

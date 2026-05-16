@@ -6,7 +6,8 @@ description: Human-in-the-loop workflow — baby steps, self-evaluation, MCP-fir
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 2
+version: 4
+maintainers: ["@lehidalgo"]
 ---
 
 # Workflow
@@ -17,6 +18,33 @@ version: 2
 3. **Never Assume**: Ask clarifying questions if anything is ambiguous
 4. **Pause Before Executing**: Always pause for human feedback before executing any significant action
 5. **No Commits Without Approval**: Never commit or deploy code without human approval and all errors fixed
+
+## Manifest Discipline (Q7)
+
+Every code edit must run under a workflow — full or quick. Ad-hoc edits without a manifest row are prohibited.
+
+| Edit type | Command |
+|-----------|---------|
+| New feature | \\\`${PROJECT_NAME} workflow run feature "<task>"\\\` |
+| Bug fix | \\\`${PROJECT_NAME} workflow run bug-fix "<task>"\\\` |
+| Refactor | \\\`${PROJECT_NAME} workflow run refactor "<task>"\\\` |
+| Schema/data migration | \\\`${PROJECT_NAME} workflow run migration "<task>"\\\` |
+| Project bootstrap | \\\`${PROJECT_NAME} workflow run project "<task>"\\\` |
+| Trivial edit | \\\`${PROJECT_NAME} workflow quick "<task>" --category <cat>\\\` (or top-level \\\`${PROJECT_NAME} quick\\\`) |
+
+Quick categories (closed list — anything else needs a full workflow): \\\`typo\\\`, \\\`comment\\\`, \\\`dep-bump\\\`, \\\`format\\\`, \\\`doc-tweak\\\`.
+
+If you catch yourself editing a file without an active workflow, STOP. Run the appropriate command first. The audit trail is mandatory, not optional.
+
+## Session Start
+
+Query the active workflow once at session start:
+
+\\\`\\\`\\\`bash
+${PROJECT_NAME} workflow status --json --slim
+\\\`\\\`\\\`
+
+If \\\`active: true\\\`, read \\\`references/phase-<current_phase>.md\\\` from the active workflow's skill directory before any edit. If \\\`active: false\\\`, decide whether the requested edit is full-workflow scope or quick-mode scope, and start the corresponding command.
 
 ## No AI Signatures
 - Never sign commits with AI attribution

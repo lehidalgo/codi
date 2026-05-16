@@ -56,7 +56,7 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("test-suite"),
     prefixedName("session-log"),
     prefixedName("codebase-explore"),
-    prefixedName("graph-sync"),
+    prefixedName("dev-graph-sync"),
     prefixedName("roadmap"),
   ],
   agents: [prefixedName("codebase-explorer"), prefixedName("code-reviewer")],

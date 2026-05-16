@@ -5,6 +5,11 @@ import os from "node:os";
 import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { PROJECT_NAME, PROJECT_DIR } from "#src/constants.js";
 
+// ISSUE-044 — boundary mocks only.
+// @clack/prompts is an external TTY library and wizard-prompts is a
+// first-party wrapper around its internal `ConfirmPrompt`/`SelectPrompt`
+// classes. Both require a real terminal; mocking them follows the same
+// boundary rationale. No SUT module is mocked here.
 vi.mock("@clack/prompts", () => ({
   S_BAR: "|",
   S_BAR_END: "\\",

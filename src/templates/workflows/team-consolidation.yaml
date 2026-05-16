@@ -1,0 +1,64 @@
+id: team-consolidation
+name: Team Consolidation
+description: Cross-dev brain analysis producing a consensus-candidate report for iterative artifact improvement
+version: 2
+phases:
+  intent:
+    gates: [scope_described, mode_chosen, brains_path_known]
+    next: [collect, abandoned]
+    # ISSUE-085 — agent-driven workflow: every phase reads a phase reference
+    # from dev-team-consolidation-workflow and runs the documented steps.
+    # The chain declares that skill as the source-of-truth for the phase,
+    # with a hint pointing at the right reference file.
+    chains:
+      - {
+          skill: dev-team-consolidation-workflow,
+          role: required,
+          hint: "phase-intent.md — confirm scope, mode (sequential/parallel), brains_path",
+        }
+  collect:
+    gates: [brains_listed, dev_layout_validated]
+    next: [analyze, abandoned]
+    chains:
+      - {
+          skill: dev-team-consolidation-workflow,
+          role: required,
+          hint: "phase-collect.md — list brain.db files + validate schema-version, run codi brain team-check",
+        }
+  analyze:
+    gates: [per_dev_findings_done]
+    next: [consolidate, abandoned]
+    chains:
+      - {
+          skill: dev-team-consolidation-workflow,
+          role: required,
+          hint: "phase-analyze.md — per-dev queries via the schema-reference Aggregate query catalog",
+        }
+  consolidate:
+    gates: [report_written]
+    next: [done, abandoned]
+    chains:
+      - {
+          skill: dev-team-consolidation-workflow,
+          role: required,
+          hint: "phase-consolidate.md — cross-reference findings + write [REPORT]_team-consolidation.md",
+        }
+      - {
+          skill: dev-refine-rules,
+          role: optional,
+          hint: "downstream — after team consensus, propagate APPROVED rule edits",
+        }
+      - {
+          skill: dev-artifact-contributor,
+          role: optional,
+          hint: "downstream — after consensus, file upstream PR candidates",
+        }
+  done:
+    gates: []
+    next: []
+  abandoned:
+    gates: []
+    next: []
+flags:
+  agent_driven: true
+  produces_document: true

@@ -1,6 +1,7 @@
 # Codi Heartbeat Hook System
+
 - **Date**: 2026-04-12 12:00
-- **Document**: 20260412_120054_[PLAN]_codi-heartbeat-hook-system.md
+- **Document**: 20260412*120054*[PLAN]\_codi-heartbeat-hook-system.md
 - **Category**: PLAN
 
 ## Goal
@@ -58,12 +59,11 @@ Fires when any `SKILL.md` is loaded. The hook checks if the file path contains `
 **Payload used**: `file_path`, `session_id`
 
 **Output file schema**:
+
 ```json
 {
   "session_id": "abc123",
-  "skills": [
-    { "name": "codi-commit", "loaded_at": "2026-04-12T10:00:00Z" }
-  ]
+  "skills": [{ "name": "codi-commit", "loaded_at": "2026-04-12T10:00:00Z" }]
 }
 ```
 
@@ -76,6 +76,7 @@ Agents emit this marker anywhere in a response when they notice a gap:
 ```
 
 Categories (same as current `rule-feedback` schema):
+
 - `trigger-miss` — skill should have fired but did not
 - `trigger-false` — skill fired when it should not
 - `missing-step` — a step needed for the task is absent from the skill
@@ -87,6 +88,7 @@ Categories (same as current `rule-feedback` schema):
 The marker is plain text in the agent's normal response — no file I/O, no schema to remember. The hook handles all structuring.
 
 Example:
+
 ```
 [CODI-OBSERVATION: codi-commit | trigger-miss | skill did not activate when user typed /codi-commit directly]
 ```
@@ -109,6 +111,7 @@ Fires when Claude stops after any turn. Steps:
 A marker is valid if it matches `/\[CODI-OBSERVATION:\s*([^|]+)\|([^|]+)\|([^\]]+)\]/`. Malformed markers are silently skipped — no error output.
 
 **Feedback file schema** (written by hook, not agent):
+
 ```json
 {
   "id": "<uuid-v4>",
@@ -124,9 +127,10 @@ A marker is valid if it matches `/\[CODI-OBSERVATION:\s*([^|]+)\|([^|]+)\|([^\]]
 ```
 
 **settings.json output** (when hint threshold reached):
+
 ```json
 {
-  "additionalContext": "[Codi] 5 observations collected in .codi/feedback/ — run /codi-refine-rules to review"
+  "additionalContext": "[Codi] 5 observations collected in .codi/feedback/ — run /codi-dev-refine-rules to review"
 }
 ```
 
@@ -214,7 +218,7 @@ The system collects and structures this automatically. You do not write files.
 
 - `user-invocable: true` (was false)
 - Purpose: reads `.codi/feedback/`, groups by artifact, shows top 3 observations worth acting on
-- Acts as a companion to `/codi-refine-rules` — call it first to see what's accumulated
+- Acts as a companion to `/codi-dev-refine-rules` — call it first to see what's accumulated
 
 Remove the JSON schema section entirely. The schema is now internal to the hook script.
 
@@ -224,15 +228,15 @@ Remove the JSON schema section entirely. The schema is now internal to the hook 
 
 ## Files to Create or Modify
 
-| File | Action |
-|------|--------|
-| `src/templates/hooks/skill-tracker.js.tmpl` | Create (generated file uses `.mjs` extension) |
-| `src/templates/hooks/skill-observer.js.tmpl` | Create (generated file uses `.mjs` extension) |
-| `src/adapters/claude-code.ts` | Modify — extend `ClaudeSettings` interface and `buildSettingsJson` |
-| `src/cli/generate.ts` | Modify — call hooks scaffolding |
-| `src/templates/rules/improvement.ts` | Modify |
-| `src/templates/skills/skill-feedback-reporter/template.ts` | Modify |
-| `src/templates/skills/rule-feedback/template.ts` | Modify |
+| File                                                       | Action                                                             |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| `src/templates/hooks/skill-tracker.js.tmpl`                | Create (generated file uses `.mjs` extension)                      |
+| `src/templates/hooks/skill-observer.js.tmpl`               | Create (generated file uses `.mjs` extension)                      |
+| `src/adapters/claude-code.ts`                              | Modify — extend `ClaudeSettings` interface and `buildSettingsJson` |
+| `src/cli/generate.ts`                                      | Modify — call hooks scaffolding                                    |
+| `src/templates/rules/improvement.ts`                       | Modify                                                             |
+| `src/templates/skills/skill-feedback-reporter/template.ts` | Modify                                                             |
+| `src/templates/skills/dev-rule-feedback/template.ts`       | Modify                                                             |
 
 ## Out of Scope
 

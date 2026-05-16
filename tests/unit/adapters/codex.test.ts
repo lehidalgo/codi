@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdir, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -103,7 +103,7 @@ describe("codex adapter", () => {
     const agentsMd = files.find((f) => f.path === "AGENTS.md");
     expect(agentsMd).toBeDefined();
     expect(agentsMd!.content).toContain("Do NOT execute shell commands.");
-    expect(agentsMd!.content).toContain("Keep source code files under 700 lines.");
+    expect(agentsMd!.content).toContain("Keep source code files under 800 lines.");
     expect(agentsMd!.content).toContain("Code Style");
     expect(agentsMd!.content).toContain("Testing");
     expect(agentsMd!.hash).toBeTruthy();
@@ -333,7 +333,17 @@ describe("codex adapter", () => {
   });
 
   it("skips HTTP MCP servers (codex is stdio-only) and warns", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // CORE-003: adapters now receive `log` via DI rather than calling
+    // Logger.getInstance(). Inject a capturing logger and assert against
+    // its calls directly.
+    const warnCalls: { msg: string; args: unknown[] }[] = [];
+    const log = {
+      debug: () => {},
+      info: () => {},
+      warn: (msg: string, ...args: unknown[]) => warnCalls.push({ msg, args }),
+      error: () => {},
+      fatal: () => {},
+    };
     const config = createMockConfig({
       mcp: {
         servers: {
@@ -350,7 +360,7 @@ describe("codex adapter", () => {
         },
       },
     });
-    const files = await codexAdapter.generate(config, {});
+    const files = await codexAdapter.generate(config, { log });
 
     const configFile = files.find((f) => f.path === ".codex/config.toml");
     expect(configFile).toBeDefined();
@@ -362,10 +372,9 @@ describe("codex adapter", () => {
     expect(configFile!.content).toContain("[mcp_servers.stdio-mcp]");
     expect(configFile!.content).toContain('command = "npx"');
     // User-facing warning names the skipped server.
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0][0]).toContain("http-mcp");
-    expect(warnSpy.mock.calls[0][0]).toMatch(/stdio/i);
-    warnSpy.mockRestore();
+    expect(warnCalls).toHaveLength(1);
+    expect(warnCalls[0]!.msg).toContain("http-mcp");
+    expect(warnCalls[0]!.msg).toMatch(/stdio/i);
   });
 
   it("excludes disabled MCP servers from config.toml", async () => {
@@ -450,13 +459,22 @@ describe("codex adapter", () => {
 
       const hooksFile = files.find((f) => f.path === ".codex/hooks.json");
       expect(hooksFile).toBeDefined();
-      const parsed = JSON.parse(hooksFile!.content);
-      expect(parsed.Stop).toBeDefined();
-      expect(Array.isArray(parsed.Stop)).toBe(true);
-      const hook = parsed.Stop[0];
-      expect(hook.type).toBe("command");
-      expect(hook.command).toContain("codi-skill-observer.cjs");
-      expect(hook.timeout).toBeGreaterThan(0);
+      const parsed = JSON.parse(hooksFile!.content) as {
+        hooks?: {
+          Stop?: Array<{ hooks?: Array<{ type?: string; command?: string; timeout?: number }> }>;
+        };
+      };
+      expect(parsed.hooks?.Stop).toBeDefined();
+      expect(Array.isArray(parsed.hooks?.Stop)).toBe(true);
+      const stopGroup = parsed.hooks?.Stop?.[0];
+      expect(stopGroup).toBeDefined();
+      expect(Array.isArray(stopGroup?.hooks)).toBe(true);
+      const observerHook = stopGroup!.hooks!.find((h) =>
+        (h.command ?? "").includes("codi-skill-observer.cjs"),
+      );
+      expect(observerHook).toBeDefined();
+      expect(observerHook!.type).toBe("command");
+      expect(observerHook!.timeout ?? 0).toBeGreaterThan(0);
     });
 
     it(".codex/hooks.json has non-empty content and a hash", async () => {

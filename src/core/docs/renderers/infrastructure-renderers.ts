@@ -3,7 +3,7 @@
  */
 import type { AgentAdapter } from "#src/types/agent.js";
 import type { McpServerTemplate } from "#src/templates/mcp-servers/index.js";
-import type { HubTopLevelEntry } from "#src/cli/hub.js";
+import type { HubTopLevelEntry } from "#src/core/hub-menu.js";
 import { PROJECT_CLI, PROJECT_DIR } from "#src/constants.js";
 
 // ---------------------------------------------------------------------------

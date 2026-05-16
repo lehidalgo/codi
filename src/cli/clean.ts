@@ -315,14 +315,16 @@ export async function cleanHandler(
   const dirsDeleted: string[] = [];
 
   let cleanBackupHandle: BackupHandle | null = null;
-  // --all wipes .codi/ entirely (including .codi/backups/), so a backup
-  // there cannot survive. For --all the user has opted into total loss; skip
-  // the snapshot. Plain clean keeps .codi/ so the backup is safe.
-  if (!options.dryRun && !options.all) {
+  // Plain clean: snapshot inside `.codi/backups/` (cheap, local).
+  // --all: snapshot to `~/.codi/archive/<project>/` BEFORE wiping `.codi/`,
+  // so brain.db / operations.json / state.json survive the uninstall and
+  // can be restored later.
+  if (!options.dryRun) {
     const backupR = await openBackup(projectRoot, configDir, {
       trigger: "clean-reset",
       includeSource: true,
       includeOutput: true,
+      external: options.all === true,
     });
     if (!backupR.ok && backupR.errors === "retention-cancelled") {
       log.error(RETENTION_CANCELLED_ERROR);

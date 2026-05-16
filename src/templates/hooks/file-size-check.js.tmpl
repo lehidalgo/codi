@@ -8,7 +8,7 @@
 const fs = require('fs');
 
 const maxLines = {{MAX_LINES}};
-const EXCLUDED = [/\.html$/, /\.css$/, /\.svg$/, /\.md$/, /\.mdx$/, /\.txt$/, /\.rst$/, /\.pdf$/, /-lock\.(json|yaml)$/, /\/assets\//, /\/vendor\//];
+const EXCLUDED = [/\.html$/, /\.css$/, /\.svg$/, /\.md$/, /\.mdx$/, /\.txt$/, /\.rst$/, /\.pdf$/, /\.xsd$/, /\.schema\.json$/, /-lock\.(json|yaml)$/, /\/assets\//, /\/vendor\//];
 const files = process.argv.slice(2).filter(f => !EXCLUDED.some(p => p.test(f)));
 let failed = false;
 for (const file of files) {

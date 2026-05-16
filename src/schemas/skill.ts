@@ -6,6 +6,7 @@ import {
   MANAGED_BY_VALUES,
   ALL_SKILL_CATEGORIES,
   SUPPORTED_PLATFORMS,
+  MAINTAINER_PATTERN,
 } from "../constants.js";
 
 const HookConfigSchema = z.record(z.string(), z.union([z.string(), z.array(z.string())]));
@@ -130,6 +131,13 @@ export const SkillFrontmatterSchema = z.object({
   hooks: HookConfigSchema.optional().describe(
     "Hook configuration passed verbatim to the agent's hook system.",
   ),
+  maintainers: z
+    .array(z.string().regex(MAINTAINER_PATTERN))
+    .min(1)
+    .optional()
+    .describe(
+      "GitHub identifiers responsible for this skill. Validated against .github/CODEOWNERS by `node scripts/check-maintainers.mjs` (ISSUE-056). Format: '@user', '@org/team', or 'email@host'.",
+    ),
 });
 
 export type SkillFrontmatterInput = z.input<typeof SkillFrontmatterSchema>;

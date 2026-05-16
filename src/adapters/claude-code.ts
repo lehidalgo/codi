@@ -1,7 +1,4 @@
-import { access } from "node:fs/promises";
-import { join } from "node:path";
 import type {
-  AgentAdapter,
   AgentCapabilities,
   AgentPaths,
   GeneratedFile,
@@ -26,19 +23,16 @@ import {
   MANIFEST_FILENAME,
   MCP_FILENAME,
   PROJECT_NAME,
-  PROJECT_DIR,
 } from "../constants.js";
 import { partitionBrandSkills } from "./brand-filter.js";
+import { buildHeartbeatArtifacts } from "./heartbeat-emission.js";
+import { readEnabledRuntimeHookNames, isHeartbeatEnabled } from "./heartbeat-state.js";
+import { defineAdapter } from "./base.js";
 import {
-  buildSkillTrackerScript,
-  buildSkillObserverScript,
-  buildLauncherFile,
-  launcherCommand,
-  HOOKS_SUBDIR,
-  LAUNCHER_FILENAME,
-  SKILL_TRACKER_FILENAME,
-  SKILL_OBSERVER_FILENAME,
-} from "../core/hooks/heartbeat-hooks.js";
+  buildSettingsJson,
+  mergeSettings,
+  readExistingClaudeSettings,
+} from "./claude-settings.js";
 
 /**
  * Maps the `language` field on a rule to Claude Code `paths:` glob patterns.
@@ -56,15 +50,6 @@ const LANGUAGE_GLOB_PATTERNS: Record<string, string[]> = {
   swift: ["**/*.swift"],
 };
 
-async function exists(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Adapter for Claude Code — Anthropic's official CLI for Claude.
  *
@@ -72,7 +57,7 @@ async function exists(path: string): Promise<boolean> {
  * Generates `CLAUDE.md` (primary instruction file), `.claude/rules/`, `.claude/skills/`,
  * `.claude/agents/`, and `.mcp.json` (MCP server config).
  */
-export const claudeCodeAdapter: AgentAdapter = {
+export const claudeCodeAdapter = defineAdapter({
   id: "claude-code",
   name: "Claude Code",
 
@@ -95,11 +80,7 @@ export const claudeCodeAdapter: AgentAdapter = {
     maxContextTokens: CONTEXT_TOKENS_LARGE,
   } satisfies AgentCapabilities,
 
-  async detect(projectRoot: string): Promise<boolean> {
-    const hasFile = await exists(join(projectRoot, "CLAUDE.md"));
-    const hasDir = await exists(join(projectRoot, ".claude"));
-    return hasFile || hasDir;
-  },
+  detect: { markers: ["CLAUDE.md", ".claude"] },
 
   async generate(config: NormalizedConfig, _options: GenerateOptions): Promise<GeneratedFile[]> {
     const files: GeneratedFile[] = [];
@@ -250,39 +231,28 @@ export const claudeCodeAdapter: AgentAdapter = {
       }
     }
 
-    // Generate heartbeat hook scripts to .codi/hooks/
-    const trackerScript = buildSkillTrackerScript();
-    const trackerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_TRACKER_FILENAME}`;
-    files.push({
-      path: trackerPath,
-      content: trackerScript,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(trackerScript),
-    });
+    // Generate heartbeat hook scripts to .codi/hooks/, gated by selection.
+    // The node-resolver launcher is shipped next to the scripts so the
+    // hook command in settings.json can invoke `/bin/sh <launcher> <script>`
+    // (non-interactive hook shells don't source ~/.zshrc, so we can't rely
+    // on PATH alone to find node).
+    const enabledRuntime = readEnabledRuntimeHookNames(_options.projectRoot);
+    const emitTracker = isHeartbeatEnabled(enabledRuntime, "skill-tracker");
+    const emitObserver = isHeartbeatEnabled(enabledRuntime, "skill-observer");
 
-    const observerScript = buildSkillObserverScript();
-    const observerPath = `${PROJECT_DIR}/${HOOKS_SUBDIR}/${SKILL_OBSERVER_FILENAME}`;
-    files.push({
-      path: observerPath,
-      content: observerScript,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(observerScript),
-    });
+    const heartbeat = buildHeartbeatArtifacts({ emitTracker, emitObserver });
+    files.push(...heartbeat.files);
 
-    // Ship the node-resolver launcher next to the hook scripts. The hook command
-    // in settings.json invokes `/bin/sh <launcher> <script>` so non-interactive
-    // hook shells (which do not source ~/.zshrc) can still find a node binary.
-    const launcher = buildLauncherFile();
-    files.push({
-      path: launcher.path,
-      content: launcher.content,
-      sources: [MANIFEST_FILENAME],
-      hash: hashContent(launcher.content),
-    });
-
-    // Generate .claude/settings.json (permissions + heartbeat hooks)
-    const settingsJson = buildSettingsJson(config);
-    const settingsContent = JSON.stringify(settingsJson, null, 2);
+    // Generate .claude/settings.json (permissions + heartbeat hooks).
+    // Deep-merge into the user's existing settings.json (if any) so codi
+    // hooks land alongside whatever Pre/Post/Stop entries the user already
+    // had — without this, init silently failed to wire the runtime hooks
+    // for any user with a pre-existing settings.json (FastAPI templates,
+    // custom scripts, etc.) and the brain captures table stayed empty.
+    const settingsJson = buildSettingsJson(config, enabledRuntime);
+    const existingSettings = readExistingClaudeSettings(_options.projectRoot);
+    const mergedSettings = mergeSettings(settingsJson, existingSettings);
+    const settingsContent = JSON.stringify(mergedSettings, null, 2);
     files.push({
       path: ".claude/settings.json",
       content: settingsContent,
@@ -292,85 +262,4 @@ export const claudeCodeAdapter: AgentAdapter = {
 
     return files;
   },
-};
-
-interface ClaudeHookCommand {
-  type: "command";
-  command: string;
-  timeout: number;
-  async?: true;
-}
-
-interface ClaudeHookEntry {
-  matcher: string;
-  hooks: ClaudeHookCommand[];
-}
-
-interface ClaudeSettings {
-  permissions?: { deny?: string[] };
-  hooks?: Record<string, ClaudeHookEntry[]>;
-}
-
-function buildSettingsJson(config: NormalizedConfig): ClaudeSettings {
-  const settings: ClaudeSettings = {};
-
-  // Map flags to permissions.deny (native enforcement — hard blocks tool calls)
-  const deny: string[] = [];
-  const flagValue = (key: string): unknown => config.flags[key]?.value;
-
-  if (flagValue("allow_force_push") === false) {
-    deny.push("Bash(git push --force *)", "Bash(git push -f *)");
-  }
-  if (flagValue("allow_shell_commands") === false) {
-    deny.push("Bash");
-  }
-  if (flagValue("allow_file_deletion") === false) {
-    deny.push("Bash(rm -rf *)", "Bash(rm -r *)");
-  }
-
-  if (deny.length > 0) {
-    settings.permissions = { deny };
-  }
-
-  // Heartbeat hooks — always present so the feedback loop works out of the box.
-  // Users who need personal hooks must use .claude/settings.local.json (auto-merged by Claude Code).
-  //
-  // Commands resolve the script via $CLAUDE_PROJECT_DIR (officially guaranteed for every
-  // hook event, per https://code.claude.com/docs/en/hooks) so they survive session CWD drift
-  // into subdirectories. The ${VAR:-.} fallback preserves today's relative-path behavior if
-  // the env var is somehow unset, so there is no regression in edge environments.
-  const hooksDir = `${PROJECT_DIR}/${HOOKS_SUBDIR}`;
-  const projectRootRef = '"${CLAUDE_PROJECT_DIR:-.}"';
-  const launcherRef = `${projectRootRef}/${hooksDir}/${LAUNCHER_FILENAME}`;
-  const trackerRef = `${projectRootRef}/${hooksDir}/${SKILL_TRACKER_FILENAME}`;
-  const observerRef = `${projectRootRef}/${hooksDir}/${SKILL_OBSERVER_FILENAME}`;
-  settings.hooks = {
-    InstructionsLoaded: [
-      {
-        matcher: "",
-        hooks: [
-          {
-            type: "command",
-            command: launcherCommand(launcherRef, trackerRef),
-            timeout: 5,
-            async: true,
-          },
-        ],
-      },
-    ],
-    Stop: [
-      {
-        matcher: "",
-        hooks: [
-          {
-            type: "command",
-            command: launcherCommand(launcherRef, observerRef),
-            timeout: 15,
-          },
-        ],
-      },
-    ],
-  };
-
-  return settings;
-}
+});

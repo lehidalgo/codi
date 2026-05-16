@@ -2,7 +2,6 @@ import type { Command } from "commander";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import matter from "gray-matter";
 import os from "node:os";
 import { resolveProjectDir } from "../utils/paths.js";
 import { safeRm } from "../utils/fs.js";
@@ -52,7 +51,7 @@ import type { Result } from "../types/result.js";
 import { initFromOptions, handleOutput } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
-import { execFileAsync } from "../utils/exec.js";
+import { EXEC_TIMEOUTS, execFileWithTimeout } from "../utils/exec.js";
 import { readLockFile } from "../core/preset/preset-registry.js";
 import { loadPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
@@ -64,6 +63,7 @@ import {
   type ConflictEntry,
 } from "../utils/conflict-resolver.js";
 
+import { parseFrontmatter } from "../utils/frontmatter.js";
 interface UpdateOptions extends GlobalOptions {
   preset?: string;
   from?: string;
@@ -71,6 +71,7 @@ interface UpdateOptions extends GlobalOptions {
   skills?: boolean;
   agents?: boolean;
   mcpServers?: boolean;
+  hooks?: boolean;
   // regenerate is now always-on (removed --regenerate flag)
   dryRun?: boolean;
   force?: boolean;
@@ -112,17 +113,23 @@ interface RefreshArtifactOptions {
 
 async function refreshManagedArtifacts(
   opts: RefreshArtifactOptions,
-): Promise<{ updated: string[]; skipped: string[]; filesWithMarkers: string[] }> {
+): Promise<{
+  updated: string[];
+  skipped: string[];
+  filesWithMarkers: string[];
+  unresolvable: string[];
+}> {
   const dir = path.join(opts.configDir, opts.subDir);
   const updated: string[] = [];
   const skipped: string[] = [];
   const filesWithMarkers: string[] = [];
+  const unresolvable: string[] = [];
 
   let entries: string[];
   try {
     entries = await fs.readdir(dir);
   } catch {
-    return { updated, skipped, filesWithMarkers };
+    return { updated, skipped, filesWithMarkers, unresolvable };
   }
 
   const conflicts: ConflictEntry[] = [];
@@ -131,7 +138,7 @@ async function refreshManagedArtifacts(
     if (!entry.endsWith(".md")) continue;
     const filePath = path.join(dir, entry);
     const raw = await fs.readFile(filePath, "utf8");
-    const parsed = matter(raw);
+    const parsed = parseFrontmatter<Record<string, unknown>>(raw);
     const name = (parsed.data["name"] as string) ?? entry.replace(".md", "");
     const templateName = findMatchingTemplate(name, opts.availableTemplates, opts.nameMappings);
 
@@ -166,7 +173,7 @@ async function refreshManagedArtifacts(
       opts.log.info(`Would update ${opts.label}: ${name}`);
       updated.push(name);
     }
-    return { updated, skipped, filesWithMarkers };
+    return { updated, skipped, filesWithMarkers, unresolvable };
   }
 
   if (conflicts.length > 0) {
@@ -174,6 +181,7 @@ async function refreshManagedArtifacts(
       force: opts.force,
       keepCurrent: opts.keepCurrent,
       unionMerge: opts.unionMerge,
+      log: opts.log,
     });
 
     for (const entry of [...resolution.accepted, ...resolution.merged]) {
@@ -188,9 +196,21 @@ async function refreshManagedArtifacts(
       const name = entry.label.split("/")[1] ?? entry.label;
       skipped.push(name);
     }
+
+    // CORE-007: the resolver no longer mutates `process.exitCode`. It
+    // returns a structured payload of unresolvable hunks plus a
+    // machine-readable stderr blob; we forward both upstream so the
+    // CLI handler can map the run to EXIT_CODES.UNRESOLVABLE_CONFLICTS.
+    if (resolution.unresolvable.length > 0 && resolution.nonInteractivePayload) {
+      process.stderr.write(JSON.stringify(resolution.nonInteractivePayload) + "\n");
+    }
+    for (const entry of resolution.unresolvable) {
+      const name = entry.label.split("/")[1] ?? entry.label;
+      unresolvable.push(name);
+    }
   }
 
-  return { updated, skipped, filesWithMarkers };
+  return { updated, skipped, filesWithMarkers, unresolvable };
 }
 
 function findMatchingTemplate(
@@ -273,17 +293,19 @@ async function pullFromSource(
   dryRun: boolean,
   log: Logger,
   options: { force?: boolean; keepCurrent?: boolean; unionMerge?: boolean } = {},
-): Promise<{ updated: string[]; filesWithMarkers: string[] }> {
+): Promise<{ updated: string[]; filesWithMarkers: string[]; unresolvable: string[] }> {
   const updated: string[] = [];
   const filesWithMarkers: string[] = [];
+  const unresolvable: string[] = [];
   const cloneDir = path.join(os.tmpdir(), `${PROJECT_NAME}-pull-${Date.now()}`);
 
   try {
     const repoUrl = `https://github.com/${repo}.git`;
-    await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, cloneDir]);
+    const args = ["clone", "--depth", GIT_CLONE_DEPTH, repoUrl, cloneDir];
+    await execFileWithTimeout("git", args, { timeoutMs: EXEC_TIMEOUTS.GH_LONG });
   } catch (cause) {
     log.warn(`Failed to clone source repo: ${repo}`, cause);
-    return { updated, filesWithMarkers };
+    return { updated, filesWithMarkers, unresolvable };
   }
 
   const sourcePaths = ["rules", "skills", "agents"];
@@ -309,7 +331,7 @@ async function pullFromSource(
       const localFile = path.join(localDir, entry);
 
       const sourceContent = await fs.readFile(sourceFile, "utf8");
-      const sourceParsed = matter(sourceContent);
+      const sourceParsed = parseFrontmatter<Record<string, unknown>>(sourceContent);
       if (sourceParsed.data["managed_by"] !== PROJECT_NAME) continue;
 
       const label = `${syncPath}/${entry}`;
@@ -338,7 +360,7 @@ async function pullFromSource(
       log.info(`Would pull: ${label}`);
       updated.push(label);
     }
-    return { updated, filesWithMarkers };
+    return { updated, filesWithMarkers, unresolvable };
   }
 
   for (const { localFile, content, label } of directWrites) {
@@ -348,16 +370,21 @@ async function pullFromSource(
   }
 
   if (conflicts.length > 0) {
-    const resolution = await resolveConflicts(conflicts, options);
+    const resolution = await resolveConflicts(conflicts, { ...options, log });
     for (const entry of [...resolution.accepted, ...resolution.merged]) {
       await fs.writeFile(entry.fullPath, entry.incomingContent, "utf-8");
       log.info(`Pulled: ${entry.label}`);
       updated.push(entry.label);
       if (entry.hasMarkers) filesWithMarkers.push(entry.fullPath);
     }
+    // CORE-007: forward unresolvable conflicts up + stderr payload.
+    if (resolution.unresolvable.length > 0 && resolution.nonInteractivePayload) {
+      process.stderr.write(JSON.stringify(resolution.nonInteractivePayload) + "\n");
+    }
+    unresolvable.push(...resolution.unresolvable.map((e) => e.label));
   }
 
-  return { updated, filesWithMarkers };
+  return { updated, filesWithMarkers, unresolvable };
 }
 
 function emptyUpdateData(): UpdateData {
@@ -410,6 +437,10 @@ export async function updateHandler(
 
   const flagsAdded: string[] = [];
   let flagsReset = false;
+  // CORE-007: aggregate hard conflicts from every step (preset apply,
+  // refresh*, pullFromSource) so the final return can surface them via
+  // a dedicated exit code.
+  const unresolvable: string[] = [];
 
   // Merge builtin + installed preset names for validation
   const builtinPresets = getPresetNames() as string[];
@@ -527,6 +558,7 @@ export async function updateHandler(
         log.info(
           `Applied preset artifacts: ${applyResult.added.length} added, ${applyResult.overwritten.length} updated, ${applyResult.skipped.length} skipped, ${applyResult.resourcesCopied} resources copied`,
         );
+        unresolvable.push(...applyResult.unresolvable);
       }
     }
   } else {
@@ -577,6 +609,7 @@ export async function updateHandler(
     rulesUpdated = result.updated;
     rulesSkipped = result.skipped;
     filesWithMarkers.push(...result.filesWithMarkers);
+    unresolvable.push(...result.unresolvable);
   }
 
   let skillsUpdated: string[] = [];
@@ -598,6 +631,7 @@ export async function updateHandler(
     skillsUpdated = result.updated;
     skillsSkipped = result.skipped;
     filesWithMarkers.push(...result.filesWithMarkers);
+    unresolvable.push(...result.unresolvable);
   }
 
   let agentsUpdated: string[] = [];
@@ -619,6 +653,7 @@ export async function updateHandler(
     agentsUpdated = result.updated;
     agentsSkipped = result.skipped;
     filesWithMarkers.push(...result.filesWithMarkers);
+    unresolvable.push(...result.unresolvable);
   }
 
   let mcpServersUpdated: string[] = [];
@@ -638,6 +673,7 @@ export async function updateHandler(
     });
     sourceUpdated = result.updated;
     filesWithMarkers.push(...result.filesWithMarkers);
+    unresolvable.push(...result.unresolvable);
   }
 
   if (filesWithMarkers.length > 0 && !dryRun) {
@@ -738,6 +774,41 @@ export async function updateHandler(
     }
   }
 
+  // CORE-007: unresolvable hard conflicts in non-interactive runs map to a
+  // dedicated exit code instead of the in-resolver `process.exitCode = 2`
+  // side effect that earlier versions relied on.
+  if (unresolvable.length > 0) {
+    return createCommandResult({
+      success: false,
+      command: "update",
+      data: {
+        flagsAdded,
+        flagsReset,
+        preset: presetName ?? null,
+        rulesUpdated,
+        rulesSkipped,
+        skillsUpdated,
+        skillsSkipped,
+        agentsUpdated,
+        agentsSkipped,
+        mcpServersUpdated,
+        mcpServersSkipped,
+        sourceUpdated,
+        regenerated,
+      },
+      errors: [
+        {
+          code: "E_UNRESOLVABLE_CONFLICTS",
+          message: `${unresolvable.length} file(s) have unresolvable conflicts in non-interactive mode.`,
+          hint: "Run interactively to resolve, or use --on-conflict keep-incoming / keep-current.",
+          severity: "error",
+          context: { files: unresolvable },
+        },
+      ],
+      exitCode: EXIT_CODES.UNRESOLVABLE_CONFLICTS,
+    });
+  }
+
   return createCommandResult({
     success: true,
     command: "update",
@@ -770,6 +841,7 @@ export function registerUpdateCommand(program: Command): void {
     .option("--skills", "Refresh template-managed skills to latest versions")
     .option("--agents", "Refresh template-managed agents to latest versions")
     .option("--mcp-servers", "Refresh template-managed MCP servers to latest versions")
+    .option("--hooks", "Show next-steps for managing hooks (list/add/remove or re-run init)")
     .option("--dry-run", "Show what would change without writing")
     .option("--force", "Accept all incoming changes without prompting (overwrites local)")
     .option(
@@ -784,6 +856,11 @@ export function registerUpdateCommand(program: Command): void {
       const globalOptions = program.opts() as GlobalOptions;
       const options: UpdateOptions = { ...globalOptions, ...cmdOptions };
       initFromOptions(options);
+      if (options.hooks) {
+        const { printHooksHelp } = await import("./update-hooks-help.js");
+        printHooksHelp(process.stdout);
+        process.exit(0);
+      }
       const result = await updateHandler(process.cwd(), options);
       handleOutput(result, options);
       process.exit(result.exitCode);

@@ -1,9 +1,12 @@
 import fs from "node:fs/promises";
+import { existsSync, mkdirSync, renameSync } from "node:fs";
 import path from "node:path";
-import { OPERATIONS_LEDGER_FILENAME } from "#src/constants.js";
+import { OPERATIONS_LEDGER_FILENAME, STATE_DIR } from "#src/constants.js";
 import { ok, err } from "#src/types/result.js";
 import type { Result } from "#src/types/result.js";
+import type { LedgerEntryType } from "../artifact-types.js";
 import { createError } from "../output/errors.js";
+import { resolveActorId } from "./resolve-actor.js";
 
 // ── Interfaces ──────────────────────────────────────────────────────
 
@@ -29,7 +32,7 @@ export interface LedgerActivePreset {
 export interface LedgerGeneratedFile {
   path: string;
   agent: string;
-  type: "instruction" | "rule" | "skill" | "agent" | "mcp" | "settings";
+  type: LedgerEntryType;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,10 +67,25 @@ export interface LedgerOperation {
   type: OperationType;
   timestamp: string;
   details: Record<string, unknown>;
+  /**
+   * `<type>:<id>` actor attribution (ISSUE-052). Optional for back-compat —
+   * rows written by older Codi versions carry no actor. Resolved at write
+   * time via `resolveActorId()` (git config email / env override / host).
+   */
+  actorId?: string;
 }
 
+/**
+ * Schema versions:
+ *   - "1" — pre-ISSUE-052, no actor attribution on any field.
+ *   - "2" — every operation carries `actorId`. Older rows remain
+ *     untouched (no retro backfill); aggregators must tolerate missing
+ *     `actorId` when joining v1 + v2 ledgers from across machines.
+ */
+export type LedgerSchemaVersion = "1" | "2";
+
 export interface OperationsLedgerData {
-  version: "1";
+  version: LedgerSchemaVersion;
   initialized: LedgerInitialization | null;
   activePreset: LedgerActivePreset | null;
   files: {
@@ -81,7 +99,7 @@ export interface OperationsLedgerData {
 // ── Constants ───────────────────────────────────────────────────────
 
 const EMPTY_LEDGER: OperationsLedgerData = {
-  version: "1",
+  version: "2",
   initialized: null,
   activePreset: null,
   files: { generated: [], hooks: [], config: [] },
@@ -94,7 +112,18 @@ export class OperationsLedgerManager {
   private readonly ledgerPath: string;
 
   constructor(configDir: string) {
-    this.ledgerPath = path.join(configDir, OPERATIONS_LEDGER_FILENAME);
+    const stateDir = path.join(configDir, STATE_DIR);
+    const ledgerPath = path.join(stateDir, OPERATIONS_LEDGER_FILENAME);
+    const legacyPath = path.join(configDir, OPERATIONS_LEDGER_FILENAME);
+    if (existsSync(legacyPath) && !existsSync(ledgerPath)) {
+      try {
+        mkdirSync(stateDir, { recursive: true });
+        renameSync(legacyPath, ledgerPath);
+      } catch {
+        /* Migration best-effort; fall back to fresh ledger if rename fails. */
+      }
+    }
+    this.ledgerPath = ledgerPath;
   }
 
   async read(): Promise<Result<OperationsLedgerData>> {
@@ -154,6 +183,7 @@ export class OperationsLedgerManager {
         stack: init.stack,
         codiVersion: init.codiVersion,
       },
+      actorId: resolveActorId(),
     });
 
     return this.write(data);
@@ -223,12 +253,20 @@ export class OperationsLedgerManager {
     return this.write(data);
   }
 
+  /**
+   * Append an operation to the ledger. ISSUE-052: `actorId` is auto-filled
+   * from `resolveActorId()` (git config + env overrides) when the caller
+   * does not supply it, so every existing call site stays a one-line
+   * append while the new column gets a real value.
+   */
   async logOperation(op: LedgerOperation): Promise<Result<void>> {
     const readResult = await this.read();
     if (!readResult.ok) return readResult;
 
     const data = readResult.data;
-    data.operations.push(op);
+    const enriched: LedgerOperation =
+      op.actorId !== undefined ? op : { ...op, actorId: resolveActorId() };
+    data.operations.push(enriched);
 
     return this.write(data);
   }

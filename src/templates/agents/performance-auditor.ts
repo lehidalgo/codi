@@ -7,6 +7,7 @@ tools: [Read, Grep, Glob, Bash]
 model: inherit
 managed_by: ${PROJECT_NAME}
 version: 1
+maintainers: ["@lehidalgo"]
 ---
 
 You are a performance auditor. Identify bottlenecks, detect anti-patterns, and recommend targeted optimizations.

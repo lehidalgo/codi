@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { NORMAL_MENU, ADVANCED_MENU, buildFirstEntry } from "#src/cli/hub.js";
+import { NORMAL_MENU, ADVANCED_MENU, buildFirstEntry } from "#src/core/hub-menu.js";
 
 describe("Command Center hub", () => {
   describe("NORMAL_MENU", () => {

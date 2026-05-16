@@ -2,21 +2,15 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 import { scanSkills, scanProjectDir } from "#src/core/config/parser.js";
-import {
-  PROJECT_NAME,
-  PROJECT_DIR,
-  MANIFEST_FILENAME,
-} from "#src/constants.js";
+import { PROJECT_NAME, PROJECT_DIR, MANIFEST_FILENAME } from "#src/constants.js";
 
 describe("scanSkills", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-parser-skills-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-parser-skills-`));
   });
 
   afterEach(async () => {
@@ -54,9 +48,7 @@ Review code for bugs and security issues.
     expect(result.data).toHaveLength(1);
     expect(result.data[0]!.name).toBe("review");
     expect(result.data[0]!.description).toBe("Code review skill");
-    expect(result.data[0]!.content).toBe(
-      "Review code for bugs and security issues.",
-    );
+    expect(result.data[0]!.content).toBe("Review code for bugs and security issues.");
     expect(result.data[0]!.compatibility).toEqual(["claude-code"]);
     expect(result.data[0]!.tools).toEqual(["read", "grep"]);
   });
@@ -145,9 +137,7 @@ describe("scanProjectDir with skills", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
-    tmpDir = await fs.mkdtemp(
-      path.join(os.tmpdir(), `${PROJECT_NAME}-scan-skills-`),
-    );
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), `${PROJECT_NAME}-scan-skills-`));
   });
 
   afterEach(async () => {

@@ -13,14 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: pnpm
+          cache: npm
 
       - uses: actions/setup-python@v5
         with:
@@ -29,7 +25,54 @@ jobs:
       - name: Install pre-commit (for E2E config-validation test)
         run: pip install pre-commit
 
-      - run: pnpm install --frozen-lockfile
+      - run: npm ci
+
+      # ISSUE-011 supply-chain guard: fast-uri<3.1.2 has a known issue; the
+      # package.json `overrides` pin to >=3.1.2 must survive every
+      # lockfile regeneration. Fail CI if any hoisted version slips below.
+      - name: Guard fast-uri override
+        run: node scripts/guard-fast-uri.mjs
+
+      # ISSUE-014 architectural guard: reject organisational barrel index.ts
+      # files in src/. Barrels are permitted only at deliberate boundary
+      # surfaces (public API entry, template-loader registries). The rule
+      # codi-typescript.md v2 documents the policy.
+      - name: Guard organisational barrels
+        run: node scripts/guard-no-internal-barrels.mjs
+
+      # ISSUE-015 architectural guard: dependencies flow inward — core/ and
+      # runtime/ must never import from cli/. The rule codi-architecture.md
+      # documents the policy; this guard enforces it mechanically.
+      - name: Guard layering (core/runtime → cli forbidden)
+        run: node scripts/guard-layering.mjs
+
+      # ISSUE-016 architectural guard: agent ids must derive from the
+      # canonical sources (SUPPORTED_PLATFORMS / ALL_ADAPTERS). Inline literal
+      # tuples of agent ids outside the whitelist will fail this check.
+      - name: Guard agent identity (no hardcoded id literals)
+        run: node scripts/guard-agent-identity.mjs
+
+      # ISSUE-017 architectural guard: `.codi`, `"codi"`, `"Codi"`,
+      # `managed_by: "codi"|"user"` literals must derive from constants
+      # (PROJECT_DIR / PROJECT_NAME / PROJECT_NAME_DISPLAY / MANAGED_BY_*).
+      # The guard whitelists constants.ts and skips comments / URLs.
+      - name: Guard project literals (PROJECT_DIR / NAME / DISPLAY single source)
+        run: node scripts/guard-project-literals.mjs
+
+      # ISSUE-023 architectural guard: CLI handlers + core/runtime code must
+      # route output through Logger. console.* is allowed only in hook
+      # templates, shipped skill scripts, and hook orchestrators (Claude
+      # Code stderr-prefix contract).
+      - name: Guard console.* usage (Logger required outside hooks/templates)
+        run: node scripts/guard-console-usage.mjs
+
+      # CORE-004 schema codegen guard: src/schemas/runtime/*.schema.json
+      # files must be byte-equal to the canonical output of
+      # `npm run schemas:generate` applied to their Zod sources. Catches
+      # hand-edits, missed regenerations, and Zod source changes that
+      # didn't propagate to the JSON Schema.
+      - name: Guard schema codegen (Zod source == generated JSON Schema)
+        run: npm run schemas:check
 
       - name: Verify artifact version bumps
         if: github.event_name == 'pull_request'
@@ -40,16 +83,16 @@ jobs:
             --head HEAD
 
       - name: Lint
-        run: pnpm lint
+        run: npm run lint
 
       - name: Build
-        run: pnpm build
+        run: npm run build
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Test (with coverage)
-        run: pnpm test:coverage
+        run: npm run test:coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

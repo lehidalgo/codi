@@ -4,6 +4,7 @@ import { hashContent } from "#src/utils/hash.js";
 import { ArtifactManifestManager } from "#src/core/version/artifact-manifest.js";
 import type { DiscoveredArtifact } from "./discovery.js";
 import type { ExternalSource } from "./connectors.js";
+import { MANAGED_BY_USER } from "#src/constants.js";
 
 export type CollisionResolution =
   | { kind: "skip" }
@@ -77,7 +78,13 @@ export async function installSelected(
   const summary: InstallSummary = { installed: 0, skipped: 0, renamed: 0 };
   const manifestManager = new ArtifactManifestManager(configDir);
   const readResult = await manifestManager.read();
-  if (!readResult.ok) throw new Error("Failed to read artifact manifest");
+  if (!readResult.ok) {
+    // ISSUE-078: preserve the underlying ProjectError messages instead of
+    // dropping them. Consumers (init-wizard-modify-add) already catch this;
+    // the richer message helps them surface a useful warning to the user.
+    const detail = readResult.errors.map((e) => e.message).join("; ");
+    throw new Error(`Failed to read artifact manifest: ${detail}`);
+  }
   const manifest = readResult.data;
 
   for (const { artifact, resolution } of entries) {
@@ -111,12 +118,15 @@ export async function installSelected(
       contentHash: hashContent(content),
       installedArtifactVersion: "unknown",
       installedAt: new Date().toISOString(),
-      managedBy: "user",
+      managedBy: MANAGED_BY_USER,
       source: source.id,
     };
   }
 
   const writeResult = await manifestManager.write(manifest);
-  if (!writeResult.ok) throw new Error("Failed to write artifact manifest");
+  if (!writeResult.ok) {
+    const detail = writeResult.errors.map((e) => e.message).join("; ");
+    throw new Error(`Failed to write artifact manifest: ${detail}`);
+  }
   return summary;
 }

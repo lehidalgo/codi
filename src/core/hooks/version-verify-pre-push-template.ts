@@ -31,6 +31,7 @@ function gitShow(ref, path) {
     return execFileSync('git', ['show', ref + ':' + path], {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 10_000,
     });
   } catch { return null; }
 }
@@ -47,9 +48,9 @@ function stripVersion(s) {
 function defaultBranchTip() {
   try {
     const ref = execFileSync('git', ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], {
-      encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'],
+      encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 5_000,
     }).trim();
-    return execFileSync('git', ['rev-parse', ref], { encoding: 'utf-8' }).trim();
+    return execFileSync('git', ['rev-parse', ref], { encoding: 'utf-8', timeout: 5_000 }).trim();
   } catch { return null; }
 }
 
@@ -58,7 +59,7 @@ function resolveBase(localOid, remoteOid) {
   const tip = defaultBranchTip();
   if (!tip) return localOid;
   try {
-    return execFileSync('git', ['merge-base', localOid, tip], { encoding: 'utf-8' }).trim();
+    return execFileSync('git', ['merge-base', localOid, tip], { encoding: 'utf-8', timeout: 10_000 }).trim();
   } catch { return localOid; }
 }
 
@@ -70,6 +71,7 @@ function verifyRef(localOid, remoteOid) {
   try {
     diffOut = execFileSync('git', ['diff', '--name-only', '--diff-filter=ACMR', baseOid + '..' + localOid], {
       encoding: 'utf-8',
+      timeout: 15_000,
     });
   } catch { return []; }
 

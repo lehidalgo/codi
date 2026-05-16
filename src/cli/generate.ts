@@ -22,6 +22,7 @@ import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
 import { OperationsLedgerManager } from "../core/audit/operations-ledger.js";
+import type { LedgerEntryType } from "../core/artifact-types.js";
 import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 
 interface GenerateCommandOptions extends GlobalOptions {
@@ -243,6 +244,33 @@ export async function generateHandler(
     }
   }
 
+  // CORE-007: a non-empty `unresolvable[]` means the resolver could not
+  // auto-merge one or more files in a non-interactive environment. The
+  // structured JSON payload has already been written to stderr by the
+  // generator; here we surface the failure via `exitCode` so the CLI
+  // entry point can propagate it.
+  if (generation.unresolvable.length > 0) {
+    return createCommandResult({
+      success: false,
+      command: "generate",
+      data: {
+        agents: generation.agents,
+        filesGenerated: generation.files.length,
+        files: generation.files.map((f) => f.path),
+      },
+      errors: [
+        {
+          code: "E_UNRESOLVABLE_CONFLICTS",
+          message: `${generation.unresolvable.length} file(s) have unresolvable conflicts in non-interactive mode.`,
+          hint: "Run interactively to resolve, or use --on-conflict keep-incoming / keep-current.",
+          severity: "error",
+          context: { files: generation.unresolvable },
+        },
+      ],
+      exitCode: EXIT_CODES.UNRESOLVABLE_CONFLICTS,
+    });
+  }
+
   return createCommandResult({
     success: true,
     command: "generate",
@@ -265,13 +293,11 @@ function inferHookFileType(
   return "pre-commit";
 }
 
-function inferGeneratedFileType(
-  filePath: string,
-): "instruction" | "rule" | "skill" | "agent" | "mcp" | "settings" {
+function inferGeneratedFileType(filePath: string): LedgerEntryType {
   if (filePath.includes("/rules/")) return "rule";
   if (filePath.includes("/skills/")) return "skill";
   if (filePath.includes("/agents/")) return "agent";
-  if (filePath.includes("mcp.json") || filePath.includes("mcp.toml")) return "mcp";
+  if (filePath.includes("mcp.json") || filePath.includes("mcp.toml")) return "mcp-server";
   if (filePath.includes("settings.json")) return "settings";
   return "instruction";
 }

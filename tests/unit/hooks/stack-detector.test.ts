@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { detectStack } from "#src/core/hooks/stack-detector.js";
 import { PROJECT_NAME } from "#src/constants.js";
-import { cleanupTmpDir } from "../../helpers/fs.js";
+import { cleanupTmpDir } from "#tests/helpers/fs.js";
 
 let tmpDir: string;
 

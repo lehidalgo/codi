@@ -28,6 +28,24 @@ describe("StateManager", () => {
     expect(result.data.agents).toEqual({});
   });
 
+  it("returns a FRESH lastGenerated for each read of a missing state.json (CORE-026)", async () => {
+    // Regression: before CORE-026, EMPTY_STATE was a module-level const and
+    // its `lastGenerated` froze to process boot time. Long-running watchers
+    // would surface the boot-time timestamp instead of the actual read time.
+    const mgr = new StateManager(tmpDir);
+    const before = new Date().toISOString();
+    // Wait 5ms so timestamps must differ if the factory really regenerates.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const r1 = await mgr.read();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const r2 = await mgr.read();
+    expect(r1.ok && r2.ok).toBe(true);
+    if (!r1.ok || !r2.ok) return;
+    expect(r1.data.lastGenerated >= before).toBe(true);
+    // The second read must produce a strictly later timestamp than the first.
+    expect(r2.data.lastGenerated > r1.data.lastGenerated).toBe(true);
+  });
+
   it("writes and reads state", async () => {
     const mgr = new StateManager(tmpDir);
     const state: StateData = {
@@ -617,6 +635,120 @@ describe("StateManager", () => {
       const after = await mgr.read();
       if (!after.ok) throw new Error("read failed");
       expect(Object.keys(after.data.agents)).toEqual(["claude-code"]);
+    });
+  });
+
+  // ─── CORE-030 — state.json corruption recovery ─────────────────────────────
+  //
+  // The contract: when state.json is unreadable as JSON, `read()` returns
+  // a typed `Result.err` with code `E_CONFIG_PARSE_FAILED`. We deliberately
+  // do NOT silently overwrite the file with empty state — corrupt state is
+  // a signal that something went wrong (mid-write crash, manual edit gone
+  // wrong, disk error) and the caller needs to decide. The CLI prints the
+  // error + bails; tests can assert the err shape; `write()` is still
+  // callable to recover via overwrite when the operator chooses.
+  describe("state.json corruption recovery (CORE-030)", () => {
+    async function writeRawState(content: string): Promise<string> {
+      const stateDir = path.join(tmpDir, "state");
+      await fs.mkdir(stateDir, { recursive: true });
+      const statePath = path.join(stateDir, "state.json");
+      await fs.writeFile(statePath, content, "utf8");
+      return statePath;
+    }
+
+    it("returns E_CONFIG_PARSE_FAILED for malformed JSON (not a silent rewrite)", async () => {
+      await writeRawState("{this is not valid JSON");
+      const mgr = new StateManager(tmpDir, tmpDir);
+      const r = await mgr.read();
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.errors[0]?.code).toBe("E_CONFIG_PARSE_FAILED");
+    });
+
+    it("returns E_CONFIG_PARSE_FAILED for an empty file", async () => {
+      await writeRawState("");
+      const mgr = new StateManager(tmpDir, tmpDir);
+      const r = await mgr.read();
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.errors[0]?.code).toBe("E_CONFIG_PARSE_FAILED");
+    });
+
+    it("returns E_CONFIG_PARSE_FAILED for truncated JSON (interrupted write)", async () => {
+      // Simulates a crash mid-write: the file starts as valid JSON but
+      // cuts off before the closing brace.
+      await writeRawState('{"version":"1","lastGenerated":"2026-01-01","agents":{"claude');
+      const mgr = new StateManager(tmpDir, tmpDir);
+      const r = await mgr.read();
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      expect(r.errors[0]?.code).toBe("E_CONFIG_PARSE_FAILED");
+    });
+
+    it("preserves the corrupt file (does not overwrite it during read)", async () => {
+      const statePath = await writeRawState("{corrupt");
+      const mgr = new StateManager(tmpDir, tmpDir);
+      await mgr.read();
+      // The corrupt content must remain — read is non-destructive.
+      const after = await fs.readFile(statePath, "utf8");
+      expect(after).toBe("{corrupt");
+    });
+
+    it("can recover via write() — overwrite restores a usable state", async () => {
+      await writeRawState("{corrupt");
+      const mgr = new StateManager(tmpDir, tmpDir);
+
+      // Confirm corruption first.
+      const failed = await mgr.read();
+      expect(failed.ok).toBe(false);
+
+      // Operator-driven recovery: write a fresh state.
+      const fresh: StateData = {
+        version: "1",
+        lastGenerated: new Date().toISOString(),
+        agents: {
+          "claude-code": [
+            {
+              path: "CLAUDE.md",
+              sourceHash: "abc",
+              generatedHash: "def",
+              sources: ["rule1.md"],
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        },
+        hooks: [],
+      };
+      const wrote = await mgr.write(fresh);
+      expect(wrote.ok).toBe(true);
+
+      // Subsequent reads succeed and return the recovered state.
+      const recovered = await mgr.read();
+      expect(recovered.ok).toBe(true);
+      if (!recovered.ok) return;
+      expect(recovered.data.agents["claude-code"]).toHaveLength(1);
+      expect(recovered.data.agents["claude-code"]![0]!.path).toBe("CLAUDE.md");
+    });
+
+    it("includes the file path in the error context (operator can find the file)", async () => {
+      const statePath = await writeRawState("{not json");
+      const mgr = new StateManager(tmpDir, tmpDir);
+      const r = await mgr.read();
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      const ctx = r.errors[0]?.context as { file?: string } | undefined;
+      expect(ctx?.file).toBe(statePath);
+    });
+
+    it("propagates the underlying SyntaxError as `cause` for debug", async () => {
+      await writeRawState("{bad");
+      const mgr = new StateManager(tmpDir, tmpDir);
+      const r = await mgr.read();
+      expect(r.ok).toBe(false);
+      if (r.ok) return;
+      const cause = r.errors[0]?.cause;
+      expect(cause).toBeInstanceOf(Error);
+      expect((cause as Error).message).toMatch(/JSON|Unexpected/);
     });
   });
 });

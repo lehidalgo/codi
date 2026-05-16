@@ -84,7 +84,7 @@ describe("claude-code adapter", () => {
       expect(mainFile.content).toContain("## Permissions");
       expect(mainFile.content).toContain("Do NOT execute shell commands.");
       expect(mainFile.content).toContain("Do NOT delete files.");
-      expect(mainFile.content).toContain("Keep source code files under 700 lines.");
+      expect(mainFile.content).toContain("Keep source code files under 800 lines.");
       expect(mainFile.content).toContain("Write tests for all new code.");
     });
 

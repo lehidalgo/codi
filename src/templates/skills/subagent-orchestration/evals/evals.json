@@ -1,0 +1,80 @@
+{
+  "skillName": "subagent-orchestration",
+  "cases": [
+    {
+      "id": "parallel-independent-failures",
+      "description": "3 unrelated test files failing — fan out 3 parallel subagents",
+      "prompt": "We have failures in agent-tool-abort.test.ts, batch-completion.test.ts, and tool-approval-race.test.ts. Investigate.",
+      "expectations": [
+        "Skill subagent-orchestration is selected",
+        "Mode parallel is chosen",
+        "Agent verifies the failures are independent (different files, no shared state) before fanning out",
+        "3 Task tool dispatches in a single message (parallel execution)",
+        "Each subagent gets specific scope, clear goal, expected output schema",
+        "Subagents do NOT inherit session history",
+        "After fan-in, agent runs the full test suite (not just targeted tests) to verify no cross-agent regressions"
+      ],
+      "tags": ["happy-path", "mode-parallel"]
+    },
+    {
+      "id": "sequential-plan-execution",
+      "description": "Plan with 5 discrete tasks — execute task-by-task with two-stage review",
+      "prompt": "Execute docs/[PLAN]_auth.md using subagent-orchestration.",
+      "expectations": [
+        "Skill subagent-orchestration is selected",
+        "Mode sequential is chosen",
+        "Agent reads the plan ONCE upfront, extracts all tasks, creates TodoWrite",
+        "Per task: dispatch implementer, await DONE, dispatch spec-compliance reviewer, await PASS, dispatch code-quality reviewer, await PASS, mark complete",
+        "Implementer subagent prompt does NOT include the plan file path — full task text is pasted",
+        "Reviewers run AFTER each task, not at the end",
+        "Spec-compliance reviewer runs BEFORE code-quality reviewer (correct order)"
+      ],
+      "tags": ["happy-path", "mode-sequential"]
+    },
+    {
+      "id": "no-parallel-implementers-in-sequential",
+      "description": "Pressure scenario — user pushes to parallelize implementers in sequential mode",
+      "prompt": "Just dispatch all 5 implementers in parallel to save time.",
+      "expectations": [
+        "Agent refuses to dispatch parallel implementers in mode sequential",
+        "Agent explains: tasks share state or build on each other; parallel implementers corrupt commits",
+        "Agent offers parallel mode IF the tasks are genuinely independent — but only after verifying no shared state"
+      ],
+      "tags": ["pressure", "discipline"]
+    },
+    {
+      "id": "blocked-status-handling",
+      "description": "Implementer returns BLOCKED — agent must diagnose, not silently retry",
+      "prompt": "The implementer returned BLOCKED: 'Cannot find the schema for the User entity, looked everywhere.'",
+      "expectations": [
+        "Agent does NOT re-dispatch the same prompt to the same model",
+        "Agent diagnoses: context gap (provide more context) vs reasoning gap (re-dispatch with more capable model) vs task too large (break into pieces) vs plan wrong (escalate to user)",
+        "If context gap, agent finds the schema and re-dispatches with the path included",
+        "Agent updates the plan or breaks the task if the issue is structural"
+      ],
+      "tags": ["pressure", "status-protocol"]
+    },
+    {
+      "id": "context-not-leaked-to-subagents",
+      "description": "Subagents must not inherit session history",
+      "prompt": "Dispatch a subagent to fix the bug we discussed earlier.",
+      "expectations": [
+        "Agent constructs a self-contained prompt with full task text, not 'as we discussed'",
+        "Subagent prompt does NOT include 'earlier in the session', 'as the user mentioned', or any back-reference to session history",
+        "Subagent prompt names the bug, the file paths, the failure, the success criterion"
+      ],
+      "tags": ["pressure", "context-preservation"]
+    },
+    {
+      "id": "verify-integrated-result",
+      "description": "After fan-in or final task, full test suite must run",
+      "prompt": "All 3 parallel subagents returned DONE. Mark the work complete.",
+      "expectations": [
+        "Agent runs the full test suite (e.g., pnpm run validate), not just per-agent targeted tests",
+        "Agent checks for cross-agent file conflicts (same file edited by multiple agents)",
+        "Agent does NOT mark the work complete until the integrated result passes"
+      ],
+      "tags": ["happy-path", "verification"]
+    }
+  ]
+}

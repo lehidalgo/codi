@@ -7,6 +7,7 @@ export default defineConfig({
   entry: {
     cli: "src/cli.ts",
     index: "src/index.ts",
+    "brain-ui-server": "src/runtime/brain-ui/cli-server.ts",
   },
   format: ["esm"],
   dts: true,
@@ -19,5 +20,6 @@ export default defineConfig({
   banner: {
     js: "#!/usr/bin/env node",
   },
-  onSuccess: "node scripts/copy-skill-assets.mjs",
+  onSuccess:
+    "node scripts/copy-skill-assets.mjs && node scripts/copy-brain-ui-vendor.mjs && node scripts/copy-hook-yaml.mjs",
 });

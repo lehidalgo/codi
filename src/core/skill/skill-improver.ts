@@ -8,8 +8,24 @@ import { MIN_FEEDBACK_FOR_EVOLVE, SKILL_OUTPUT_FILENAME } from "#src/constants.j
 import { readFeedbackForSkill } from "./feedback-collector.js";
 import { aggregateStats } from "./skill-stats.js";
 import type { SkillStatsResult } from "./skill-stats.js";
-import { getEvalsSummary } from "./evals-manager.js";
+import { getEvalsSummary, readEvals } from "./evals-manager.js";
 import type { FeedbackEntry } from "#src/schemas/feedback.js";
+
+/**
+ * ISSUE-100 — resolve the evolve-readiness threshold for a single skill.
+ *
+ * Looks at the skill's own `evals/evals.json` first; if it declares
+ * `minFeedbackForEvolve`, that value wins. Otherwise falls back to the
+ * global `MIN_FEEDBACK_FOR_EVOLVE` constant. Reading failures are
+ * non-fatal — the global default applies.
+ */
+async function resolveEvolveThreshold(skillDir: string): Promise<number> {
+  const evalsResult = await readEvals(skillDir);
+  if (evalsResult.ok && evalsResult.data.minFeedbackForEvolve) {
+    return evalsResult.data.minFeedbackForEvolve;
+  }
+  return MIN_FEEDBACK_FOR_EVOLVE;
+}
 
 export interface ImproveOptions {
   skillName: string;
@@ -42,12 +58,15 @@ export async function validateEvolveReadiness(
     Logger.getInstance().debug("Skill file not found, skipping evolution", cause);
   }
 
+  // ISSUE-100 — per-skill threshold from evals.json overrides the global.
+  const threshold = await resolveEvolveThreshold(skillDir);
+
   if (!skillExists) {
     return ok({
       ready: false,
       skillExists: false,
       feedbackCount: 0,
-      minimumRequired: MIN_FEEDBACK_FOR_EVOLVE,
+      minimumRequired: threshold,
       reason: `Skill "${skillName}" not found at ${skillPath}`,
     });
   }
@@ -55,13 +74,13 @@ export async function validateEvolveReadiness(
   const fbResult = await readFeedbackForSkill(configDir, skillName);
   const feedbackCount = fbResult.ok ? fbResult.data.length : 0;
 
-  if (feedbackCount < MIN_FEEDBACK_FOR_EVOLVE) {
+  if (feedbackCount < threshold) {
     return ok({
       ready: false,
       skillExists: true,
       feedbackCount,
-      minimumRequired: MIN_FEEDBACK_FOR_EVOLVE,
-      reason: `Skill "${skillName}" needs at least ${MIN_FEEDBACK_FOR_EVOLVE} feedback entries to evolve (has ${feedbackCount})`,
+      minimumRequired: threshold,
+      reason: `Skill "${skillName}" needs at least ${threshold} feedback entries to evolve (has ${feedbackCount})`,
     });
   }
 
@@ -69,7 +88,7 @@ export async function validateEvolveReadiness(
     ready: true,
     skillExists: true,
     feedbackCount,
-    minimumRequired: MIN_FEEDBACK_FOR_EVOLVE,
+    minimumRequired: threshold,
   });
 }
 

@@ -9,10 +9,48 @@ const canonicalHooks = () => [
   ...getGlobalHooks().filter((h) => h.name !== "commitlint"),
 ];
 
-describe("shell renderer parity (golden snapshot)", () => {
-  it("matches snapshot for typescript+python+global hooks (excluding commitlint)", () => {
+describe("shell renderer — typescript+python+global composition (CORE-034 inline)", () => {
+  // CORE-034 — replaced an opaque .toMatchSnapshot() with semantic
+  // assertions that document WHAT the composed script must contain.
+  // The exact whitespace / argument order is exercised by the
+  // parity-check below (renderShellHooks === buildHuskyCommands).
+  it("composes the canonical hook script with one section per language + global", () => {
     const out = buildHuskyCommands(canonicalHooks());
-    expect(out).toMatchSnapshot();
+
+    // Staged-file collection seeds every per-hook variable.
+    expect(out).toContain("STAGED=$(git diff --cached --name-only --diff-filter=ACMR)");
+
+    // Section dividers in declared order: typescript → python → global.
+    const tsIdx = out.indexOf("# — typescript —");
+    const pyIdx = out.indexOf("# — python —");
+    const globalIdx = out.indexOf("# — global —");
+    expect(tsIdx).toBeGreaterThanOrEqual(0);
+    expect(pyIdx).toBeGreaterThan(tsIdx);
+    expect(globalIdx).toBeGreaterThan(pyIdx);
+
+    // TypeScript hooks fire on the TS/JS extension set.
+    expect(out).toContain("xargs npx eslint --fix");
+    expect(out).toContain("xargs npx prettier --write");
+    expect(out).toContain("xargs npx @biomejs/biome check --write --no-errors-on-unmatched");
+
+    // Python hooks fire only on .py, with BLOCKING dep-check guards
+    // for tools the user must install (ruff + bandit).
+    expect(out).toMatch(/RUFF_CHECK=.*\\\.\(py\)\$/);
+    expect(out).toContain("BLOCKING — install ruff-check to commit: pip install ruff");
+    expect(out).toContain("xargs ruff check --fix");
+    expect(out).toContain("xargs ruff format");
+    expect(out).toContain('BLOCKING — install bandit to commit: pip install "bandit[toml]"');
+    expect(out).toContain("xargs bandit -c pyproject.toml -lll -r");
+
+    // Global hooks fire after the languages.
+    expect(out).toContain("gitleaks protect --staged --no-banner");
+    expect(out).toContain("npx codi doctor --ci");
+
+    // Re-staging step at the end so formatter writes survive the commit.
+    expect(out).toContain('xargs git add || true');
+
+    // Excluded by the canonicalHooks filter — must NOT leak in.
+    expect(out).not.toContain("commitlint");
   });
 });
 

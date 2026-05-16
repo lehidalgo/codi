@@ -12,7 +12,7 @@ import {
   AGENT_CATEGORIES,
   buildSkillCategoryMap,
   extractTemplateHint,
-} from "#src/cli/artifact-categories.js";
+} from "#src/core/onboard/artifact-categories.js";
 import { BUILTIN_PRESETS, getBuiltinPresetNames } from "#src/templates/presets/index.js";
 import { PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 
@@ -357,12 +357,12 @@ grep through scripts.
 
    ## Install
    \`\`\`bash
-   # e.g. pnpm install / uv sync / go mod download
+   # e.g. npm install / uv sync / go mod download
    \`\`\`
 
    ## Development
    \`\`\`bash
-   # e.g. pnpm dev / python manage.py runserver
+   # e.g. npm run dev / python manage.py runserver
    \`\`\`
 
    ## Testing / Build / Lint & Format — same pattern, omit if empty

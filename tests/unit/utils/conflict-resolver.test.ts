@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   UnresolvableConflictError,
   resolveConflicts,
@@ -87,20 +87,16 @@ describe("resolveConflicts - non-TTY", () => {
   });
 });
 
-describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
-  let stderrSpy: ReturnType<typeof vi.spyOn>;
+describe("resolveConflicts - non-TTY structured output (CORE-007)", () => {
   let originalIsTTY: boolean | undefined;
-  let originalExitCode: number | undefined;
 
   beforeEach(() => {
     originalIsTTY = process.stdout.isTTY;
-    originalExitCode = process.exitCode as number | undefined;
     Object.defineProperty(process.stdout, "isTTY", {
       value: false,
       writable: true,
       configurable: true,
     });
-    stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -109,8 +105,6 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
       writable: true,
       configurable: true,
     });
-    process.exitCode = originalExitCode;
-    stderrSpy.mockRestore();
   });
 
   it("does NOT throw when there are unresolvable conflicts", async () => {
@@ -121,39 +115,28 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
     await expect(resolveConflicts([conflict])).resolves.not.toThrow();
   });
 
-  it("sets process.exitCode to 2 for unresolvable conflicts", async () => {
+  it("returns unresolvable entries in resolution.unresolvable (was: process.exitCode=2 side effect)", async () => {
     const current = "line1\nUSER-VERSION\nline3\n";
     const incoming = "line1\nUPSTREAM-VERSION\nline3\n";
     const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", current, incoming);
 
-    await resolveConflicts([conflict]);
+    const resolution = await resolveConflicts([conflict]);
 
-    expect(process.exitCode).toBe(2);
+    expect(resolution.unresolvable).toHaveLength(1);
+    expect(resolution.unresolvable[0]!.label).toBe("rules/foo");
   });
 
-  it("writes JSON payload to stderr for unresolvable conflicts", async () => {
+  it("returns nonInteractivePayload for stderr emission by the CLI caller", async () => {
     const current = "line1\nUSER-VERSION\nline3\n";
     const incoming = "line1\nUPSTREAM-VERSION\nline3\n";
     const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", current, incoming);
 
-    await resolveConflicts([conflict]);
+    const resolution = await resolveConflicts([conflict]);
 
-    const written = stderrSpy.mock.calls.map((c) => c[0]).join("");
-    const parsed = JSON.parse(written) as unknown;
-    expect(parsed).toMatchObject({ type: "conflicts" });
-  });
-
-  it("payload items contain label, fullPath, currentContent, incomingContent", async () => {
-    const current = "line1\nUSER-VERSION\nline3\n";
-    const incoming = "line1\nUPSTREAM-VERSION\nline3\n";
-    const conflict = makeConflictEntry("rules/foo", "/tmp/foo.md", current, incoming);
-
-    await resolveConflicts([conflict]);
-
-    const written = stderrSpy.mock.calls.map((c) => c[0]).join("");
-    const parsed = JSON.parse(written) as { type: string; items: unknown[] };
-    expect(parsed.items).toHaveLength(1);
-    expect(parsed.items[0]).toMatchObject({
+    expect(resolution.nonInteractivePayload).toBeDefined();
+    expect(resolution.nonInteractivePayload!.type).toBe("conflicts");
+    expect(resolution.nonInteractivePayload!.items).toHaveLength(1);
+    expect(resolution.nonInteractivePayload!.items[0]).toMatchObject({
       label: "rules/foo",
       fullPath: "/tmp/foo.md",
       currentContent: current,
@@ -161,7 +144,7 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
     });
   });
 
-  it("returns failed entries in skipped, auto-merged in merged", async () => {
+  it("returns unresolvable entries separately from skipped (no more conflation)", async () => {
     // c1: auto-mergeable (pure addition)
     const c1 = makeConflictEntry(
       "rules/safe",
@@ -181,12 +164,13 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
 
     expect(resolution.merged).toHaveLength(1);
     expect(resolution.merged[0]!.label).toBe("rules/safe");
-    expect(resolution.skipped).toHaveLength(1);
-    expect(resolution.skipped[0]!.label).toBe("rules/conflict");
+    expect(resolution.unresolvable).toHaveLength(1);
+    expect(resolution.unresolvable[0]!.label).toBe("rules/conflict");
+    expect(resolution.skipped).toHaveLength(0); // CORE-007: user-skipped only
     expect(resolution.accepted).toHaveLength(0);
   });
 
-  it("payload only lists unresolvable files, not auto-merged ones", async () => {
+  it("nonInteractivePayload only lists unresolvable files, not auto-merged ones", async () => {
     const c1 = makeConflictEntry(
       "rules/safe",
       "/tmp/safe.md",
@@ -200,17 +184,25 @@ describe("resolveConflicts - non-TTY structured output (exit 2)", () => {
       "line1\nUPSTREAM-VERSION\nline3\n",
     );
 
-    await resolveConflicts([c1, c2]);
+    const resolution = await resolveConflicts([c1, c2]);
 
-    const jsonPayload = stderrSpy.mock.calls
-      .map((c) => c[0] as string)
-      .find((s) => s.trimStart().startsWith("{"));
-    const parsed = JSON.parse(jsonPayload ?? "") as {
-      type: string;
-      items: Array<{ label: string }>;
-    };
-    expect(parsed.items).toHaveLength(1);
-    expect(parsed.items[0]!.label).toBe("rules/conflict");
+    expect(resolution.nonInteractivePayload).toBeDefined();
+    expect(resolution.nonInteractivePayload!.items).toHaveLength(1);
+    expect(resolution.nonInteractivePayload!.items[0]!.label).toBe("rules/conflict");
+  });
+
+  it("nonInteractivePayload is undefined when all conflicts auto-merge cleanly", async () => {
+    const c1 = makeConflictEntry(
+      "rules/safe",
+      "/tmp/safe.md",
+      "# Safe\n\nOriginal content\n",
+      "# Safe\n\nOriginal content\n\n## New Section\nAdded upstream\n",
+    );
+
+    const resolution = await resolveConflicts([c1]);
+
+    expect(resolution.unresolvable).toHaveLength(0);
+    expect(resolution.nonInteractivePayload).toBeUndefined();
   });
 });
 

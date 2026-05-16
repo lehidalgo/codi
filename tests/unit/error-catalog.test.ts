@@ -12,8 +12,8 @@ describe("ERROR_CATALOG", () => {
     expect(unique.size).toBe(codes.length);
   });
 
-  it("has 38 entries", () => {
-    expect(Object.keys(ERROR_CATALOG)).toHaveLength(38);
+  it("has 60 entries", () => {
+    expect(Object.keys(ERROR_CATALOG)).toHaveLength(60);
   });
 
   it("all entries have required fields", () => {

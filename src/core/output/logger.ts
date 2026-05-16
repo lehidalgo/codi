@@ -1,4 +1,5 @@
 import type { LogLevel, OutputMode } from "./types.js";
+import type { Logger as LoggerInterface } from "#src/types/logger.js";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -14,7 +15,13 @@ interface LoggerOptions {
   noColor: boolean;
 }
 
-export class Logger {
+/**
+ * Concrete logger. `utils/` and `adapters/` import only the
+ * {@link LoggerInterface} from `src/types/logger.ts` — never this class.
+ * The composition root (CLI entry points, the generator pipeline) holds
+ * the singleton via `Logger.getInstance()` and threads it through DI.
+ */
+export class Logger implements LoggerInterface {
   private static instance: Logger | null = null;
 
   private level: LogLevel;

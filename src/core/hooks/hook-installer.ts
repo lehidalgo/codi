@@ -6,18 +6,21 @@ import { createError } from "../output/errors.js";
 import type { HookSetup } from "./hook-detector.js";
 import type { HookEntry } from "./hook-registry.js";
 import type { ResolvedFlags } from "#src/types/flags.js";
-import { RUNNER_TEMPLATE } from "./runner-template.js";
 import {
-  SECRET_SCAN_TEMPLATE,
-  FILE_SIZE_CHECK_TEMPLATE,
   VERSION_CHECK_TEMPLATE,
-  TEMPLATE_WIRING_CHECK_TEMPLATE,
   DOC_NAMING_CHECK_TEMPLATE,
-  ARTIFACT_VALIDATE_TEMPLATE,
   SKILL_RESOURCE_CHECK_TEMPLATE,
   SKILL_PATH_WRAP_CHECK_TEMPLATE,
-  STAGED_JUNK_CHECK_TEMPLATE,
 } from "./hook-templates.js";
+import {
+  buildRunnerScript,
+  buildSecretScanScript,
+  buildFileSizeScript,
+  buildTemplateWiringScript,
+  buildArtifactValidateScript,
+  buildVersionBumpScript,
+  buildStagedJunkCheckScript,
+} from "./hook-installer-scripts.js";
 import { CONFLICT_MARKER_CHECK_TEMPLATE } from "./conflict-marker-template.js";
 import { BRAND_SKILL_VALIDATE_TEMPLATE } from "./brand-skill-validate-template.js";
 import { renderShellHooks } from "./renderers/shell-renderer.js";
@@ -27,9 +30,7 @@ import {
   IMPORT_DEPTH_CHECK_TEMPLATE,
   SKILL_YAML_VALIDATE_TEMPLATE,
 } from "./hook-policy-templates.js";
-import { VERSION_BUMP_TEMPLATE } from "./version-bump-template.js";
 import { VERSION_VERIFY_PRE_PUSH_TEMPLATE } from "./version-verify-pre-push-template.js";
-import { buildVendoredDirsTemplatePatterns } from "./exclusions.js";
 import { PRE_COMMIT_MAX_FILE_LINES, PROJECT_NAME, PROJECT_NAME_DISPLAY } from "#src/constants.js";
 import type { DependencyCheck } from "./hook-dependency-checker.js";
 import {
@@ -78,170 +79,83 @@ export interface InstallOptions {
 }
 
 /**
- * Build the standalone .git/hooks/pre-commit script body. Hooks are
- * pre-filtered to those that declare `stages.includes("pre-commit")` so
- * pre-push and commit-msg specs do not leak into the pre-commit runner.
- * (The runner also filters at runtime as defense-in-depth.)
+ * CORE-014 — declarative table of auxiliary hook scripts written
+ * alongside the standalone pre-commit runner. Pre-CORE-014 each entry
+ * here was a hand-rolled `if (options.flag) { … writeFile … push … }`
+ * block in `writeAuxiliaryScripts`; the table consolidates the 15
+ * blocks into a single iterator below.
+ *
+ * `body` is a thunk so constant templates and `buildXScript()` factory
+ * calls coexist on the same surface. Adding aux-hook #N is now a
+ * single row here plus the matching `InstallOptions` flag.
+ *
+ * Order MUST stay stable — the order of `writeFile` calls is part of
+ * the byte-equal contract that the existing installer tests rely on.
  */
-function buildRunnerScript(hooks: HookEntry[]): string {
-  const preCommitHooks = hooks.filter((h) => h.stages.includes("pre-commit"));
-  const hooksJson = JSON.stringify(preCommitHooks, null, 2);
-  return RUNNER_TEMPLATE.replace("{{HOOKS_JSON}}", hooksJson);
-}
+const AUX_HOOKS: ReadonlyArray<{
+  readonly flag: keyof InstallOptions;
+  readonly slug: string;
+  readonly body: () => string;
+}> = [
+  { flag: "secretScan", slug: "secret-scan", body: buildSecretScanScript },
+  {
+    flag: "fileSizeCheck",
+    slug: "file-size-check",
+    body: () => buildFileSizeScript(PRE_COMMIT_MAX_FILE_LINES),
+  },
+  { flag: "versionCheck", slug: "version-check", body: () => VERSION_CHECK_TEMPLATE },
+  { flag: "templateWiringCheck", slug: "template-wiring-check", body: buildTemplateWiringScript },
+  { flag: "docNamingCheck", slug: "doc-naming-check", body: () => DOC_NAMING_CHECK_TEMPLATE },
+  { flag: "artifactValidation", slug: "artifact-validate", body: buildArtifactValidateScript },
+  {
+    flag: "importDepthCheck",
+    slug: "import-depth-check",
+    body: () => IMPORT_DEPTH_CHECK_TEMPLATE,
+  },
+  {
+    flag: "skillYamlValidation",
+    slug: "skill-yaml-validate",
+    body: () => SKILL_YAML_VALIDATE_TEMPLATE,
+  },
+  {
+    flag: "skillResourceCheck",
+    slug: "skill-resource-check",
+    body: () => SKILL_RESOURCE_CHECK_TEMPLATE,
+  },
+  {
+    flag: "skillPathWrapCheck",
+    slug: "skill-path-wrap-check",
+    body: () => SKILL_PATH_WRAP_CHECK_TEMPLATE,
+  },
+  { flag: "stagedJunkCheck", slug: "staged-junk-check", body: buildStagedJunkCheckScript },
+  {
+    flag: "conflictMarkerCheck",
+    slug: "conflict-marker-check",
+    body: () => CONFLICT_MARKER_CHECK_TEMPLATE,
+  },
+  { flag: "versionBump", slug: "version-bump", body: buildVersionBumpScript },
+  { flag: "versionVerify", slug: "version-verify", body: () => VERSION_VERIFY_PRE_PUSH_TEMPLATE },
+  {
+    flag: "brandSkillValidation",
+    slug: "brand-skill-validate",
+    body: () => BRAND_SKILL_VALIDATE_TEMPLATE,
+  },
+];
 
-function buildSecretScanScript(): string {
-  return SECRET_SCAN_TEMPLATE;
-}
-
-function buildFileSizeScript(maxLines: number): string {
-  return FILE_SIZE_CHECK_TEMPLATE.replace("{{MAX_LINES}}", String(maxLines)).replace(
-    "{{VENDORED_DIRS_PATTERNS}}",
-    buildVendoredDirsTemplatePatterns(),
-  );
-}
-
-function buildTemplateWiringScript(): string {
-  return TEMPLATE_WIRING_CHECK_TEMPLATE;
-}
-
-function buildArtifactValidateScript(): string {
-  return ARTIFACT_VALIDATE_TEMPLATE;
-}
-
-function buildVersionBumpScript(): string {
-  return VERSION_BUMP_TEMPLATE;
-}
-
-function buildStagedJunkCheckScript(): string {
-  return STAGED_JUNK_CHECK_TEMPLATE;
-}
-
+/**
+ * Write every auxiliary script whose `InstallOptions` flag is enabled.
+ * Pre-CORE-014 this function was 129 LOC of hand-rolled if-blocks
+ * with the same shape (mkdir was not needed; only writeFile + push);
+ * the table-driven loop below collapses them to ~10 LOC of logic
+ * while preserving order and byte-equal output.
+ */
 async function writeAuxiliaryScripts(hookDir: string, options: InstallOptions): Promise<string[]> {
   const files: string[] = [];
-  if (options.secretScan) {
-    const secretPath = path.join(hookDir, `${PROJECT_NAME}-secret-scan.mjs`);
-    const secretScript = buildSecretScanScript();
-    await fs.writeFile(secretPath, secretScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, secretPath));
-  }
-  if (options.fileSizeCheck) {
-    const sizePath = path.join(hookDir, `${PROJECT_NAME}-file-size-check.mjs`);
-    const sizeScript = buildFileSizeScript(PRE_COMMIT_MAX_FILE_LINES);
-    await fs.writeFile(sizePath, sizeScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, sizePath));
-  }
-  if (options.versionCheck) {
-    const versionPath = path.join(hookDir, `${PROJECT_NAME}-version-check.mjs`);
-    await fs.writeFile(versionPath, VERSION_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, versionPath));
-  }
-  if (options.templateWiringCheck) {
-    const wiringPath = path.join(hookDir, `${PROJECT_NAME}-template-wiring-check.mjs`);
-    const wiringScript = buildTemplateWiringScript();
-    await fs.writeFile(wiringPath, wiringScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, wiringPath));
-  }
-  if (options.docNamingCheck) {
-    const docNamingPath = path.join(hookDir, `${PROJECT_NAME}-doc-naming-check.mjs`);
-    await fs.writeFile(docNamingPath, DOC_NAMING_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, docNamingPath));
-  }
-  if (options.artifactValidation) {
-    const artifactPath = path.join(hookDir, `${PROJECT_NAME}-artifact-validate.mjs`);
-    const artifactScript = buildArtifactValidateScript();
-    await fs.writeFile(artifactPath, artifactScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, artifactPath));
-  }
-  if (options.importDepthCheck) {
-    const importDepthPath = path.join(hookDir, `${PROJECT_NAME}-import-depth-check.mjs`);
-    await fs.writeFile(importDepthPath, IMPORT_DEPTH_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, importDepthPath));
-  }
-  if (options.skillYamlValidation) {
-    const skillYamlPath = path.join(hookDir, `${PROJECT_NAME}-skill-yaml-validate.mjs`);
-    await fs.writeFile(skillYamlPath, SKILL_YAML_VALIDATE_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, skillYamlPath));
-  }
-  if (options.skillResourceCheck) {
-    const resourceCheckPath = path.join(hookDir, `${PROJECT_NAME}-skill-resource-check.mjs`);
-    await fs.writeFile(resourceCheckPath, SKILL_RESOURCE_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, resourceCheckPath));
-  }
-  if (options.skillPathWrapCheck) {
-    const pathWrapCheckPath = path.join(hookDir, `${PROJECT_NAME}-skill-path-wrap-check.mjs`);
-    await fs.writeFile(pathWrapCheckPath, SKILL_PATH_WRAP_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, pathWrapCheckPath));
-  }
-  if (options.stagedJunkCheck) {
-    const junkCheckPath = path.join(hookDir, `${PROJECT_NAME}-staged-junk-check.mjs`);
-    await fs.writeFile(junkCheckPath, STAGED_JUNK_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, junkCheckPath));
-  }
-  if (options.conflictMarkerCheck) {
-    const cmPath = path.join(hookDir, `${PROJECT_NAME}-conflict-marker-check.mjs`);
-    await fs.writeFile(cmPath, CONFLICT_MARKER_CHECK_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, cmPath));
-  }
-  if (options.versionBump) {
-    const versionBumpPath = path.join(hookDir, `${PROJECT_NAME}-version-bump.mjs`);
-    const versionBumpScript = buildVersionBumpScript();
-    await fs.writeFile(versionBumpPath, versionBumpScript, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, versionBumpPath));
-  }
-  if (options.versionVerify) {
-    const versionVerifyPath = path.join(hookDir, `${PROJECT_NAME}-version-verify.mjs`);
-    await fs.writeFile(versionVerifyPath, VERSION_VERIFY_PRE_PUSH_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, versionVerifyPath));
-  }
-  if (options.brandSkillValidation) {
-    const brandSkillPath = path.join(hookDir, `${PROJECT_NAME}-brand-skill-validate.mjs`);
-    await fs.writeFile(brandSkillPath, BRAND_SKILL_VALIDATE_TEMPLATE, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    files.push(path.relative(options.projectRoot, brandSkillPath));
+  for (const { flag, slug, body } of AUX_HOOKS) {
+    if (!options[flag]) continue;
+    const filePath = path.join(hookDir, `${PROJECT_NAME}-${slug}.mjs`);
+    await fs.writeFile(filePath, body(), { encoding: "utf-8", mode: 0o755 });
+    files.push(path.relative(options.projectRoot, filePath));
   }
   return files;
 }
@@ -252,32 +166,90 @@ async function installStandalone(
   _flags: ResolvedFlags,
   options: InstallOptions,
 ): Promise<Result<HookFileResult>> {
-  const hookDir = path.join(projectRoot, ".git", "hooks");
-  try {
-    await fs.mkdir(hookDir, { recursive: true });
-  } catch {
-    return err([
-      createError("E_HOOK_FAILED", {
-        hook: "pre-commit",
-        reason: `Cannot create .git/hooks directory at ${hookDir}`,
-      }),
-    ]);
-  }
-
   const script = buildRunnerScript(hooks);
-  const hookPath = path.join(hookDir, "pre-commit");
+  const result = await writeHookFile({
+    projectRoot,
+    runner: "standalone",
+    kind: "pre-commit",
+    content: script,
+  });
+  if (!result.ok) return result;
+
+  // Auxiliary scripts (secret-scan, file-size-check, …) live alongside
+  // the pre-commit runner in `.git/hooks/`. CORE-014 will table-drive
+  // this; for now the orchestration stays here.
+  const hookDir = path.join(projectRoot, ".git", "hooks");
+  const auxFiles = await writeAuxiliaryScripts(hookDir, options);
+  return ok({ files: [...result.data.files, ...auxFiles] });
+}
+
+/**
+ * CORE-013 — unified hook file writer.
+ *
+ * Pre-CORE-013, four sibling helpers (`installStandalone`,
+ * `installHusky`, `installCommitMsgHook`, `installPrePushHook`)
+ * duplicated the same `mkdir + writeFile mode 0o755 + try/catch +
+ * Result<HookFileResult>` skeleton. Differences were target path
+ * (`.git/hooks/<kind>` vs `.husky/<kind>`), an optional husky banner
+ * prefix, and the husky pre-commit read-modify-write strip-and-append.
+ * This single function captures the variants.
+ *
+ * `runner === "husky"` writes to `.husky/<kind>` and never `mkdir`s
+ * (husky-init owns the directory). Everything else writes to
+ * `.git/hooks/<kind>` with `mkdir -p`. The `huskyHeader` flag prepends
+ * `# ${PROJECT_NAME_DISPLAY} hooks\n` — required by the commit-msg
+ * husky variant and by the husky pre-commit append; intentionally
+ * absent from husky pre-push (preserves the existing inconsistency
+ * so byte-equal tests stay green). `stripPriorGenerated` is the
+ * read-modify-write knob for the husky pre-commit case: read existing
+ * file, strip any prior block matching the banner, then append the
+ * new block separated by a blank line.
+ */
+async function writeHookFile(opts: {
+  projectRoot: string;
+  runner: "standalone" | "husky" | "lefthook" | "pre-commit";
+  kind: "pre-commit" | "commit-msg" | "pre-push";
+  content: string;
+  huskyHeader?: boolean;
+  stripPriorGenerated?: boolean;
+}): Promise<Result<HookFileResult>> {
+  const targetDir =
+    opts.runner === "husky"
+      ? path.join(opts.projectRoot, ".husky")
+      : path.join(opts.projectRoot, ".git", "hooks");
+  const hookPath = path.join(targetDir, opts.kind);
 
   try {
-    await fs.writeFile(hookPath, script, { encoding: "utf-8", mode: 0o755 });
-    const files: string[] = [path.relative(projectRoot, hookPath)];
-    const auxFiles = await writeAuxiliaryScripts(hookDir, options);
-    files.push(...auxFiles);
-    return ok({ files });
+    if (opts.runner !== "husky") {
+      await fs.mkdir(targetDir, { recursive: true });
+    }
+
+    let payload = opts.content;
+    if (opts.stripPriorGenerated) {
+      let existing = "";
+      try {
+        existing = await fs.readFile(hookPath, "utf-8");
+      } catch {
+        // file doesn't exist yet
+      }
+      const cleaned = stripGeneratedSection(existing);
+      // The husky pre-commit case feeds the block content (commands)
+      // and lets writeHookFile compose the banner + leading newline.
+      const block = opts.huskyHeader
+        ? `\n# ${PROJECT_NAME_DISPLAY} hooks\n${opts.content}\n`
+        : `\n${opts.content}\n`;
+      payload = cleaned + block;
+    } else if (opts.huskyHeader) {
+      payload = `# ${PROJECT_NAME_DISPLAY} hooks\n${opts.content}`;
+    }
+
+    await fs.writeFile(hookPath, payload, { encoding: "utf-8", mode: 0o755 });
+    return ok({ files: [path.relative(opts.projectRoot, hookPath)] });
   } catch (cause) {
     return err([
       createError("E_HOOK_FAILED", {
-        hook: "pre-commit",
-        reason: `Failed to write hook: ${(cause as Error).message}`,
+        hook: opts.kind,
+        reason: `Failed to write ${opts.kind} hook: ${(cause as Error).message}`,
       }),
     ]);
   }
@@ -429,34 +401,19 @@ async function installHusky(
   projectRoot: string,
   hooks: HookEntry[],
 ): Promise<Result<HookFileResult>> {
-  const huskyFile = path.join(projectRoot, ".husky", "pre-commit");
-
   const commands = renderShellHooks(hooks, "husky");
-  const block = `\n# ${PROJECT_NAME_DISPLAY} hooks\n${commands}\n`;
-
-  try {
-    let existing = "";
-    try {
-      existing = await fs.readFile(huskyFile, "utf-8");
-    } catch {
-      // file doesn't exist yet
-    }
-
-    // Remove any existing generated section before appending to prevent duplicates
-    const cleaned = stripGeneratedSection(existing);
-    await fs.writeFile(huskyFile, cleaned + block, {
-      encoding: "utf-8",
-      mode: 0o755,
-    });
-    return ok({ files: [path.relative(projectRoot, huskyFile)] });
-  } catch (cause) {
-    return err([
-      createError("E_HOOK_FAILED", {
-        hook: "husky",
-        reason: `Failed to write husky hook: ${(cause as Error).message}`,
-      }),
-    ]);
-  }
+  // writeHookFile composes the banner + leading newline when both
+  // `huskyHeader` and `stripPriorGenerated` are set — passing the raw
+  // command body keeps byte-equal with the legacy `cleaned + "\n# X\n
+  // <commands>\n"` shape.
+  return writeHookFile({
+    projectRoot,
+    runner: "husky",
+    kind: "pre-commit",
+    content: commands,
+    huskyHeader: true,
+    stripPriorGenerated: true,
+  });
 }
 
 async function installCommitMsgHook(
@@ -464,40 +421,21 @@ async function installCommitMsgHook(
   runner: string,
 ): Promise<Result<HookFileResult>> {
   if (runner === "none" || runner === "lefthook") {
-    const hookDir = path.join(projectRoot, ".git", "hooks");
-    try {
-      await fs.mkdir(hookDir, { recursive: true });
-      const hookPath = path.join(hookDir, "commit-msg");
-      await fs.writeFile(hookPath, COMMIT_MSG_TEMPLATE, {
-        encoding: "utf-8",
-        mode: 0o755,
-      });
-      return ok({ files: [path.relative(projectRoot, hookPath)] });
-    } catch (cause) {
-      return err([
-        createError("E_HOOK_FAILED", {
-          hook: "commit-msg",
-          reason: `Failed to write commit-msg hook: ${(cause as Error).message}`,
-        }),
-      ]);
-    }
+    return writeHookFile({
+      projectRoot,
+      runner: "standalone",
+      kind: "commit-msg",
+      content: COMMIT_MSG_TEMPLATE,
+    });
   }
   if (runner === "husky") {
-    const huskyFile = path.join(projectRoot, ".husky", "commit-msg");
-    try {
-      await fs.writeFile(huskyFile, `# ${PROJECT_NAME_DISPLAY} hooks\n${COMMIT_MSG_TEMPLATE}`, {
-        encoding: "utf-8",
-        mode: 0o755,
-      });
-      return ok({ files: [path.relative(projectRoot, huskyFile)] });
-    } catch (cause) {
-      return err([
-        createError("E_HOOK_FAILED", {
-          hook: "commit-msg",
-          reason: `Failed to write husky commit-msg: ${(cause as Error).message}`,
-        }),
-      ]);
-    }
+    return writeHookFile({
+      projectRoot,
+      runner: "husky",
+      kind: "commit-msg",
+      content: COMMIT_MSG_TEMPLATE,
+      huskyHeader: true,
+    });
   }
   return ok({ files: [] });
 }
@@ -511,37 +449,12 @@ async function installPrePushHook(
     "{{PROTECTED_BRANCHES}}",
     protectedBranches.join(" "),
   );
-
-  if (runner === "husky") {
-    const huskyFile = path.join(projectRoot, ".husky", "pre-push");
-    try {
-      await fs.writeFile(huskyFile, script, { encoding: "utf-8", mode: 0o755 });
-      return ok({ files: [path.relative(projectRoot, huskyFile)] });
-    } catch (cause) {
-      return err([
-        createError("E_HOOK_FAILED", {
-          hook: "pre-push",
-          reason: `Failed to write husky pre-push: ${(cause as Error).message}`,
-        }),
-      ]);
-    }
-  }
-
-  // standalone, lefthook, pre-commit framework: write directly to .git/hooks/pre-push
-  const hookDir = path.join(projectRoot, ".git", "hooks");
-  try {
-    await fs.mkdir(hookDir, { recursive: true });
-    const hookPath = path.join(hookDir, "pre-push");
-    await fs.writeFile(hookPath, script, { encoding: "utf-8", mode: 0o755 });
-    return ok({ files: [path.relative(projectRoot, hookPath)] });
-  } catch (cause) {
-    return err([
-      createError("E_HOOK_FAILED", {
-        hook: "pre-push",
-        reason: `Failed to write pre-push hook: ${(cause as Error).message}`,
-      }),
-    ]);
-  }
+  return writeHookFile({
+    projectRoot,
+    runner: runner === "husky" ? "husky" : "standalone",
+    kind: "pre-push",
+    content: script,
+  });
 }
 
 async function cleanStaleHooksFromOtherRunner(

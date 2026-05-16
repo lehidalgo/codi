@@ -5,8 +5,14 @@ import type { Result } from "#src/types/result.js";
 import { createError } from "../output/errors.js";
 import { loadSkillTemplate } from "./skill-template-loader.js";
 import { generateMitLicense } from "./license-generator.js";
-import { MAX_NAME_LENGTH, NAME_PATTERN_STRICT } from "#src/constants.js";
 import type { SkillTemplateDescriptor } from "#src/templates/skills/types.js";
+import {
+  assertNotExists,
+  ensureDir,
+  replaceNamePlaceholder,
+  validateArtifactName,
+  writeFileSafe,
+} from "./common.js";
 
 const DEFAULT_CONTENT = `---
 name: {{name}}
@@ -59,13 +65,8 @@ export interface CreateSkillOptions {
 export async function createSkill(options: CreateSkillOptions): Promise<Result<string>> {
   const { name, configDir, template, force } = options;
 
-  if (!NAME_PATTERN_STRICT.test(name) || name.length > MAX_NAME_LENGTH) {
-    return err([
-      createError("E_CONFIG_INVALID", {
-        message: `Invalid skill name "${name}". Use lowercase letters, digits, and hyphens only (max ${MAX_NAME_LENGTH} chars).`,
-      }),
-    ]);
-  }
+  const nameResult = validateArtifactName(name, "skill");
+  if (!nameResult.ok) return nameResult;
 
   let content: string;
   let descriptor: SkillTemplateDescriptor | undefined;
@@ -79,51 +80,19 @@ export async function createSkill(options: CreateSkillOptions): Promise<Result<s
     content = DEFAULT_CONTENT;
   }
 
-  content = content.replace(/\{\{name\}\}/g, name);
+  content = replaceNamePlaceholder(content, name);
 
   const skillDir = path.join(configDir, "skills", name);
   const filePath = path.join(skillDir, "SKILL.md");
 
-  try {
-    await fs.mkdir(skillDir, { recursive: true });
-  } catch (cause) {
-    return err([
-      createError(
-        "E_PERMISSION_DENIED",
-        {
-          path: skillDir,
-        },
-        cause as Error,
-      ),
-    ]);
-  }
+  const dirResult = await ensureDir(skillDir);
+  if (!dirResult.ok) return dirResult;
 
-  if (!force) {
-    try {
-      await fs.access(filePath);
-      return err([
-        createError("E_CONFIG_INVALID", {
-          message: `Skill file already exists: ${filePath}`,
-        }),
-      ]);
-    } catch {
-      // File does not exist, good to proceed
-    }
-  }
+  const existsResult = await assertNotExists(filePath, "Skill", Boolean(force));
+  if (!existsResult.ok) return existsResult;
 
-  try {
-    await fs.writeFile(filePath, content + "\n", "utf-8");
-  } catch (cause) {
-    return err([
-      createError(
-        "E_PERMISSION_DENIED",
-        {
-          path: filePath,
-        },
-        cause as Error,
-      ),
-    ]);
-  }
+  const writeResult = await writeFileSafe(filePath, content + "\n");
+  if (!writeResult.ok) return writeResult;
 
   const holder = options.copyrightHolder ?? "Contributors";
   const scaffoldResult = await scaffoldSkillSubdirs(skillDir, name, holder);

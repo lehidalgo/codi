@@ -1,0 +1,1031 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codi.dev/schemas/manifest-event/v1.0.0",
+  "title": "Manifest Event",
+  "description": "Canonical event in the codi manifest event log. Closed vocabulary — extending requires an ADR.",
+  "type": "object",
+  "$defs": {
+    "eventId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 identifying this event."
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semver of the event schema this event was written against."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp in UTC."
+    },
+    "author": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["agent", "human", "system"] },
+        "id": { "type": "string", "minLength": 1 }
+      },
+      "required": ["type", "id"],
+      "additionalProperties": false
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "intent",
+        "reproduce",
+        "baseline",
+        "plan",
+        "discover",
+        "decompose",
+        "execute",
+        "verify",
+        "data-validation",
+        "sync",
+        "done"
+      ]
+    },
+    "workflowType": {
+      "type": "string",
+      "enum": ["feature", "bug-fix", "refactor", "migration", "project", "quick", "team-consolidation"]
+    },
+    "scopeCategory": {
+      "type": "string",
+      "enum": ["incidental", "scope-expansion"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "low"]
+    },
+    "subagentCategory": {
+      "type": "string",
+      "enum": ["fork-by-design", "fork-on-demand"]
+    },
+    "gateVerdict": {
+      "type": "string",
+      "enum": ["pass", "fail"]
+    },
+    "baseEvent": {
+      "type": "object",
+      "properties": {
+        "event_id": { "$ref": "#/$defs/eventId" },
+        "schema_version": { "$ref": "#/$defs/schemaVersion" },
+        "event_type": { "type": "string" },
+        "timestamp": { "$ref": "#/$defs/timestamp" },
+        "author": { "$ref": "#/$defs/author" },
+        "parent_event_id": {
+          "oneOf": [{ "$ref": "#/$defs/eventId" }, { "type": "null" }]
+        },
+        "commitable": { "type": "boolean" },
+        "payload": { "type": "object" }
+      },
+      "required": [
+        "event_id",
+        "schema_version",
+        "event_type",
+        "timestamp",
+        "author",
+        "parent_event_id",
+        "commitable",
+        "payload"
+      ]
+    }
+  },
+  "discriminator": { "propertyName": "event_type" },
+  "oneOf": [
+    {
+      "title": "init",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "init" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "workflow_id": { "type": "string", "minLength": 1 },
+            "workflow_type": { "$ref": "#/$defs/workflowType" },
+            "task": { "type": "string", "minLength": 1 },
+            "plugin_version": { "$ref": "#/$defs/schemaVersion" },
+            "skill_commit_hash": { "type": "string" },
+            "from_story_id": {
+              "type": "string",
+              "pattern": "^US-\\d{3,}$",
+              "description": "Optional UserStory id this workflow run is delivering. Set by --from-story flag."
+            },
+            "cwd": {
+              "type": "string",
+              "description": "Project root at workflow init time. Filters workflow visibility per project."
+            },
+            "quick_category": {
+              "type": "string",
+              "enum": ["typo", "comment", "dep-bump", "format", "doc-tweak"],
+              "description": "Q7 — required when workflow_type is 'quick'. Closed list of trivial-edit categories."
+            },
+            "bug_fix_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for bug-fix workflow. Drives phase compression at runtime.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["quick", "standard", "deep", "incident"] },
+                "severity": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+                "reproducer_exists": { "type": "boolean" },
+                "root_cause_known": { "type": "boolean" },
+                "scope": { "type": "string", "enum": ["single", "multi"] },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "feature_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for feature workflow. Drives phase compression at runtime.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["prototype", "standard", "deep"] },
+                "complexity": { "type": "string", "enum": ["trivial", "standard", "large"] },
+                "design_exists": { "type": "boolean" },
+                "scope": { "type": "string", "enum": ["single", "multi"] },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "tdd_strict": { "type": "boolean" },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "refactor_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for refactor workflow.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["deadcode", "standard", "deep"] },
+                "kind": { "type": "string", "enum": ["deadcode", "extract", "deepen", "decouple"] },
+                "scope": { "type": "string", "enum": ["single", "multi"] },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "migration_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for migration workflow.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["schema", "data", "deep"] },
+                "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+                "rollback_tested": { "type": "boolean" },
+                "execute_mode": { "type": "string", "enum": ["inline", "subagent"] },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "project_adaptation": {
+              "type": "object",
+              "description": "Adaptive intake answers for project workflow.",
+              "properties": {
+                "profile": { "type": "string", "enum": ["no-sheet", "standard", "absorb"] },
+                "mode": { "type": "string", "enum": ["greenfield", "incremental", "absorb"] },
+                "no_sheet": { "type": "boolean" },
+                "grill": { "type": "boolean" },
+                "interactive": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "carryover_from": {
+              "type": "string",
+              "description": "Cross-workflow conversion — id of a previously-abandoned workflow whose context carries over."
+            },
+            "carryover_context": {
+              "type": "object",
+              "description": "Compact summary of the prior workflow's context (task, scope_files, decisions_count, knowledge_terms). Materialized at init time when carryover_from is set.",
+              "additionalProperties": true
+            }
+          },
+          "required": ["workflow_id", "workflow_type", "task", "plugin_version"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "workflow_completed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "workflow_completed" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "summary": { "type": "string" }
+          },
+          "required": ["duration_ms"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "workflow_abandoned",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "workflow_abandoned" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": { "type": "string", "minLength": 1 },
+            "abandoned_in_phase": { "$ref": "#/$defs/phase" }
+          },
+          "required": ["reason", "abandoned_in_phase"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "phase_started",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "phase_started" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "phase": { "$ref": "#/$defs/phase" }
+          },
+          "required": ["phase"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "phase_completed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "phase_completed" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "phase": { "$ref": "#/$defs/phase" },
+            "duration_ms": { "type": "integer", "minimum": 0 },
+            "gate_passed": { "type": "boolean" }
+          },
+          "required": ["phase", "duration_ms", "gate_passed"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "phase_transition_proposed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "phase_transition_proposed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "from_phase": { "$ref": "#/$defs/phase" },
+            "to_phase": { "$ref": "#/$defs/phase" }
+          },
+          "required": ["from_phase", "to_phase"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "phase_transition_approved",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "phase_transition_approved" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "from_phase": { "$ref": "#/$defs/phase" },
+            "to_phase": { "$ref": "#/$defs/phase" }
+          },
+          "required": ["from_phase", "to_phase"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "phase_transition_rejected",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "phase_transition_rejected" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "from_phase": { "$ref": "#/$defs/phase" },
+            "to_phase": { "$ref": "#/$defs/phase" },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["from_phase", "to_phase", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "scope_change_classified",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "scope_change_classified" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "file_path": { "type": "string", "minLength": 1 },
+            "category": { "$ref": "#/$defs/scopeCategory" },
+            "confidence": { "$ref": "#/$defs/confidence" },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["file_path", "category", "confidence", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "scope_expansion_proposed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "scope_expansion_proposed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "file_path": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["file_path", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "scope_expansion_approved",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "scope_expansion_approved" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "file_path": { "type": "string", "minLength": 1 },
+            "added_to_scope": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          },
+          "required": ["file_path", "added_to_scope"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "scope_expansion_rejected",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "scope_expansion_rejected" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "file_path": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["file_path", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "incidental_change_recorded",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "incidental_change_recorded" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "file_path": { "type": "string", "minLength": 1 },
+            "lines_changed": { "type": "integer", "minimum": 0 },
+            "classifier_reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["file_path", "lines_changed", "classifier_reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "gate_check_started",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "gate_check_started" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "gate_name": { "type": "string", "minLength": 1 },
+            "check_id": { "type": "string", "minLength": 1 },
+            "check_type": { "enum": ["deterministic", "agent"] }
+          },
+          "required": ["gate_name", "check_id", "check_type"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "gate_check_passed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "gate_check_passed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "gate_name": { "type": "string", "minLength": 1 },
+            "check_id": { "type": "string", "minLength": 1 },
+            "duration_ms": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["gate_name", "check_id", "duration_ms"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "gate_check_failed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "gate_check_failed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "gate_name": { "type": "string", "minLength": 1 },
+            "check_id": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 },
+            "retry_count": { "type": "integer", "minimum": 0 },
+            "retries_remaining": { "type": "integer", "minimum": 0 },
+            "suggested_action": { "type": "string" }
+          },
+          "required": ["gate_name", "check_id", "reason", "retry_count", "retries_remaining"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "validation_run",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "validation_run" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "command": { "type": "string", "minLength": 1 },
+            "exit_code": { "type": "integer" },
+            "duration_ms": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["command", "exit_code", "duration_ms"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "subagent_dispatched",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "subagent_dispatched" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "skill_name": { "type": "string", "minLength": 1 },
+            "category": { "$ref": "#/$defs/subagentCategory" },
+            "purpose": { "type": "string", "minLength": 1 },
+            "parent_phase": { "$ref": "#/$defs/phase" }
+          },
+          "required": ["skill_name", "category", "purpose", "parent_phase"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "subagent_completed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "subagent_completed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "skill_name": { "type": "string", "minLength": 1 },
+            "verdict_summary": { "type": "string" },
+            "tokens_consumed": { "type": "integer", "minimum": 0 },
+            "duration_ms": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["skill_name", "tokens_consumed", "duration_ms"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "subagent_failed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "subagent_failed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "skill_name": { "type": "string", "minLength": 1 },
+            "reason": {
+              "enum": ["timeout", "schema_validation_failed", "tool_violation", "other"]
+            },
+            "details": { "type": "string" }
+          },
+          "required": ["skill_name", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "parallel_fork_dispatched",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "parallel_fork_dispatched" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "count": { "type": "integer", "minimum": 2 },
+            "purposes": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 2
+            }
+          },
+          "required": ["count", "purposes"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "child_workflow_initiated",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "child_workflow_initiated" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "child_workflow_id": { "type": "string", "minLength": 1 },
+            "child_workflow_type": { "$ref": "#/$defs/workflowType" },
+            "child_branch": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["child_workflow_id", "child_workflow_type", "child_branch", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "child_workflow_resolved",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "child_workflow_resolved" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "child_workflow_id": { "type": "string", "minLength": 1 },
+            "status": { "enum": ["completed", "abandoned"] },
+            "summary": { "type": "string" }
+          },
+          "required": ["child_workflow_id", "status"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "workflow_paused_for_child",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "workflow_paused_for_child" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "child_workflow_id": { "type": "string", "minLength": 1 },
+            "paused_in_phase": { "$ref": "#/$defs/phase" }
+          },
+          "required": ["child_workflow_id", "paused_in_phase"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "workflow_resumed_after_child",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "workflow_resumed_after_child" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "child_workflow_id": { "type": "string", "minLength": 1 },
+            "resumed_in_phase": { "$ref": "#/$defs/phase" }
+          },
+          "required": ["child_workflow_id", "resumed_in_phase"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "elevation_proposed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "elevation_proposed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "suggested_workflow_type": { "$ref": "#/$defs/workflowType" },
+            "trigger": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["suggested_workflow_type", "trigger", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "elevation_approved",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "elevation_approved" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "child_workflow_type": { "$ref": "#/$defs/workflowType" }
+          },
+          "required": ["child_workflow_type"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "elevation_rejected",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "elevation_rejected" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "context_term_added",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "context_term_added" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "term": { "type": "string", "minLength": 1 },
+            "definition": { "type": "string", "minLength": 1 }
+          },
+          "required": ["term", "definition"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "context_term_updated",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "context_term_updated" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "term": { "type": "string", "minLength": 1 },
+            "previous_definition": { "type": "string" },
+            "new_definition": { "type": "string", "minLength": 1 }
+          },
+          "required": ["term", "new_definition"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "adr_proposed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "adr_proposed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "adr_number": { "type": "integer", "minimum": 1 },
+            "title": { "type": "string", "minLength": 1 },
+            "rationale": { "type": "string", "minLength": 1 }
+          },
+          "required": ["adr_number", "title", "rationale"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "adr_approved",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "adr_approved" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "adr_number": { "type": "integer", "minimum": 1 },
+            "adr_path": { "type": "string", "minLength": 1 }
+          },
+          "required": ["adr_number", "adr_path"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "adr_superseded",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "adr_superseded" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "superseded_adr_number": { "type": "integer", "minimum": 1 },
+            "superseding_adr_number": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["superseded_adr_number", "superseding_adr_number"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "artifact_linked",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "artifact_linked" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "artifact_type": {
+              "enum": ["plan", "adr", "context", "research", "report", "test"]
+            },
+            "path": { "type": "string", "minLength": 1 },
+            "content_hash": { "type": "string" }
+          },
+          "required": ["artifact_type", "path"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "design_doc_authored",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "design_doc_authored" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "design_doc_path": { "type": "string", "minLength": 1 },
+            "story_id": {
+              "type": "string",
+              "pattern": "^US-\\d{3,}$"
+            },
+            "content_hash": { "type": "string" }
+          },
+          "required": ["design_doc_path"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "decision_recorded",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "decision_recorded" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "summary": { "type": "string", "minLength": 1 },
+            "rationale": { "type": "string", "minLength": 1 },
+            "alternatives_considered": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["summary", "rationale"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "workflow_handover",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "workflow_handover" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "from_dev_id": { "type": "string", "minLength": 1 },
+            "to_dev_id": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["from_dev_id", "to_dev_id", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "workflow_force_handover",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "workflow_force_handover" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "from_dev_id": { "type": "string", "minLength": 1 },
+            "to_dev_id": { "type": "string", "minLength": 1 },
+            "maintainer_id": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }
+          },
+          "required": ["from_dev_id", "to_dev_id", "maintainer_id", "reason"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "sheet_row_upserted",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "sheet_row_upserted" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "entity": { "type": "string", "minLength": 1 },
+            "row_id": { "type": "string", "minLength": 1 },
+            "columns_written": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "was_no_op": { "type": "boolean" }
+          },
+          "required": ["entity", "row_id"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "sheet_row_appended",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "sheet_row_appended" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "entity": { "type": "string", "minLength": 1 },
+            "row_id": { "type": "string" }
+          },
+          "required": ["entity"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "sheet_sync_queued",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "sheet_sync_queued" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "entity": { "type": "string", "minLength": 1 },
+            "row_id": { "type": "string" },
+            "queue_id": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string" }
+          },
+          "required": ["entity", "queue_id"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "sheet_sync_failed",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "sheet_sync_failed" },
+        "commitable": { "const": false },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "entity": { "type": "string" },
+            "row_id": { "type": "string" },
+            "queue_id": { "type": "string" },
+            "code": {
+              "type": "string",
+              "enum": [
+                "config_missing",
+                "credentials_missing",
+                "zone_violation",
+                "schema_invalid",
+                "sheet_unreachable",
+                "row_missing",
+                "id_conflict"
+              ]
+            },
+            "message": { "type": "string", "minLength": 1 },
+            "attempts": { "type": "integer", "minimum": 1 }
+          },
+          "required": ["code", "message"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    },
+    {
+      "title": "sheet_reconciled",
+      "allOf": [{ "$ref": "#/$defs/baseEvent" }],
+      "properties": {
+        "event_type": { "const": "sheet_reconciled" },
+        "commitable": { "const": true },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "rows_reconciled": { "type": "integer", "minimum": 0 },
+            "duration_ms": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["rows_reconciled"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["event_type"]
+    }
+  ]
+}

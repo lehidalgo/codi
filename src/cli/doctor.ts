@@ -1,5 +1,8 @@
 import type { Command } from "commander";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { PROJECT_CLI, PROJECT_NAME } from "../constants.js";
+import { openBrain, BrainBindingsError } from "#src/runtime/brain/db.js";
 import { runAllChecks } from "../core/version/version-checker.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { validateContentSize } from "../core/config/validator.js";
@@ -47,6 +50,18 @@ export async function doctorHandler(
     : "warn";
 
   const reportResult = await runAllChecks(projectRoot, driftMode);
+
+  // Native bindings probe — opens a throwaway brain to confirm
+  // better-sqlite3's native binding loads. Cheap (no migrations, no schema)
+  // and catches the most common production failure on fresh installs (npm
+  // postinstall failures → bindings missing → every brain operation crashes
+  // with a node-gyp stack trace). See BrainBindingsError for the actionable
+  // fix message.
+  const bindingsResult = await checkNativeBindings();
+  if (reportResult.ok) {
+    reportResult.data.results.push(bindingsResult);
+    if (!bindingsResult.passed) reportResult.data.allPassed = false;
+  }
 
   if (!reportResult.ok) {
     return createCommandResult({
@@ -119,6 +134,43 @@ export async function doctorHandler(
     warnings: [...contentWarnings, ...docWarnings, ...hookWarnings],
     exitCode,
   });
+}
+
+export async function checkNativeBindings(): Promise<{
+  check: string;
+  passed: boolean;
+  message: string;
+}> {
+  const probePath = join(tmpdir(), `codi-doctor-bindings-${process.pid}.db`);
+  try {
+    const handle = openBrain({ dbPath: probePath });
+    handle.close();
+    return {
+      check: "native-bindings",
+      passed: true,
+      message: "better-sqlite3 native binding loads correctly.",
+    };
+  } catch (e) {
+    if (e instanceof BrainBindingsError) {
+      return {
+        check: "native-bindings",
+        passed: false,
+        message: e.message,
+      };
+    }
+    return {
+      check: "native-bindings",
+      passed: false,
+      message: `Native bindings probe failed: ${e instanceof Error ? e.message : String(e)}`,
+    };
+  } finally {
+    try {
+      const fs = await import("node:fs/promises");
+      await fs.unlink(probePath).catch(() => undefined);
+    } catch {
+      /* probe file cleanup is best-effort */
+    }
+  }
 }
 
 async function doctorHooks(

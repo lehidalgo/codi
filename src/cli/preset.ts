@@ -45,7 +45,7 @@ import { loadPreset } from "../core/preset/preset-loader.js";
 import { applyPresetArtifacts } from "../core/preset/preset-applier.js";
 import { scanDirectory } from "../core/security/content-scanner.js";
 import { promptSecurityFindings } from "../core/security/scan-prompt.js";
-import { execFileAsync } from "../utils/exec.js";
+import { EXEC_TIMEOUTS, execFileWithTimeout } from "../utils/exec.js";
 import fg from "fast-glob";
 
 export interface PresetData {
@@ -191,7 +191,9 @@ export async function presetInstallHandler(
   const tmpDir = path.join(os.tmpdir(), `${PROJECT_NAME}-preset-${Date.now()}`);
   try {
     log.info(`Cloning preset from ${from}...`);
-    await execFileAsync("git", ["clone", "--depth", GIT_CLONE_DEPTH, from, tmpDir]);
+    await execFileWithTimeout("git", ["clone", "--depth", GIT_CLONE_DEPTH, from, tmpDir], {
+      timeoutMs: EXEC_TIMEOUTS.GH_LONG,
+    });
 
     const presetSource = path.join(tmpDir, name);
     let sourceDir: string;

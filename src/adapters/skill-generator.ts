@@ -3,9 +3,10 @@ import { join, relative, extname } from "node:path";
 import { stringify as stringifyYaml, parse as yamlParse } from "yaml";
 import type { NormalizedSkill } from "../types/config.js";
 import type { GeneratedFile } from "../types/agent.js";
-import { hashContent } from "../utils/hash.js";
+import { hashBuffer, hashContent } from "../utils/hash.js";
 import { sanitizeNameForPath } from "../utils/path-guard.js";
-import { Logger } from "../core/output/logger.js";
+import type { Logger } from "../types/logger.js";
+import { NULL_LOGGER } from "../types/logger.js";
 import { fmStr } from "../utils/yaml-serialize.js";
 import { addGeneratedFooter } from "./generated-header.js";
 import {
@@ -116,7 +117,11 @@ function flattenDescription(desc: string): string {
  * strip ${CLAUDE_SKILL_DIR} prefix so paths stay relative to the skill directory.
  * Inner whitespace is normalized in both cases: [[ /path ]] → [[/path]] or /path.
  */
-function warnStrippedFields(skill: NormalizedSkill, platformId: PlatformId): void {
+function warnStrippedFields(
+  skill: NormalizedSkill,
+  platformId: PlatformId,
+  log: Logger,
+): void {
   const allowed = PLATFORM_SKILL_FIELDS[platformId];
   const lossy = (
     [
@@ -136,7 +141,7 @@ function warnStrippedFields(skill: NormalizedSkill, platformId: PlatformId): voi
   ).filter((f): f is string => typeof f === "string" && !allowed.has(f));
 
   if (lossy.length > 0) {
-    Logger.getInstance().warn(
+    log.warn(
       `Skill "${skill.name}" (${platformId}): stripping unsupported fields: ${lossy.join(", ")}`,
     );
   }
@@ -155,9 +160,10 @@ export function buildSkillMd(
   skill: NormalizedSkill,
   descriptionPrefix = "",
   platformId: PlatformId = "claude-code",
+  log: Logger = NULL_LOGGER,
 ): string {
   const allowed = PLATFORM_SKILL_FIELDS[platformId];
-  warnStrippedFields(skill, platformId);
+  warnStrippedFields(skill, platformId, log);
   const frontmatter: string[] = ["---"];
 
   // name and description are required on all platforms
@@ -247,6 +253,7 @@ export async function generateSkillFiles(
   projectRoot?: string,
   descriptionPrefix = "",
   platformId: PlatformId = "claude-code",
+  log: Logger = NULL_LOGGER,
 ): Promise<GeneratedFile[]> {
   const files: GeneratedFile[] = [];
   for (const skill of skills) {
@@ -254,7 +261,7 @@ export async function generateSkillFiles(
     const skillBasePath = `${basePath}/${dirName}`;
 
     // 1. Generate SKILL.md — filtered to platform-supported fields
-    const raw = buildSkillMd(skill, descriptionPrefix, platformId);
+    const raw = buildSkillMd(skill, descriptionPrefix, platformId, log);
     const content = addGeneratedFooter(raw);
     files.push({
       path: `${skillBasePath}/${SKILL_OUTPUT_FILENAME}`,
@@ -290,13 +297,13 @@ export async function generateSkillFiles(
     // 3. Scan skill directory for user-added supporting files
     if (projectRoot) {
       const projectSkillDir = join(projectRoot, PROJECT_DIR, "skills", dirName);
-      const supporting = await collectSupportingFiles(projectSkillDir);
+      const supporting = await collectSupportingFiles(projectSkillDir, log);
       for (const sf of supporting) {
         files.push({
           path: `${skillBasePath}/${sf.relativePath}`,
           content: sf.content,
           sources: [MANIFEST_FILENAME],
-          hash: hashContent(sf.content),
+          hash: sf.binaryHash ?? hashContent(sf.content),
           ...(sf.binarySrc ? { binarySrc: sf.binarySrc } : {}),
         });
       }
@@ -310,15 +317,23 @@ interface SupportingFile {
   content: string;
   /** Absolute source path for binary files (copied as-is, not read as text). */
   binarySrc?: string;
+  /** SHA-256 hash of the raw bytes for binary files. Set whenever binarySrc is set
+   *  so drift detection can compare against the on-disk file via hashBuffer().
+   *  Without this, binary assets would be stored with hashContent("") and reported
+   *  as drifted on every `codi status` run. */
+  binaryHash?: string;
 }
 
 /** Scan a skill directory for supporting files to propagate. */
-async function collectSupportingFiles(skillDir: string): Promise<SupportingFile[]> {
+async function collectSupportingFiles(
+  skillDir: string,
+  log: Logger = NULL_LOGGER,
+): Promise<SupportingFile[]> {
   const results: SupportingFile[] = [];
   try {
     await access(skillDir);
   } catch (cause) {
-    Logger.getInstance().debug("Skill directory not accessible", cause);
+    log.debug("Skill directory not accessible", cause);
     return results;
   }
 
@@ -354,9 +369,23 @@ async function scanDir(
     if (SKIP_FILES.has(entry.name)) continue;
     if (topDir === "evals") continue;
 
-    // Binary files: record source path for copy (not text-readable)
+    // Binary files: record source path for copy (not text-readable) + compute
+    // a real SHA-256 of the bytes so drift detection has a stable expected
+    // hash to compare against. Without binaryHash the GeneratedFile.hash
+    // collapses to hashContent("") = EMPTY_INPUT_SHA256 and `codi status`
+    // reports every binary asset as drifted on every run.
     if (BINARY_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
-      results.push({ relativePath, content: "", binarySrc: fullPath });
+      try {
+        const bytes = await readFile(fullPath);
+        results.push({
+          relativePath,
+          content: "",
+          binarySrc: fullPath,
+          binaryHash: hashBuffer(bytes),
+        });
+      } catch {
+        // Unreadable — skip silently like the text branch below.
+      }
       continue;
     }
 

@@ -6,7 +6,8 @@ description: Token-efficient output — anti-sycophancy, concise responses, form
 priority: high
 alwaysApply: true
 managed_by: ${PROJECT_NAME}
-version: 1
+version: 2
+maintainers: ["@lehidalgo"]
 ---
 
 # Output Discipline

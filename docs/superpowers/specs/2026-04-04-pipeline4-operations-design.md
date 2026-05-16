@@ -26,7 +26,7 @@ Two entry points sharing a common evidence and documentation layer:
 
 ```
 Entry A: codi-guided-execution
-  → [per step] codi-evidence-gathering → codi-verification → codi-step-documenter
+  → [per step] codi-evidence-gathering → codi-verification → codi-dev-step-documenter
   → Final summary: docs/executions/<workflow>/README.md
 
 Entry B: codi-audit-fix
@@ -57,7 +57,7 @@ Shared discipline layer applies to both entries: `codi-verification`, `codi-debu
 
 ---
 
-### codi-step-documenter (shared)
+### codi-dev-step-documenter (shared)
 
 **Pattern:** Gate/Evidence  
 **Role:** Generates structured step completion documents after each validated workflow step

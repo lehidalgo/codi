@@ -8,28 +8,30 @@ import {
 export const template = `---
 name: {{name}}
 description: |
-  Unified testing skill with three modes. RUN: detect the framework and
-  execute the test suite, report pass/fail with quick triage. COVERAGE:
-  run with coverage instrumentation, identify files and lines below the
-  ${MIN_CODE_COVERAGE_PERCENT}% threshold, produce a gap report.
-  GENERATE: COVERAGE + generate tests for uncovered code paths (delegates
-  to ${PROJECT_NAME}-test-generator and ${PROJECT_NAME}-code-reviewer
-  subagents). Auto-detects Jest, Vitest, Pytest, Go, Rust, and .NET.
-  Activates on phrases like "run the tests", "are the tests green", "test
-  results", "npm test", "pytest", "go test", "cargo test", "vitest",
-  "code coverage", "test gaps", "uncovered lines", "measure coverage",
-  "fill coverage gaps", "what's my coverage". Do NOT activate for writing
-  new feature tests (use ${PROJECT_NAME}-tdd), fixing a failing test
-  (use ${PROJECT_NAME}-debugging), quality-reviewing existing tests
-  (use ${PROJECT_NAME}-code-review), full ${PROJECT_NAME} installation
-  audits (use ${PROJECT_NAME}-dev-e2e-testing), or multi-phase QA sweeps
-  (use ${PROJECT_NAME}-guided-qa-testing).
+  Run, measure, or generate tests for the current suite (not a specific
+  new feature). Three modes: RUN (detect framework, execute, report
+  pass/fail), COVERAGE (instrument, find files/lines below
+  ${MIN_CODE_COVERAGE_PERCENT}% threshold, gap report), GENERATE
+  (COVERAGE + generate tests for uncovered paths via
+  ${PROJECT_NAME}-test-generator and ${PROJECT_NAME}-code-reviewer
+  subagents). Auto-detects Jest, Vitest, Pytest, Go, Rust, .NET.
+  Triggers: "run the tests", "are the tests green", "test results",
+  "npm test", "pytest", "go test", "cargo test", "vitest", "code
+  coverage", "test gaps", "uncovered lines", "measure coverage", "fill
+  coverage gaps". Skip for: TDD inner loop with failing-test-first (use
+  ${PROJECT_NAME}-tdd); browser-driven testing (use
+  ${PROJECT_NAME}-webapp-testing); human-paired QA (use
+  ${PROJECT_NAME}-guided-qa-testing); fixing a failing test (use
+  ${PROJECT_NAME}-debugging); quality-reviewing tests (use
+  ${PROJECT_NAME}-code-review); full ${PROJECT_NAME} install audit (use
+  ${PROJECT_NAME}-dev-e2e-testing).
 category: ${SKILL_CATEGORY.TESTING}
 compatibility: ${SUPPORTED_PLATFORMS_YAML}
 managed_by: ${PROJECT_NAME}
 user-invocable: true
 disable-model-invocation: false
-version: 3
+version: 6
+maintainers: ["@lehidalgo"]
 ---
 
 # {{name}} — Testing

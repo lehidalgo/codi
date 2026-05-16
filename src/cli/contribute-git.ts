@@ -1,10 +1,12 @@
 import fs from "node:fs/promises";
-import { execFileAsync } from "../utils/exec.js";
+import { EXEC_TIMEOUTS, execFileWithTimeout } from "../utils/exec.js";
 import type { Logger } from "../core/output/logger.js";
 
 export async function getGitRepoUrl(repo: string): Promise<string> {
   try {
-    const { stdout, stderr } = await execFileAsync("gh", ["auth", "status"]);
+    const { stdout, stderr } = await execFileWithTimeout("gh", ["auth", "status"], {
+      timeoutMs: EXEC_TIMEOUTS.GH_API,
+    });
     const output = stdout + stderr;
     if (output.includes("Git operations protocol: ssh")) {
       return `git@github.com:${repo}.git`;
@@ -18,15 +20,11 @@ export async function getGitRepoUrl(repo: string): Promise<string> {
 export async function detectDefaultBranch(repo: string): Promise<string> {
   // 1. Try GitHub CLI (works for repos the user has gh access to)
   try {
-    const { stdout } = await execFileAsync("gh", [
-      "repo",
-      "view",
-      repo,
-      "--json",
-      "defaultBranchRef",
-      "--jq",
-      ".defaultBranchRef.name",
-    ]);
+    const { stdout } = await execFileWithTimeout(
+      "gh",
+      ["repo", "view", repo, "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"],
+      { timeoutMs: EXEC_TIMEOUTS.GH_API },
+    );
     const branch = stdout.trim();
     if (branch) return branch;
   } catch {
@@ -36,7 +34,11 @@ export async function detectDefaultBranch(repo: string): Promise<string> {
   // 2. Try git ls-remote via the user's configured protocol
   const repoUrl = await getGitRepoUrl(repo);
   try {
-    const { stdout } = await execFileAsync("git", ["ls-remote", "--symref", repoUrl, "HEAD"]);
+    const { stdout } = await execFileWithTimeout(
+      "git",
+      ["ls-remote", "--symref", repoUrl, "HEAD"],
+      { timeoutMs: EXEC_TIMEOUTS.GH_API },
+    );
     // Output format: ref: refs/heads/<branch>\tHEAD
     const match = stdout.match(/^ref: refs\/heads\/([^\t\n]+)\s+HEAD/m);
     if (match?.[1]) return match[1];
@@ -53,8 +55,9 @@ export async function detectDefaultBranch(repo: string): Promise<string> {
  */
 export async function detectClonedBranch(cloneDir: string): Promise<string> {
   try {
-    const { stdout } = await execFileAsync("git", ["symbolic-ref", "--short", "HEAD"], {
+    const { stdout } = await execFileWithTimeout("git", ["symbolic-ref", "--short", "HEAD"], {
       cwd: cloneDir,
+      timeoutMs: EXEC_TIMEOUTS.GIT_LOCAL,
     });
     return stdout.trim() || "main";
   } catch {
@@ -74,7 +77,9 @@ export async function checkRepoAccess(repo: string): Promise<RepoAccessResult> {
   // Try gh CLI first — it gives the clearest error messages
   let ghAccessible = false;
   try {
-    await execFileAsync("gh", ["repo", "view", repo, "--json", "name"]);
+    await execFileWithTimeout("gh", ["repo", "view", repo, "--json", "name"], {
+      timeoutMs: EXEC_TIMEOUTS.GH_API,
+    });
     ghAccessible = true;
   } catch {
     // gh failed — could be auth, could be private repo
@@ -83,8 +88,8 @@ export async function checkRepoAccess(repo: string): Promise<RepoAccessResult> {
   // Check if the repo has any refs (detects empty repos)
   const repoUrl = await getGitRepoUrl(repo);
   try {
-    const { stdout } = await execFileAsync("git", ["ls-remote", repoUrl], {
-      timeout: 15_000,
+    const { stdout } = await execFileWithTimeout("git", ["ls-remote", repoUrl], {
+      timeoutMs: EXEC_TIMEOUTS.GH_API,
     });
     // ls-remote succeeds but returns empty output = repo exists but has no refs
     const isEmpty = stdout.trim() === "";
@@ -177,11 +182,20 @@ export async function pushToEmptyRepo({
   log.info(`Repository ${targetRepo} is empty — pushing initial commit directly.`);
 
   await fs.mkdir(cloneDir, { recursive: true });
-  await execFileAsync("git", ["init"], { cwd: cloneDir });
-  await execFileAsync("git", ["remote", "add", "origin", repoUrl], { cwd: cloneDir });
+  await execFileWithTimeout("git", ["init"], {
+    cwd: cloneDir,
+    timeoutMs: EXEC_TIMEOUTS.GIT_LOCAL,
+  });
+  await execFileWithTimeout("git", ["remote", "add", "origin", repoUrl], {
+    cwd: cloneDir,
+    timeoutMs: EXEC_TIMEOUTS.GIT_LOCAL,
+  });
 
   await buildPackage(cloneDir);
-  await execFileAsync("git", ["add", "."], { cwd: cloneDir });
+  await execFileWithTimeout("git", ["add", "."], {
+    cwd: cloneDir,
+    timeoutMs: EXEC_TIMEOUTS.GIT_WRITE,
+  });
 
   const grouped: Record<string, string[]> = {};
   for (const a of artifacts) (grouped[a.type] ??= []).push(a.name);
@@ -195,17 +209,23 @@ export async function pushToEmptyRepo({
     )
     .join("\n\n");
 
-  await execFileAsync(
+  await execFileWithTimeout(
     "git",
     ["commit", "-m", `feat: initial preset contribution — ${summary}\n\n${details}`],
-    { cwd: cloneDir },
+    { cwd: cloneDir, timeoutMs: EXEC_TIMEOUTS.GIT_WRITE },
   );
 
   const pushBranch = targetBranch || "main";
-  await execFileAsync("git", ["branch", "-M", pushBranch], { cwd: cloneDir });
+  await execFileWithTimeout("git", ["branch", "-M", pushBranch], {
+    cwd: cloneDir,
+    timeoutMs: EXEC_TIMEOUTS.GIT_LOCAL,
+  });
 
   try {
-    await execFileAsync("git", ["push", "-u", "origin", pushBranch], { cwd: cloneDir });
+    await execFileWithTimeout("git", ["push", "-u", "origin", pushBranch], {
+      cwd: cloneDir,
+      timeoutMs: EXEC_TIMEOUTS.GH_LONG,
+    });
   } catch (pushError) {
     const msg = pushError instanceof Error ? pushError.message : String(pushError);
     log.error(`Push to empty repo failed: ${msg}`);

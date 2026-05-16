@@ -168,7 +168,7 @@ Enabled automatically when `src/templates/` exists (codi contributors only):
 | ------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | template-wiring-check          | Ensure all templates are registered in index.ts                                                          |
 | version-bump                   | Auto-increment template frontmatter version when content changes, regenerate baseline                    |
-| pre-push (codi-cli's own repo) | Run `pnpm lint && pnpm test:coverage` before pushing — gate enforced via `scripts/setup-husky-hooks.mjs` |
+| pre-push (codi-cli's own repo) | Run `npm run lint && npm run test:coverage` before pushing — gate enforced via `scripts/setup-husky-hooks.mjs` |
 
 For the full enforcement model — pre-commit ⇢ pre-push ⇢ CI ⇢ release — see [docs/20260430*155234*[TECH]\_quality-gates-policy.md](../20260430_155234_%5BTECH%5D_quality-gates-policy.md) (codi-cli's quality-gates policy, also a useful reference for end-user projects).
 

@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { writeStamp, ensureDocProjectDir } from "../core/docs/doc-stamp.js";
 import { createCommandResult } from "../core/output/formatter.js";
+import { Logger } from "../core/output/logger.js";
 import { EXIT_CODES } from "../core/output/exit-codes.js";
 import type { CommandResult } from "../core/output/types.js";
 import { initFromOptions, handleOutput } from "./shared.js";
@@ -50,7 +51,7 @@ export function registerDocsStampCommand(program: Command): void {
 
       if (result.exitCode === EXIT_CODES.SUCCESS && !globalOptions.json) {
         const d = result.data as DocsStampData;
-        console.log(
+        Logger.getInstance().info(
           `\n[codi] Documentation stamped at ${d.commit.slice(0, 7)} (${d.verified_by})\n` +
             `  Stamp written to: ${d.stamp_path}\n` +
             `  Commit this file to unblock your push.\n`,

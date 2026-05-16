@@ -19,7 +19,14 @@ export default defineConfig({
   test: {
     globals: true,
     include: ["tests/**/*.test.ts", "src/templates/skills/**/tests/**/*.test.{ts,js}"],
-    exclude: ["projs/**", "node_modules/**"],
+    exclude: [
+      "projs/**",
+      "node_modules/**",
+      "src/runtime/**",
+      "scripts/runtime/**",
+      "src/templates/hooks/runtime/**",
+      "src/schemas/runtime/**",
+    ],
     environmentMatchGlobs: [["src/templates/skills/**/tests/**/*.test.{ts,js}", "jsdom"]],
     testTimeout: 10_000,
     server: {
@@ -58,6 +65,28 @@ export default defineConfig({
         "src/cli/add.ts", // top-level command — logic in add-handlers.ts + add-wizard.ts
         "src/cli/hub.ts", // top-level interactive hub — logic in hub-handlers.ts
         "src/cli/skill.ts", // top-level command — logic in skill-evolve-handler.ts
+        "src/cli/prefs.ts", // top-level command — logic in src/runtime/preferences.ts
+        "src/cli/workflow.ts", // top-level command — logic in src/runtime/cli-handlers/*
+        // CORE-020 — src/cli/init.ts is now the slim orchestrator; phase
+        // logic moved to init-helpers.ts (already covered). The orchestrator
+        // is exercised by tests/unit/cli/init.test.ts + the e2e suite.
+        "src/cli/brain.ts", // top-level CLI — spawns brain-ui via child_process
+        "src/cli/agent-hooks.ts", // hook orchestrator wrapping stdin + brain handle
+        "src/runtime/cli-handlers.ts", // barrel re-export (no runtime code)
+        // ─── Google Sheets sync CLI — needs sheet fixtures we don't have ─
+        "src/runtime/sync/cli.ts", // sheets dispatcher
+        "src/runtime/sync/cli-bridge.ts", // sheets row bridge
+        "src/runtime/sync/cli-create.ts", // sheets row creator
+        "src/runtime/sync/cli-draft.ts", // sheets row drafter
+        "src/runtime/sync/cli-safety.ts", // sheets bootstrap guard
+        // ─── Brain UI HTTP page renderers — need supertest harness ──────
+        // Tracked as test-debt; remove when supertest harness lands.
+        "src/runtime/brain-ui/pages/sessions.ts", // /sessions route HTML
+        "src/runtime/brain-ui/pages/workflows.ts", // /workflows route HTML
+        "src/runtime/brain-ui/pages/tool-calls.ts", // /tool-calls route HTML
+        "src/runtime/brain-ui/pages/settings.ts", // /settings route HTML
+        // ─── Heavy @clack/prompts orchestration (per-workflow intake) ───
+        "src/runtime/workflows/bug-fix/interactive.ts", // 7-question @clack flow
         // ─── Heavy @clack/prompts orchestration ─────────────────────────
         // These files are >70% prompt-driven control flow (multiselect,
         // confirm, text loops with cancel/edit/skip branches). Unit-testing
@@ -70,11 +99,20 @@ export default defineConfig({
         "src/cli/hub-handlers.ts", // interactive hub menu actions
         "src/cli/preset-wizard.ts", // interactive preset selection wizard
         // ─── Network / git boundary ─────────────────────────────────────
-        // Need msw + git-fixture infrastructure to test meaningfully.
-        // Tracked as test-debt; remove from this list when fixtures land.
+        // Need git-fixture / gh-CLI subprocess mocks (HTTP mocking isn't
+        // enough — these files shell out to git / gh, not fetch).
+        // Tracked as test-debt; remove when subprocess-fixture infra lands.
         "src/cli/contribute-git.ts", // hits real git remotes
         "src/cli/preset-github.ts", // hits GitHub API + git clone
-        "src/cli/update-check.ts", // queries npm registry
+        // CORE-035 — update-check.ts: pure helpers `isNewer` and
+        // `installCommand` are covered by tests/unit/cli/update-check.test.ts.
+        // The `checkForUpdate` orchestrator stays excluded because it
+        // gates on `isTTY`, runs a `@clack/prompts` confirm loop, and
+        // spawns the package manager — three layers that need the same
+        // prompt-mock harness conflict-resolver waits on. The file's
+        // single network call (fetch REGISTRY_URL) lives inside that
+        // orchestrator, so no separate HTTP mock is required.
+        "src/cli/update-check.ts",
 
         "src/core/preset/preset-zip.ts", // requires zip/unzip binary
         "src/core/preset/preset-source.ts", // type-only file
@@ -84,6 +122,13 @@ export default defineConfig({
         // resolveConflicts loop needs a prompt-mock harness we don't yet
         // have. Tracked as test-debt; remove from this list once mocks land.
         "src/utils/conflict-resolver.ts",
+        // CORE-021 extracted the editor invocation helpers from
+        // conflict-resolver.ts. `openInEditor` spawns the user's $EDITOR
+        // and waits for save — same prompt-mock harness gap as the
+        // conflict-resolver loop. The pure parts (`isCommandAvailable`,
+        // `resolveEditor`) are exercised through editor-utils.test.ts.
+        // Tracked as test-debt with the same removal trigger.
+        "src/utils/editor-utils.ts",
         "src/templates/skills/**/scripts/**", // standalone skill runtime scripts with external deps
         "src/templates/skills/**/generators/**", // content-factory frontend (browser/worker) JS — not server-side code
         "src/templates/skills/**/static-dir.ts", // skill packaging helper (build-time)
@@ -121,6 +166,14 @@ export default defineConfig({
         },
         "src/utils/**": {
           statements: 95,
+          // CORE-029 — backfilled from 78.43% (post-CORE-021 regression)
+          // back to ~93.5%. Threshold 92 absorbs v8 measurement jitter
+          // between local runs (94.35% in CORE-029 measurement) and CI
+          // pre-push (93.54%); the remaining headroom lives in
+          // defensive `?? ""` / `typeof x === "string"` fallbacks across
+          // exec.ts, frontmatter.ts, yaml-serialize.ts, codi-dir-diff.ts
+          // — branches unreachable from real input shapes. The 92 floor
+          // still catches regressions of testable code.
           branches: 92,
           functions: 100,
         },

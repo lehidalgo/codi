@@ -1,4 +1,5 @@
 import type { NormalizedConfig } from "./config.js";
+import type { Logger } from "./logger.js";
 
 /**
  * File system paths that an adapter writes generated files to.
@@ -76,6 +77,13 @@ export interface GenerateOptions {
   unionMerge?: boolean;
   /** Absolute path to the project root; defaults to the current working directory. */
   projectRoot?: string;
+  /**
+   * Injected logger (CORE-003). Adapters use this for warn/info/debug
+   * messages emitted during generation. Defaults to `NULL_LOGGER` when
+   * not provided. The composition root (`core/generator/generator.ts`)
+   * passes `Logger.getInstance()` here.
+   */
+  log?: Logger;
 }
 
 /**

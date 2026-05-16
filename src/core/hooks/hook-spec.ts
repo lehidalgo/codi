@@ -22,7 +22,15 @@ export type HookLanguage =
   | "shell"
   | "global";
 
-export type HookCategory = "format" | "lint" | "type-check" | "security" | "test" | "meta";
+export type HookCategory =
+  | "format"
+  | "lint"
+  | "type-check"
+  | "security"
+  | "test"
+  | "meta"
+  | "enforcement"
+  | "observation";
 
 export type HookStage = "pre-commit" | "pre-push" | "commit-msg" | "manual";
 

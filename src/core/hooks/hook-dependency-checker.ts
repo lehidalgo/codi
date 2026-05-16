@@ -118,8 +118,9 @@ function resolveToolBinary(hook: HookEntry): string {
 
 async function resolveToolPath(tool: string): Promise<string | undefined> {
   try {
+    // ISSUE-070: promisify(execFile) already gives { stdout, stderr } — no cast needed.
     const result = await execFileAsync("which", [tool]);
-    const path = (result as unknown as { stdout: string }).stdout?.trim();
+    const path = result.stdout?.trim();
     return path || undefined;
   } catch {
     return undefined;

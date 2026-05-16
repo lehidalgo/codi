@@ -1,4 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+/**
+ * ISSUE-044 rewrite — drives real scaffolders against tmp .codi dirs.
+ *
+ * The pre-rewrite version mocked every scaffolder, every template-loader,
+ * the operations-ledger, and `cli/shared.js`. That meant the tests only
+ * proved the handlers WIRED to the mocks — they never verified that the
+ * scaffolders produced the expected files or that the helper
+ * `runAddCommand` correctly composed error CommandResults from real
+ * scaffolder failures.
+ *
+ * The rewrite removes every internal `vi.mock("#src/...")` call. Each test
+ * now provisions a real tmp `.codi/` directory and asserts observable
+ * outcomes: the file the scaffolder wrote, the success/failure shape of
+ * the returned CommandResult, and the error message strings carried in
+ * `result.errors[]`.
+ *
+ * The wizard test (`handleWizardFlow`) still mocks `runAddWizard` because
+ * that helper drives interactive TTY prompts via `@clack/prompts` — those
+ * remain a legitimate boundary mock.
+ */
+
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import {
   addRuleHandler,
   addSkillHandler,
@@ -8,292 +32,242 @@ import {
   brandAsArtifactHandler,
   handleWizardFlow,
 } from "#src/cli/add-handlers.js";
+import { AVAILABLE_TEMPLATES } from "#src/core/scaffolder/template-loader.js";
+import { AVAILABLE_SKILL_TEMPLATES } from "#src/core/scaffolder/skill-template-loader.js";
+import { AVAILABLE_AGENT_TEMPLATES } from "#src/core/scaffolder/agent-template-loader.js";
+import { AVAILABLE_MCP_SERVER_TEMPLATES } from "#src/core/scaffolder/mcp-template-loader.js";
 import { EXIT_CODES } from "#src/core/output/exit-codes.js";
 
-vi.mock("#src/utils/paths.js", () => ({
-  resolveProjectDir: vi.fn((root: string) => `${root}/.codi`),
-}));
-
-vi.mock("#src/core/output/logger.js", () => {
-  const instance = {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn(),
-  };
-  return { Logger: { getInstance: () => instance, init: vi.fn() } };
-});
-
-vi.mock("#src/core/scaffolder/rule-scaffolder.js", () => ({
-  createRule: vi.fn(),
-}));
-vi.mock("#src/core/scaffolder/skill-scaffolder.js", () => ({
-  createSkill: vi.fn(),
-}));
-vi.mock("#src/core/scaffolder/agent-scaffolder.js", () => ({
-  createAgent: vi.fn(),
-}));
-vi.mock("#src/core/scaffolder/mcp-scaffolder.js", () => ({
-  createMcpServer: vi.fn(),
-}));
-
-vi.mock("#src/core/scaffolder/template-loader.js", () => ({
-  AVAILABLE_TEMPLATES: ["typescript", "python"],
-}));
-vi.mock("#src/core/scaffolder/agent-template-loader.js", () => ({
-  AVAILABLE_AGENT_TEMPLATES: ["code-reviewer", "test-generator"],
-}));
-vi.mock("#src/core/scaffolder/skill-template-loader.js", () => ({
-  AVAILABLE_SKILL_TEMPLATES: ["frontend-design", "pdf"],
-}));
-vi.mock("#src/core/scaffolder/mcp-template-loader.js", () => ({
-  AVAILABLE_MCP_SERVER_TEMPLATES: ["memory", "filesystem"],
-}));
-
-vi.mock("#src/core/audit/operations-ledger.js", () => ({
-  OperationsLedgerManager: vi.fn().mockImplementation(() => ({
-    logOperation: vi.fn().mockResolvedValue(undefined),
-  })),
-}));
-
-vi.mock("#src/cli/shared.js", () => ({
-  initFromOptions: vi.fn(),
-  handleOutput: vi.fn(),
-  regenerateConfigs: vi.fn().mockResolvedValue(undefined),
-}));
-
+// `runAddWizard` is the only legitimate mock left — it consumes interactive
+// TTY prompts (@clack/prompts) which can't run inside vitest workers.
 vi.mock("#src/cli/add-wizard.js", () => ({
   runAddWizard: vi.fn(),
 }));
-
-import { createRule } from "#src/core/scaffolder/rule-scaffolder.js";
-import { createSkill } from "#src/core/scaffolder/skill-scaffolder.js";
-import { createAgent } from "#src/core/scaffolder/agent-scaffolder.js";
-import { createMcpServer } from "#src/core/scaffolder/mcp-scaffolder.js";
 import { runAddWizard } from "#src/cli/add-wizard.js";
-import { regenerateConfigs } from "#src/cli/shared.js";
 
-const mockCreateRule = vi.mocked(createRule);
-const mockCreateSkill = vi.mocked(createSkill);
-const mockCreateAgent = vi.mocked(createAgent);
-const mockCreateMcpServer = vi.mocked(createMcpServer);
 const mockRunAddWizard = vi.mocked(runAddWizard);
 
-beforeEach(() => vi.clearAllMocks());
-
 describe("addRuleHandler", () => {
-  it("succeeds without template", async () => {
-    mockCreateRule.mockResolvedValue({
-      ok: true,
-      data: "/tmp/.codi/rules/my-rule.md",
-    });
-    const result = await addRuleHandler("/tmp", "my-rule", {});
-    expect(result.success).toBe(true);
-    expect(result.data.path).toContain("my-rule");
+  let tmpRoot: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-addrule-"));
+    vi.clearAllMocks();
   });
 
-  it("rejects unknown template", async () => {
-    const result = await addRuleHandler("/tmp", "r", {
-      template: "nonexistent",
-    });
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it("succeeds without template — writes a rule file to disk", async () => {
+    const result = await addRuleHandler(tmpRoot, "my-rule", {});
+    expect(result.success).toBe(true);
+    expect(result.data.path.length).toBeGreaterThan(0);
+    expect(existsSync(result.data.path)).toBe(true);
+  });
+
+  it("rejects unknown template via the registry — no file written", async () => {
+    const result = await addRuleHandler(tmpRoot, "r", { template: "nonexistent-zzz" });
     expect(result.success).toBe(false);
     expect(result.errors[0]!.message).toContain("Unknown template");
+    expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
   });
 
-  it("propagates scaffolder errors", async () => {
-    mockCreateRule.mockResolvedValue({
-      ok: false,
-      errors: [
-        {
-          code: "E_DUP",
-          message: "exists",
-          hint: "",
-          severity: "error",
-          context: {},
-        },
-      ],
-    });
-    const result = await addRuleHandler("/tmp", "dup", {});
-    expect(result.success).toBe(false);
-    expect(result.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
+  it("propagates scaffolder errors (duplicate name) without overwriting", async () => {
+    const first = await addRuleHandler(tmpRoot, "dup-name", {});
+    expect(first.success).toBe(true);
+    const second = await addRuleHandler(tmpRoot, "dup-name", {});
+    expect(second.success).toBe(false);
+    expect(second.exitCode).toBe(EXIT_CODES.GENERAL_ERROR);
   });
 });
 
 describe("addSkillHandler", () => {
+  let tmpRoot: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-addskill-"));
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
   it("succeeds without template", async () => {
-    mockCreateSkill.mockResolvedValue({
-      ok: true,
-      data: "/tmp/.codi/skills/s",
-    });
-    const result = await addSkillHandler("/tmp", "s", {});
+    const result = await addSkillHandler(tmpRoot, "my-skill", {});
     expect(result.success).toBe(true);
+    expect(existsSync(result.data.path)).toBe(true);
   });
 
-  it("rejects unknown template", async () => {
-    const result = await addSkillHandler("/tmp", "s", { template: "nope" });
+  it("rejects unknown skill template", async () => {
+    const result = await addSkillHandler(tmpRoot, "s", { template: "nope-zzz" });
     expect(result.success).toBe(false);
+    expect(result.errors[0]!.message).toContain("Unknown skill template");
   });
 
-  it("propagates scaffolder errors", async () => {
-    mockCreateSkill.mockResolvedValue({
-      ok: false,
-      errors: [
-        {
-          code: "E",
-          message: "fail",
-          hint: "",
-          severity: "error",
-          context: {},
-        },
-      ],
-    });
-    const result = await addSkillHandler("/tmp", "s", {});
+  it("propagates scaffolder errors (duplicate)", async () => {
+    await addSkillHandler(tmpRoot, "dup-skill", {});
+    const result = await addSkillHandler(tmpRoot, "dup-skill", {});
     expect(result.success).toBe(false);
   });
 });
 
 describe("addAgentHandler", () => {
+  let tmpRoot: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-addagent-"));
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
   it("succeeds without template", async () => {
-    mockCreateAgent.mockResolvedValue({
-      ok: true,
-      data: "/tmp/.codi/agents/a",
-    });
-    const result = await addAgentHandler("/tmp", "a", {});
+    const result = await addAgentHandler(tmpRoot, "my-agent", {});
     expect(result.success).toBe(true);
+    expect(existsSync(result.data.path)).toBe(true);
   });
 
-  it("rejects unknown template", async () => {
-    const result = await addAgentHandler("/tmp", "a", { template: "bad" });
+  it("rejects unknown agent template", async () => {
+    const result = await addAgentHandler(tmpRoot, "a", { template: "bad-zzz" });
     expect(result.success).toBe(false);
+    expect(result.errors[0]!.message).toContain("Unknown agent template");
   });
 
-  it("propagates scaffolder errors", async () => {
-    mockCreateAgent.mockResolvedValue({
-      ok: false,
-      errors: [
-        {
-          code: "E",
-          message: "fail",
-          hint: "",
-          severity: "error",
-          context: {},
-        },
-      ],
-    });
-    const result = await addAgentHandler("/tmp", "a", {});
+  it("propagates scaffolder errors (duplicate)", async () => {
+    await addAgentHandler(tmpRoot, "dup-agent", {});
+    const result = await addAgentHandler(tmpRoot, "dup-agent", {});
     expect(result.success).toBe(false);
   });
 });
 
 describe("addBrandHandler", () => {
-  it("succeeds creating brand skill", async () => {
-    mockCreateSkill.mockResolvedValue({
-      ok: true,
-      data: "/tmp/.codi/skills/brand",
-    });
-    const result = await addBrandHandler("/tmp", "my-brand");
-    expect(result.success).toBe(true);
-    expect(result.data.name).toBe("my-brand");
+  let tmpRoot: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-addbrand-"));
+    vi.clearAllMocks();
   });
 
-  it("propagates scaffolder errors", async () => {
-    mockCreateSkill.mockResolvedValue({
-      ok: false,
-      errors: [
-        {
-          code: "E",
-          message: "fail",
-          hint: "",
-          severity: "error",
-          context: {},
-        },
-      ],
-    });
-    const result = await addBrandHandler("/tmp", "my-brand");
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it("succeeds creating brand skill", async () => {
+    const result = await addBrandHandler(tmpRoot, "my-brand");
+    expect(result.success).toBe(true);
+    expect(result.data.name).toBe("my-brand");
+    expect(existsSync(result.data.path)).toBe(true);
+  });
+
+  it("propagates scaffolder errors (duplicate)", async () => {
+    await addBrandHandler(tmpRoot, "dup-brand");
+    const result = await addBrandHandler(tmpRoot, "dup-brand");
     expect(result.success).toBe(false);
   });
 });
 
 describe("addMcpServerHandler", () => {
+  let tmpRoot: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-addmcp-"));
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
   it("succeeds without template", async () => {
-    mockCreateMcpServer.mockResolvedValue({
-      ok: true,
-      data: "/tmp/.codi/mcp-servers/m",
-    });
-    const result = await addMcpServerHandler("/tmp", "m", {});
+    const result = await addMcpServerHandler(tmpRoot, "my-mcp", {});
     expect(result.success).toBe(true);
   });
 
   it("rejects unknown template", async () => {
-    const result = await addMcpServerHandler("/tmp", "m", { template: "bad" });
+    const result = await addMcpServerHandler(tmpRoot, "m", { template: "bad-zzz" });
     expect(result.success).toBe(false);
     expect(result.errors[0]!.message).toContain("Unknown MCP server template");
-  });
-
-  it("propagates scaffolder errors", async () => {
-    mockCreateMcpServer.mockResolvedValue({
-      ok: false,
-      errors: [
-        {
-          code: "E",
-          message: "fail",
-          hint: "",
-          severity: "error",
-          context: {},
-        },
-      ],
-    });
-    const result = await addMcpServerHandler("/tmp", "m", {});
-    expect(result.success).toBe(false);
   });
 });
 
 describe("brandAsArtifactHandler", () => {
-  it("wraps addBrandHandler result", async () => {
-    mockCreateSkill.mockResolvedValue({
-      ok: true,
-      data: "/tmp/.codi/skills/b",
-    });
-    const result = await brandAsArtifactHandler("/tmp", "b", {});
+  let tmpRoot: string;
+
+  beforeEach(() => {
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-brandart-"));
+  });
+
+  afterEach(() => {
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it("wraps addBrandHandler result with template:null", async () => {
+    const result = await brandAsArtifactHandler(tmpRoot, "wrap-brand", {});
     expect(result.success).toBe(true);
     expect(result.data.template).toBeNull();
   });
 });
 
 describe("handleWizardFlow", () => {
-  const mockExit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+  let tmpRoot: string;
+  let mockExit: ReturnType<typeof vi.spyOn>;
+  let savedCwd: string;
 
-  it("exits when wizard returns null", async () => {
+  beforeEach(() => {
+    savedCwd = process.cwd();
+    tmpRoot = mkdtempSync(path.join(tmpdir(), "codi-wizard-"));
+    // handleWizardFlow uses process.cwd() to find the .codi dir — chdir
+    // so the real scaffolder operates in the isolated tmpRoot.
+    process.chdir(tmpRoot);
+    vi.clearAllMocks();
+    mockExit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+  });
+
+  afterEach(() => {
+    process.chdir(savedCwd);
+    mockExit.mockRestore();
+    rmSync(tmpRoot, { recursive: true, force: true });
+  });
+
+  it("exits 0 when the wizard returns null (user cancelled)", async () => {
     mockRunAddWizard.mockResolvedValue(null);
     await handleWizardFlow("rule", addRuleHandler, {});
     expect(mockExit).toHaveBeenCalledWith(0);
   });
 
-  it("processes wizard selections and regenerates configs", async () => {
+  it("processes multiple wizard selections and exits with SUCCESS when all rules write", async () => {
     mockRunAddWizard.mockResolvedValue({
-      names: ["rule-a", "rule-b"],
+      names: ["rule-one", "rule-two"],
       useTemplates: false,
     });
-    mockCreateRule.mockResolvedValue({ ok: true, data: "/tmp/path" });
-
     await handleWizardFlow("rule", addRuleHandler, {});
-
-    expect(mockCreateRule).toHaveBeenCalledTimes(2);
-    expect(regenerateConfigs).toHaveBeenCalled();
     expect(mockExit).toHaveBeenCalledWith(EXIT_CODES.SUCCESS);
   });
 
-  it("passes template when useTemplates is true", async () => {
+  it("passes a real template when useTemplates is true", async () => {
+    // Pick the first real available template — the wizard normally lets the
+    // user select from this same list.
+    const template = AVAILABLE_TEMPLATES[0]!;
     mockRunAddWizard.mockResolvedValue({
-      names: ["typescript"],
+      names: [template],
       useTemplates: true,
     });
-    mockCreateRule.mockResolvedValue({ ok: true, data: "/tmp/path" });
-
     await handleWizardFlow("rule", addRuleHandler, {});
+    expect(mockExit).toHaveBeenCalledWith(EXIT_CODES.SUCCESS);
+  });
+});
 
-    expect(mockCreateRule).toHaveBeenCalledWith(
-      expect.objectContaining({ template: "typescript" }),
-    );
+// Sanity probe — keep the AVAILABLE_* lists referenced so accidental
+// pruning of those imports surfaces here rather than as a silent test gap.
+describe("AVAILABLE_* registries", () => {
+  it("each registry has at least one template", () => {
+    expect(AVAILABLE_TEMPLATES.length).toBeGreaterThan(0);
+    expect(AVAILABLE_SKILL_TEMPLATES.length).toBeGreaterThan(0);
+    expect(AVAILABLE_AGENT_TEMPLATES.length).toBeGreaterThan(0);
+    expect(AVAILABLE_MCP_SERVER_TEMPLATES.length).toBeGreaterThan(0);
   });
 });

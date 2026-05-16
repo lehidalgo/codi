@@ -6,6 +6,443 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Package manager: pnpm → npm
+
+#### Changed
+
+- **Package manager: pnpm → npm.** codi's own toolchain now uses npm
+  exclusively (`package-lock.json` is the canonical lockfile,
+  `pnpm-lock.yaml` removed). CI, husky pre-push hook, scripts, and
+  contributor docs all updated. Rationale: codi is developed inside
+  restricted corporate environments where npm has the lowest IT-approval
+  friction. The earlier pnpm → npm flip in v2.x (CHANGELOG line 450) was
+  reversed for this reason.
+
+#### Removed
+
+- `package.json#pnpm.onlyBuiltDependencies` whitelist (npm runs
+  postinstall scripts by default for `better-sqlite3`, `esbuild`,
+  `playwright`). Security tradeoff: we lose the explicit allowlist;
+  compensated by code-review discipline on new dependencies.
+
+#### Added
+
+- `package.json#preinstall: "npx -y only-allow npm"` aborts any
+  `pnpm install` / `yarn install` with a clear error message.
+- `package.json#packageManager: "npm@10.9.0"` pins the npm version via
+  `corepack` for contributors.
+- Top-level `package.json#overrides` (replaces `pnpm.overrides`) carries
+  the `fast-uri >=3.1.2` supply-chain pin. The `scripts/guard-fast-uri.mjs`
+  guard now reads from this location (via `npm ls fast-uri --all --json`).
+- `tests/unit/scripts/guard-fast-uri.test.ts` locks the package.json
+  contract for the override location.
+
+#### Migration notes for users
+
+- Codi continues to RECOGNISE pnpm and yarn in *user projects* — the
+  classifier, lockfile detection, and multi-PM rebuild hints in
+  `codi doctor` are unchanged. Only codi's own development toolchain
+  switched.
+- The templates that codi generates into user projects (skills, hooks,
+  scripts under `src/templates/`) still reference pnpm in some places.
+  A follow-up migration (deferred Task 12 in the migration plan) will
+  redesign those templates to auto-detect the user's lockfile.
+
+### Phase 16E-H — prefs system, lifecycle hygiene, contribution lint, agent harness
+
+#### Added
+
+- `.codi/preferences.yaml` source of truth (16E) — `src/runtime/preferences.ts` reads YAML first, falls back to legacy `.codi/preferences.json`. New fields: `test_command`, `validate_command`, `docs_dir`, `auto_review`, `issue_tracker`, `default_profiles`, `hooks`. `codi prefs init/get/set/show/migrate` subcommands; `session-start.sh` reads the YAML and injects the `using-codi` anchor into agent context.
+- Skill lifecycle hygiene check #10 (16F) — `validate-artifacts.ts` now requires `deprecated` skills to declare both `replaced_by` and `remove_in`. Closed-set `VALID_LIFECYCLES` covers `stable | beta | experimental | deprecated`.
+- Contribution rejection criteria + lint (16G) — new "Contribution rejection criteria (HARD)" section in root `CLAUDE.md` (9 numbered criteria). `codi contribute lint --base main` runs all 9 checks against the local diff (generated-edits, skill-evals, description-size, workflow-chains, hook-edits, version-bump, no-verify, doc-naming, skill-index). New `codi-contribution-discipline` rule template ships these criteria into consumer projects.
+- Agent harness (16H) — opt-in `tests/agent-harness/` runner (`CODI_AGENT_TESTS=1` + `ANTHROPIC_API_KEY`) probes real-model behavior on the `using-codi` anchor and `tdd` skill. Skips by default to keep CI free.
+- New `using-codi` anchor skill — 1% rule, DOT diagram, Red Flags table; loaded by `session-start.sh` and pinned into the agent's system prompt.
+
+#### Changed
+
+- Red Flags tables added to `discover` (v2→v3), `plan-writing` (v2→v3), `verify-evidence` (v1→v2), `diagnose` (v2→v3) — explicit anti-pattern rationalization rows per the superpowers pattern.
+- Workflow yamls bumped to declare `chains:` per non-terminal phase (`feature`, `migration`, `project`, `refactor`).
+- `RULE_CATEGORIES` covers `codi-contribution-discipline` under `Workflow & Process`.
+
+### v3 install blockers (Linux + non-primary Mac field reports)
+
+#### Fixed
+
+- `.claude/settings.json` deep-merge — `codi init` and `codi generate` now merge codi runtime hooks (`Stop`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`) into a pre-existing user `settings.json` instead of letting the line-based JSON conflict resolver clobber them. Brain capture pipeline now wires up reliably for users coming from FastAPI / template starters that already ship a `settings.json`.
+- `codi brain ui --foreground` now polls `/healthz` before reporting success — a child crash during startup (missing `better-sqlite3` native binding, port conflict) no longer silently reports `[OK]` while nothing listens at the bound port.
+- Binary skill assets (fonts, PDFs, archives) are now hashed via `hashBuffer(bytes)` instead of `hashContent("")` — `codi status` stops reporting `.claude/skills/**/*.{ttf,pdf,tar.gz}` as drifted on every run for fresh installs.
+- Drift detection (`detectDrift`, `detectPresetArtifactDrift`, `detectHookDrift`) treats `EMPTY_INPUT_SHA256` as a sentinel meaning "synced" — migration safety net for state.json files written by older codi versions.
+
+#### Changed
+
+- `package.json` — added `playwright` to `pnpm.onlyBuiltDependencies` so pnpm 11 runs its postinstall (browser engine download) automatically alongside `better-sqlite3` and `esbuild`.
+
+### Workflow adaptive intake + modular adapters
+
+#### Added
+
+- Per-workflow adaptive intake — every workflow type accepts a profile and 5-7 questions that compress the phase pipeline. Profiles: `quick`/`standard`/`deep`/`incident` for bug-fix, `prototype`/`standard`/`deep` for feature, `deadcode`/`standard`/`deep` for refactor, `schema`/`data`/`deep` for migration, `no-sheet`/`standard`/`absorb` for project.
+- `src/runtime/workflows/<id>/` module structure — each workflow ships a `WorkflowAdapter` exposing types, profile defaults, resolver, skip-rules, CLI flag parsing, and (optionally) an interactive intake.
+- Adapter registry at `src/runtime/workflows/registry.ts` — adding a new workflow type is a directory + one-line registration.
+- CLI flags on `codi workflow run`: `--profile`, `--severity`, `--reproducer-exists`, `--root-cause-known`, `--scope`, `--execute-mode`, `--grill`, `--interactive`, `--carryover-from`, plus workflow-specific `--complexity`/`--design-exists`/`--tdd-strict`/`--kind`/`--risk-level`/`--rollback-tested`/`--mode`/`--no-sheet`.
+- Bug-fix interactive intake via `@clack/prompts` — `--interactive` walks the dev through 7 questions, then runs the resolved workflow.
+- Cross-workflow conversion — `--carryover-from <prior-id>` materializes a compact context summary (task, scope files, decisions count, knowledge terms) into the new run's init payload.
+- Two new bug-fix gate enforcers — `reproducer_event_exists` and `tdd_first_test_exists` — read the adaptive intake or look for marker `decision_recorded` events.
+
+#### Changed
+
+- Workflow definitions extended (`bug-fix`, `feature`, `refactor`, `migration`, `project` — all bumped to v3) with `flags.adaptive`, `flags.profiles`, and `flags.skip_phases_when` declarations.
+- `cli-handlers/workflow.ts` slimmed down by dispatching adaptation through the adapter registry; per-workflow types and resolvers no longer live in the lifecycle module.
+- Init event schema accepts `bug_fix_adaptation`, `feature_adaptation`, `refactor_adaptation`, `migration_adaptation`, `project_adaptation`, and `carryover_context` payload fields.
+
+### Team Consolidation workflow + legacy consolidate retire
+
+#### Added
+
+- New workflow `team-consolidation` — agent-driven cross-dev brain analysis producing a consensus-candidate markdown report. Use `codi run team-consolidation` to start. The workflow reads N brain.db files from a shared directory, lets the code agent analyze them in sequential or parallel mode, and writes a free-form markdown report at `docs/YYYYMMDD_HHMMSS_[REPORT]_team-consolidation.md` for async team consensus review.
+- New companion skill `codi-dev-team-consolidation-workflow` with 4 phase docs (intent, collect, analyze, consolidate) + a brain DB schema reference.
+- `refine-rules` skill — new `REPORT-DRIVEN` mode (v8) that consumes team consolidation reports and applies APPROVED domain findings to `.codi/rules/`.
+- `artifact-contributor` skill — new `REPORT-DRIVEN` mode (v14) that opens upstream PRs from APPROVED meta-pipeline findings.
+
+#### Removed
+
+- Legacy auto-detection consolidation pipeline at `src/runtime/consolidate/` — replaced by the agent-driven `team-consolidation` workflow.
+- Pattern detectors P1 through P9 and the LLM enrichment loop in `runConsolidation`.
+- `proposals` table from the brain DB schema (dropped in v10 migration).
+- `/proposals` page and navigation entry in the brain UI.
+- `/api/v1/consolidation/*` and `/api/v1/proposals/*` endpoints from the brain UI server.
+- `src/runtime/llm/` LLM provider abstraction (orphan after consolidate removal — only consumer was the runner).
+- `src/templates/consolidation/` prompt templates (P1-P9 LLM prompts).
+
+#### Deprecated
+
+- `codi brain export` command — now prints a deprecation message and exits cleanly. Will be removed in the next minor release.
+
+#### Migration notes
+
+- Brain DBs migrate automatically on first open: schema version bumps from 9 to 10; the `proposals` table is dropped via `applyMigrations`. Idempotent on DBs without the table (fresh DBs never create it).
+- Teams that scripted `codi brain export` should switch to `codi run team-consolidation` and consume the generated `[REPORT]_team-consolidation.md`.
+
+### Workflow-first skills optimization
+
+#### Added
+
+- `chains:` field per phase in workflow yamls — declares which skills run in each phase with role (required / alt-entry / optional) and optional hint.
+- `codi quick "<task>" --category <cat>` (and top-level `codi quick` alias) — trivial-edit fast path. Closed category list: typo, comment, dep-bump, format, doc-tweak.
+- `codi workflow status --slim` — minimal JSON shape for agent session-start polling.
+- `pnpm regen:phase-refs` — rebuilds auto-generated chain sections between BEGIN/END markers in every `phase-*.md`. Build-error on drift; `--force` repairs.
+- `pnpm validate:codi` — CI validator with 5 checks (internal-flag consistency, chain skill existence, yaml schema, version-bump-on-content-change, phase-ref drift).
+- `auto_generate_phase_refs:` opt-out flag per workflow yaml.
+- New `quick` workflow type with its yaml definition.
+
+#### Changed
+
+- Skill descriptions (14 skills) carry mutual Skip-when clauses for paired skills and a DECISION TREE preamble for the testing cluster.
+- `evidence-gathering` and `dispatching-parallel-agents` flipped to `internal: true` — invokable only via slash, not auto-trigger.
+- `codi-workflow.md` rule v3 — adds Manifest Discipline section requiring every edit to run under a workflow (full or quick).
+
+### Consolidator cold-start guard + artifact tracking + proposals UI
+
+#### Added
+
+- `tool-hook.ts` records `Skill` and `Agent` invocations into `artifacts_used` so the consolidator's P2 / P3 / P8 detectors finally have real signal. Other tool names remain no-ops.
+- Proposals page replaces plain text links with elegant icon buttons (Accept / Reject / Delete / Restore) and 2-step Alpine modals matching the captures-page pattern. Reject and Accept modals accept an optional reason that goes into `decision_reason`.
+
+#### Changed
+
+- P2 (`p2UnusedSkill`) and P8 (`p8UnusedRule`) gain a cold-start guard: if `artifacts_used` has zero rows of the matching kind in the analysis window, the detector returns no proposals. Absence of evidence is no longer treated as evidence of absence — the entire catalog used to get flagged for deprecation on every fresh install.
+
+### Workflow advisory gates + brain-ui detail + capture rule v5
+
+#### Added
+
+- Brain-ui workflow detail page: type-aware event cards (one per `workflow_event`), quality metrics ribbon (duration / phases / transitions / gate health / scope changes / subagents / linked captures / rejections), Gantt-style phase timeline, and linked captures section grouped by type.
+- `docs/CONTEXT.md` minimal project glossary and `docs/adr/README.md` placeholder so `codi workflow run` no longer fails on first use.
+
+#### Changed
+
+- Workflow file/scope gates are now ADVISORY, not blocking. Edits outside `files_in_plan` and edits to source files in `intent / plan / decompose` phases pass through with a stderr advisory instead of `exit 2`. Friction removed; the post-tool-use flow records `incidental_change_recorded` for retrospective review in the brain UI.
+- `BashRule` schema gained an `enforcement: "block" | "advisory"` field. `git push` and `gh pr create` are advisory in their pre-phase windows (Iron Law 7 still gates the actual push with the `ok` token); `rm -rf /`, `git reset --hard`, and `git push --force` remain hard-blocked as universal data-loss rules.
+- Capture rule template `capture-everything` bumped v4 → v5 with three new sections: a Long-term value test (3 questions before every marker), a Hard reject patterns table (8 shapes that NEVER emit), and Worked examples covering FEEDBACK-as-prompt-restatement, agent's own QUESTIONs, and approval-token PREFERENCEs.
+
+### Codex parity — tokens, hooks, agent_text capture
+
+#### Added
+
+- Token + cost telemetry parity for Codex CLI sessions. `transcript-codex.ts` reads `event_msg/token_count` events (`info.total_token_usage`) and folds reasoning output tokens into the output bucket.
+- OpenAI / Codex pricing rows: `gpt-5-5`, `gpt-5-4`, `gpt-5-4-mini`, `gpt-5-3-codex`, `gpt-5-codex`. Family fallback in `resolvePricing` for unknown `gpt-*` ids.
+- Codex hooks adapter writes the correct schema (root `hooks` object + `matcher` + nested `hooks` array) and gates it behind `[features] codex_hooks = true`.
+- `--agent <id>` flag on `codi hook` so each hook fires under the right adapter; auto-detect chain (flag → env → fallback).
+- Project identity columns on `projects` (`git_user_name`, `git_user_email`, `host_user`, `host_machine`); migration v7.
+- `tokens_max_prefix` (largest single-message prefix) and `tokens_messages_count` (assistant API calls) on `sessions`; migrations v5 / v6.
+- Per-session metrics card (Verbosity / Efficiency / Behavior / Productivity) and dashboard aggregate metrics across sessions.
+
+#### Changed
+
+- Iron Law 4 + 7 share a single approval token: literal `ok` / `OK` / `Ok` (3 casings). Long-token list (`commit`, `push`, `merge`, `tag`, `release`) removed — brittle on typos and unicode.
+- Anthropic price table refreshed for Opus 4.7 / 4.6 / Sonnet 4.6 (1M context at standard pricing, no `-1m` tier).
+- `agent_model` on `sessions` is overwritten with the resolved id (no `COALESCE`) so stale Anthropic ids don't survive on Codex sessions.
+- Generated `.codex/config.toml` sets `suppress_unstable_features_warning = true` and `check_for_update_on_startup = false` to silence startup nags.
+
+#### Fixed
+
+- Stop-hook `extractAssistantText` only matched Anthropic transcript shape; Codex sessions persisted empty `agent_text`. Added `response_item / payload.role=assistant` and `event_msg / agent_message` cases.
+- TOML order bug in Codex adapter: root keys after a `[section]` header were parsed as section keys. `developer_instructions` now emits before any section.
+- `largest prefix` in tokens card was a cumulative sum across calls; now tracks the maximum single-message prefix.
+
+### Workflow gates wired as advisory + cwd filter + handbook
+
+#### Added
+
+- `gate-runner-bridge.ts` connects the existing `gate-runner` deterministic checkers to `approveTransition`. Phase transitions now run the configured gates as advisory (no hard block).
+- `buildGateAdvisoryBlock` surfaces gate failures in the next `UserPromptSubmit` until the next approval supersedes them.
+- `[GUIDE]_workflow-handbook.md` covering decision tree, lifecycle, CLI cheatsheet, gate semantics, brain visibility, Iron Laws summary, common pitfalls, and supervision contract.
+- `gate_check_started` / `gate_check_passed` / `gate_check_failed` events now persisted on every phase transition (previously declared as event types but never emitted).
+- `BrainEventLog.getActiveWorkflowIdForCwd(cwd)` filters the active workflow by current project root.
+
+#### Changed
+
+- `approveTransition` no longer hardcodes `gate_passed: true`. The flag in the emitted `phase_completed` event reflects the real verdict from the gate run.
+- `codi workflow status` is filtered by current `cwd`. Workflows from other projects on the same machine no longer surface in this project's status output.
+- `workflow_init` payload now includes `cwd`. Manifest event schema updated to allow the optional field.
+
+#### Fixed
+
+- Gate-runner code path was unreachable in production; the 6 deterministic checkers now run on every phase transition as advisory.
+- `tests/runtime/brain-ui-pages.test.ts` captures-page test updated to match the current Alpine.js modal-confirm pattern (was asserting the deprecated `hx-delete` HTMX attribute).
+
+### Brain UI — tokens telemetry + restore + Human/Agent layout
+
+#### Added
+
+- **Token + cost telemetry per session** sourced from the Claude Code transcript JSONL (input / output / cache_create / cache_read / pre-loaded / largest single-message prefix) with cost computed from a local price table.
+- **`gpt-tokenizer` fallback** for sessions without a transcript; rows are flagged `estimated`.
+- **Auto-promote to 1M context tier** when the largest observed prefix exceeds 200K tokens, even if the model id does not carry the `-1m` suffix.
+- **`/tool-call/:id` and `/capture/:id`** detail pages with anchor links from the session timeline.
+- **Backup detail pages** (`/backup/local/:ts` and `/backup/archive/:hash/:ts`) — show manifest, file list, total size, and a Restore action.
+- **Restore endpoints**: `POST /api/v1/backups/local/:ts/restore` and `POST /api/v1/backups/archive/:hash/:ts/restore` overlay files from the snapshot manifest onto the project root.
+- **Reconciliation banner** on session detail showing the gap between codi-captured turns and assistant API calls in the transcript.
+- **Per-tool description as inline title** (extracted from `input.description`) on the session timeline, the tool-calls list, and the tool-call detail header.
+
+#### Changed
+
+- **Session timeline restructured** into Human + Agent blocks per turn, with tool calls and captures rendered as compact sub-blocks inside the agent card. Tool blocks default collapsed; click expands input + output + error.
+- **Capture row buttons** replaced with icon buttons; delete now opens an Alpine modal with a two-step confirmation.
+- **Settings backup rows are clickable** with inline Restore icon. Restore is gated behind a two-step modal.
+- **Sidebar fixed** (only the right panel scrolls) and Alpine `[x-cloak]` CSS added to suppress the modal flash on refresh.
+- **Context-window fill bar** now reads `tokens_max_prefix` (largest single-message prefix) instead of summing `cache_read` cumulatively across turns.
+
+#### Fixed
+
+- **Tool-call header double dash** — `fmtDuration(null)` no longer emits a placeholder `—` that competed with the title separator.
+- **Capture edit modal** fetches content from the API on click instead of embedding JSON in the `x-on:click` attribute, eliminating the HTML-attribute escape bug that broke the row layout for captures containing `"`.
+- **Tool-output JSON unescape** — known string fields (`stdout`, `stderr`, etc.) now render with real newlines instead of `\n` escapes; the previous in-place decoder re-escaped via `JSON.stringify` and was effectively a no-op.
+
+### Hooks — post-reinit fixes
+
+#### Fixed
+
+- State path mismatch: hook readers and adapters used `.codi/.state/state.json` (with leading dot) but `STATE_DIR` is `state`. Reads silently returned null after a fresh `codi init`, so adapter heartbeat gating and runtime hook selection always defaulted on. Path corrected across `agent-hooks`, `hooks-list/add/remove`, and the `claude-code` and `codex` adapters.
+- `codi init` did not persist the wizard's git/runtime hook selection — `WizardResult.gitHooks` and `runtimeHooks` were captured but never written to `state.json`. Added `StateManager.updateSelectedHooks` and a call from `init.ts` after the wizard returns.
+- Test fixtures for adapter emission and CLI hook commands now write to the canonical `.codi/state/` path.
+
+### Hooks as first-class artifacts
+
+#### Added
+
+- **`HookArtifact` discriminated union** under `src/core/hooks/hook-artifact.ts` covering both buckets (`git`, `runtime`).
+- **Unified registry helpers** — `getAllHooks`, `getGitHooks`, `getRuntimeHooks`, `getDefaultGitHookNames`, `getDefaultRuntimeHookNames`.
+- **`security-reminder` runtime hook** — clean-room PreToolUse hook with nine patterns (gha-injection, child-process-exec, new-function, eval-call, dangerously-set-html, document-write, inner-html-assign, pickle-deserialize, os-system). Per-pattern extension allowlists, comment-line heuristic, per-session dedupe at `~/.codi/security/`.
+- **Five wrapper artifacts** for existing runtime hooks: `iron-laws-enforcer`, `workflow-classifier`, `capture-markers`, `skill-tracker`, `skill-observer`. They surface in the registry without changing their underlying behaviour.
+- **CLI surface** — `codi hooks list [--git|--runtime|--enabled]`, `codi hooks add <bucket> <name>`, `codi hooks remove <bucket> <name>`, `codi update --hooks` next-step printer.
+- **Init wizard** — two new `wizardMultiselect` steps for git and runtime hook selection, persisted to `state.selectedHooks`.
+- **Optional `phaseFilter` and `dispatchSkill`** on every hook for workflow-phase gating and skill delegation. Both default to undefined (no behavioural change for existing hooks).
+- **Adapter heartbeat gating** — claude-code and codex adapters skip emission of `skill-tracker` / `skill-observer` scripts and settings entries when not in `state.selectedHooks.runtime`.
+- **Pre-commit config filter** — `hook-config-generator` honours `state.selectedHooks.git` to filter the emitted `.pre-commit-config.yaml`. Codi-internal meta hooks (`version-bump`, `secret-scan`, etc.) remain regardless.
+
+#### Changed
+
+- 16 per-language pre-commit registries (`typescript`, `javascript`, `python`, `go`, `rust`, `java`, `kotlin`, `swift`, `csharp`, `cpp`, `php`, `ruby`, `dart`, `shell`, `global`) migrated to emit `GitHookArtifact[]`. Same shape as before plus `bucket`, `description`, `version`, `managed_by`, `default`. No behavioural change.
+- `HookSpec.HookCategory` widened to include `"enforcement"` and `"observation"`.
+- `StateData` gains optional `selectedHooks` field. Reader fills defaults at the boundary — no migrator required.
+- `runPreToolUse` in `cli/agent-hooks.ts` is now async and dispatches the runtime hook runner for `Edit / Write / MultiEdit / NotebookEdit` calls.
+
+### Brain UI — detail pages + anchored navigation + larger output cap
+
+#### Added
+
+- **`/tool-call/:id` detail page** — full input + output + error blocks, link back to `/session/:id#tool-:id`.
+- **`/capture/:id` detail page** — content (markdown), files, raw_marker, link back to `/session/:id#capture-:id`.
+- **Anchored navigation** in the session timeline. Each tool-call event gets `id="tool-<id>"` and each capture event gets `id="capture-<id>"`. The kind label and the `#id` footer in list views link directly to the timeline anchor and to the detail page.
+- **Strip canonical capture markers** from `agent_text` when rendering the timeline so the marker text does not duplicate alongside its parsed `capture` row.
+
+#### Changed
+
+- **Tool output storage cap raised**: `output_summary` 200 → 16,384 chars; `error` 500 → 8,192 chars. The brain UI was correctly rendering everything it received; the truncation was happening at the hook write path, so prior calls show the old limit.
+
+### Brain UI — robust tool output + expand/collapse + edit fix
+
+#### Added
+
+- **Per-block expand / collapse** on every tool-call output (sessions timeline + tool-calls page) via Alpine.js. Default expanded; click to collapse the body.
+- **Formatted / raw toggle** for JSON outputs. `formatted` mode keeps the per-field stdout / stderr / error / output / result blocks; `raw` mode shows the full pretty-printed JSON.
+- **`GET /api/v1/captures/:id`** returns a single capture row (used by the new editor modal to fetch fresh content).
+
+#### Changed
+
+- **Capture editor modal** now fetches content from the API on click instead of embedding JSON in the `x-on:click` attribute. Eliminates the HTML-attribute escape bug that broke the row layout when captures contained `"`.
+- **Tool output rendering** is unified through `renderToolPayload(prefix, payload)` shared by sessions timeline and tool-calls page. The previous in-place `\n` decoder was a no-op (re-escaped via `JSON.stringify`); the new path extracts known string fields cleanly.
+
+#### Fixed
+
+- Tool outputs that started with prefixes other than `Bash:` now expand correctly (the prefix detection no longer collapses raw text).
+- Capture rows whose content contained `"` no longer leak `})">` into the visible label and no longer collapse the markdown column to one character per line.
+
+### Brain UI — markdown rendering + no truncation
+
+#### Added
+
+- **Markdown rendering** for prompts, turn agent_text, and capture content via the `marked` library (GFM + breaks). Tables, fenced code blocks, headings, and inline emphasis now render natively in the timeline and captures list.
+- **Tool output decoder** — JSON envelopes (e.g. `{"stdout":"…","stderr":"…"}`) are unwrapped and the well-known string fields (`stdout`, `stderr`, `error`, `output`, `result`) render in dark code blocks with real newlines instead of `\n` escapes.
+- **Tailwind typography plugin** loaded from CDN with a small `prose` skin (dark code, inline code chips, scrollable tables).
+
+#### Changed
+
+- **No truncation** anywhere in the UI: session timeline events, captures list, and tool-calls list show the full content; long blocks scroll horizontally inside `pre` rather than getting clipped.
+
+### Brain UI — observability + CRUD
+
+#### Added
+
+- **Sidebar nav with 8 sections**: Dashboard, Sessions, Captures, Tool calls, Workflows, Proposals, Artifacts, Settings.
+- **Dashboard** — count cards, captures-by-type bar, top tools, recent activity feed.
+- **Captures page** — type / session / FTS5 search filters, Alpine.js inline edit modal, soft-delete + trash view + restore.
+- **Sessions detail** — chronological timeline merging prompts, turns, tool calls, and captures into one feed.
+- **Tool calls page** — per-tool aggregate with error rate + avg duration, filterable list with full output_summary preview.
+- **Workflows detail** — Mermaid phase graph with current_phase highlighted + event log.
+- **Proposals page** — accept / reject / soft-delete, filter by pattern + status, evidence + patch accordions.
+- **Artifacts usage page** — aggregate of `artifacts_used` by name with success rate + recent invocations.
+- **Settings page** — project metadata, brain DB stats, local backups list, external archives list with size summary.
+- **Soft-delete on `captures` and `proposals`** — `deleted_at INTEGER` column with idempotent v3 schema migration.
+- **Write API**: `PATCH /api/v1/captures/:id`, `DELETE /api/v1/captures/:id`, `POST /api/v1/captures/:id/restore`, `POST /api/v1/captures/bulk-delete`, `DELETE /api/v1/proposals/:id`, `POST /api/v1/proposals/:id/restore`.
+- **Read API additions**: `GET /api/v1/dashboard/metrics` and `GET /api/v1/captures.csv` (full export, RFC 4180 quoting).
+
+#### Changed
+
+- **Brain schema bumped to v3**. Versioned-migration runner replaces the previous bootstrap-only logic — fresh DBs hit `CURRENT_SCHEMA_VERSION` in one step; existing DBs apply only the missing ALTERs.
+- **Brain-ui server runs read-write**. Localhost-only bind (127.0.0.1) is the auth boundary for CRUD endpoints.
+- **`pages.ts` is now a thin registry** that delegates to one module per page in `src/runtime/brain-ui/pages/`.
+- **Captures session API** filters `deleted_at IS NULL` by default; pass `?trash=1` to include soft-deleted rows.
+
+#### Removed
+
+- The Sprint 5 placeholder `/findings` route. Proposals UI now lives at `/proposals`.
+- The legacy `/live` polling page and `/partials/live-captures` HTMX partial. Live updates fold into Dashboard "Recent captures".
+
+### Brain durability + capture grammar refinements
+
+#### Added
+
+- **`.codi/state/` subdir** for precious persistent data (`brain.db`, `operations.json`, `state.json`). Anything under `state/` is never touched by `codi init`, `codi generate`, or orphan pruning.
+- **External archive on `clean --all`** — snapshots the full `.codi/` to `~/.codi/archive/<sha-basename>/<timestamp>/` before the wipe so brain history survives uninstalls.
+- **`DEFECT` capture type** added to the canonical set (now 11 types) — aligns with the existing `DEFECT-XXX` nomenclature used internally.
+- **Auto-promotion of non-canonical markers** — markers with shape `|TYPE: "..."|` whose TYPE is unknown are now persisted as `OBSERVATION` with the original type preserved in `content` (`[unknown_type=<RAW>]`) and `raw_marker`. Stderr warning emitted for visibility.
+- **Per-marker `file_paths` auto-extraction** in `persist.ts` — mines path-like tokens from each marker's content (filtering semver, IPs).
+
+#### Changed
+
+- **`brain.db` / `operations.json` / `state.json` paths** moved from `.codi/<file>` to `.codi/state/<file>`. Auto-migration on first read: legacy files are renamed transparently the first time the resolver runs.
+- **`capture-everything` rule v4** — documents the auto-promote behaviour, lists `DEFECT` and the canonical synonyms to avoid (`BUG`, `ERROR`, `NOTE`, `TODO`).
+- **Brain UI server entrypoint** moved from `scripts/runtime/brain-ui-server.ts` to `src/runtime/brain-ui/cli-server.ts` and bundled into `dist/brain-ui-server.js` so the spawn runs plain Node — no `--experimental-strip-types`.
+
+#### Fixed
+
+- **`codi brain ui` spawn died silently on Node 24** — the detached child invoked `process.execPath --experimental-strip-types` against a `.ts` script importing `.js` specifiers, which Node 24 cannot resolve. The CLI now spawns the bundled `.js` from `dist/` and falls back to the local `tsx` binary when running from source.
+
+### v3 zero closure (F1–F11)
+
+The eleven-step closure that takes Codi v3 from "v2-shaped legacy underneath" to a brain-canonical, devloop-dissolved zero-mode core. Single backend (SQLite), single CLI namespace (`codi workflow ...`), single capture grammar (Iron Law 9). All tests green: 3395 pass + 2 skipped across 281 files.
+
+#### Added
+
+- **Workflow definitions in brain (F1+F2)** — new `workflow_definitions` table seeded from `src/templates/workflows/{feature,bug-fix,refactor,migration,project}.yaml`. Phase graphs / gates / flags now live in SQLite, not in code.
+- **Phase graph enforcement (F4)** — `proposeTransition` rejects illegal phase moves against `workflow_definitions[type].phases[from].next`. Graceful degrade for tmp brains without seeded definitions.
+- **Capture pipeline (F6)** — `prompts` / `turns` / `captures` / `tool_calls` / `artifacts_used` populated end-to-end:
+  - `processPromptSubmit` opens a turn on every UserPromptSubmit
+  - `processPostToolUse` records every tool call (`ok` / `error` / `blocked`)
+  - `processStopHook` parses `|TYPE: "verbatim"|` markers, persists captures, closes the turn
+  - New `scripts/runtime/hook-stop.ts` + `src/templates/hooks/runtime/stop.sh` wired into `hooks.json`
+- **Iron Laws live wiring (F7)**:
+  - L4 — `phase_transition_proposed` flips `workflow_runs.status` to `pending_approval`; UserPromptSubmit emits the hard-gate banner; only literal `ok` / `OK` / `Ok` passes
+  - L5 — PreToolUse warns (advisory) on mutating edits when last brain read is older than 60s
+  - L7 — PreToolUse blocks (exit 2) `git commit/push/merge/tag/reset --hard/push --force` when no approval token is found in recent prompts
+  - L8 — UserPromptSubmit reads `.codi/preferences.json` and emits the caveman directive
+- **`codi workflow` CLI namespace (F9)** — 10 subcommands: `run`, `status`, `abandon`, `recover`, `transition`, `scope {propose,approve,reject}`, `elevate`, `handover`, `stats`. Every action accepts `--as-agent` to attribute to the agent rather than the human user.
+- **P9 detector (F10)** — turns `|OBSERVATION: "..."|` captures naming an installed artifact into `OPTIMIZE_EXISTING_ARTIFACT` proposals (case-insensitive match against rules + skills + agents catalog, ≥minEvidence threshold, sorted by evidence count).
+- **Brain-backed compactor (F11)** — `compactWorkflows` collapses old terminal `workflow_events` into a `workflow_runs.metadata.compacted` summary blob (preserves init / decisions / scope-approvals / handovers / lifecycle events verbatim) and deletes the redundant rows. Idempotent; supports dry-run.
+- **`CODI_BRAIN_DB` env var** — `defaultBrainPath` honors it before falling back to `~/.codi/brain.db`. Test harness uses this for per-test brain isolation.
+
+#### Changed
+
+- **Real gate checks (F8)** — three checks that previously fake-passed are now wired to evidence:
+  - `no_unresolved_scope_proposals` — walks events per-file, fails listing each unresolved proposal
+  - `validation_passes` — finds the most recent `validation_run` event and requires `exit_code === 0`
+  - `all_planned_files_modified` — shells out to `git status --porcelain` for each scope file; untracked files count as modified
+- **System author renamed `devloop` → `codi`** in every event written by transitions / elevation / scope handlers and in auto-commit messages.
+- **Hook-emitted strings reference `codi workflow ...`** instead of `devloop ...` (state block, scope-violation messages, transition reminders, abandon hint).
+- **Child-workflow branch prefix** flipped from `devloop/<parent>/<child>` to `codi/<parent>/<child>`.
+- **PR summary marker** flipped from `<!-- devloop-summary-hash:` to `<!-- codi-summary-hash:`.
+- **Project preferences relocated** from `.devloop/preferences.json` to `.codi/preferences.json`. `DevloopPreferences` type renamed `CodiPreferences`.
+- **Hook classifier** allows `.codi/*.json|jsonl` artifacts in any phase (was `.devloop/`).
+- **`codi workflow` reaches the brain DB in production builds** — `findSchemaPath` searches multiple candidate paths so the same source code resolves correctly in dev (`src/schemas/...`) and dist (`dist/schemas/...`); the post-build asset copier now ships `src/schemas/` to `dist/schemas/`.
+- **Iron Law 9 capture grammar (F10)** — agent-facing rule (`improvement.ts`) and skill (`rule-feedback`) now instruct the unified `|OBSERVATION: "..."|` marker. The legacy `[CODI-OBSERVATION: artifact | category | text]` grammar is no longer documented in agent-facing artifacts; the gap-category vocabulary lives inside the verbatim text where P9 detects it.
+
+#### Removed (F5 + F11)
+
+- `src/runtime/event-log.ts`, `event-log-factory.ts`, `paths.ts` and their tests — the legacy filesystem-archive event log (`.workflow/active/` + `.workflow/archives/`). Every handler now goes through `BrainEventLog`.
+- `scripts/runtime/{devloop,classify,gate,manifest,pre-squash}.ts` — broken legacy CLI scripts (imported `../lib/*` paths that never existed); zero callers.
+- `tests/runtime/e2e/` — stale shell harness pinned at `/Users/laht/projects/devloop`.
+- Legacy filesystem compactor (`compactAllArchives`) — replaced by brain-backed `compactWorkflows`.
+
+#### Internal
+
+- 33 new tests across `capture-session`, `stop-hook`, `prompt-hook`, `iron-laws-wiring`, `gate-fixes`, `p9-detector`, `unit/cli/workflow`, plus the brain-backed compactor block in `m5-features`.
+- Net diff across F1–F11: ~+3000 / −2400 lines, including ~600 lines of dead code purged.
+
+## [3.0.0] - 2026-05-08
+
+Major release — Codi v3 ed.0 zero-mode. Introduces the canonical SQLite brain, the capture protocol (Iron Law 9), the brain-ui Hono server, the consolidation pipeline with LLM enrichment (Gemini + OpenAI), the Capabilities Matrix, the `codi migrate v2-to-v3` planner + executor, the `codi plugin publish` dual-track distribution, and the v3 Diataxis docs. v2 users upgrade via `codi migrate v2-to-v3 --apply`; the migration backs up `.codi/` before any rewrite.
+
+### BREAKING
+
+- **SQLite brain at `~/.codi/brain.db` is now the canonical persistence**. v2 was a stateless generator; v3 captures everything the user says into 12 structured tables. v2 users MUST run `codi migrate v2-to-v3` before upgrading the dependency. The migration creates `.codi.v2.backup-<ts>/` before any rewrite, so rolling back is a `mv` away.
+- **DevLoop event-log layout (`.devloop/active/`) is deprecated.** Workflows can opt into the new brain backend via `CODI_USE_BRAIN_BACKEND=1`; legacy file-based event log stays the default in v3.0.0 to keep ~30 DevLoop tests green during the migration window. v3.1+ will flip the default.
+- **`engines.node` continues to require `>= 20.19`.** No change versus v2.14, listed here for explicitness.
+- **Tier 2 adapters (Cursor, Windsurf, Cline, Copilot, Gemini) emit the SAME artifacts they emitted in v2.x.** The new Capabilities Matrix is OPT-IN; legacy adapters are GRANDFATHERED. v3.1+ may migrate them with their own release notes.
+- **`/api/v1/consolidation/run-with-llm`** now returns a real proposal-enrichment response when `CODI_LLM_PROVIDER` + the matching API key are configured. Previously a 501 stub.
+
+### Migration
+
+See `docs/src/content/docs/guides/upgrade-from-v2.md`.
+
+```bash
+codi migrate v2-to-v3            # dry-run
+codi migrate v2-to-v3 --apply    # 5-step plan: backup, brain bootstrap, yaml, regen, summary
+codi generate --force            # refresh per-agent output
+```
+
+### Added — Codi v3 ed.0
+
+- **DevLoop merge** — copied DevLoop libs/hooks/schemas/scripts into `src/runtime/`, integrated 32 DevLoop test files into the main vitest suite, and migrated all 22 DevLoop skills into Codi v2 standard layout (`template.ts` + `index.ts`). Catalog: 67 → 84 skills.
+- **SQLite canonical brain** (`src/runtime/brain/`) — 11-table schema (`projects`, `sessions`, `prompts`, `turns`, `captures`, `tool_calls`, `corrections`, `artifacts_used`, `_codi_schema_version`, `workflow_runs`, `workflow_events`) with FTS5 mirrors over `captures` and `prompts`. Drizzle ORM for typed access; idempotent bootstrap migration with WAL + foreign-keys + busy-timeout.
+- **Capture markers protocol** (Iron Law 9) — `src/runtime/capture/` parses `|TYPE: "..."|` markers across the 10 canonical capture types (RULE, PROHIBITION, PREFERENCE, FEEDBACK, INSIGHT, OBSERVATION, DECISION, QUESTION, PROMPT, CORRECTION) and persists deduplicated rows to the brain. New `codi-capture-everything` rule enforces emission; `UserPromptSubmit` hook injects a per-turn reminder.
+- **ExternalSyncer interface** (ADR-005) — `src/runtime/sync/external-syncer.ts` contract + `SyncerRegistry`. Sheets and Xlsx sync targets are now opt-in adapters behind the same surface; SQLite stays the source of truth.
+- **Hono-based brain-ui server** (`src/runtime/brain-ui/`) — read-only HTTP API (9 endpoints: projects, sessions, captures, FTS5 search, workflows + events, proposals list/accept/reject) plus HTMX pages (sessions, session detail, live polling, workflows, findings stub). Spawn-or-attach lifecycle via `~/.codi/brain-ui.pid` so multiple agent sessions share one server. Default port 4477.
+- **Consolidation pipeline scaffold** (`src/runtime/consolidate/`) — `proposals` table, typed `Proposal` / `Proposal{Type,Status}` / `ProposalEvidence` records, and three pattern detectors: P1 (repeated correction → PROMOTE_TO_RULE), P2 (unused skill → DEPRECATE_ARTIFACT), P5 (consistent new pattern → CREATE_NEW_ARTIFACT). Remaining patterns P3/P4/P6/P7/P8 follow the same `PatternDetector` contract.
+- **Capabilities Matrix** (`src/core/capabilities/`) — per-target feature flags: Tier 1A (Claude Code) supports the full surface, Tier 1B (Codex CLI) everything except UI integration, Tier 2 (Cursor / Windsurf / Cline / Copilot / Gemini) skills + rules + MCP only. Generators consult `supports(target, feature)` before emitting output.
+- **`codi migrate v2-to-v3` planner** (`src/core/migration/v2-to-v3.ts`) — pure-function `detectV2Layout` + `planMigration` + `formatPlan`. Dry-run by default; the executor is gated on explicit `ok` and writes a timestamped backup of `.codi/` before any rewrite.
+- **10 ADRs** documenting the v3 ed.0 decisions: rebrand-in-place, DevLoop merge, tiered capabilities, workflows as artifacts, SQLite canonical, catalog of 77 artifacts, four architectural features, DDD internal layout, plugin distribution dual track, install modes (zero / lite / standard / full).
+
 ### Fixed
 
 - **Unselecting an agent during `codi init --customize` now fully removes its directories** — three independent bugs combined to leave `.cursor/`, `.windsurf/`, `.cline/` (and similar) on disk after the deselected agent's files were "pruned":

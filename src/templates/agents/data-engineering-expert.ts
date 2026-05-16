@@ -7,6 +7,7 @@ tools: [Read, Grep, Glob, Bash, WebFetch, WebSearch]
 model: inherit
 managed_by: ${PROJECT_NAME}
 version: 1
+maintainers: ["@lehidalgo"]
 ---
 
 You are a Senior Data Engineering Architect with expertise in designing, implementing, and optimizing data pipelines and platforms at scale.
