@@ -9,8 +9,8 @@ import {
   restoreBackup,
   openBackup,
 } from "#src/core/backup/backup-manager.js";
+import { getStatePath } from "#src/core/config/state.js";
 import {
-  STATE_FILENAME,
   BACKUPS_DIR,
   BACKUP_MANIFEST_FILENAME,
   PROJECT_NAME,
@@ -35,13 +35,20 @@ afterEach(async () => {
 });
 
 /**
- * Writes a minimal state.json that references the given relative file paths.
+ * Writes a minimal state.json at the canonical post-CORE-002 path
+ * (`<configDir>/state/state.json`). Was previously writing to the legacy
+ * top-level `state.json` — see ISSUE-005, where both the test helper AND
+ * `backup-manager.ts:204` used the same wrong legacy path, masking the
+ * production defect that `includeOutput` captured 0 files for non-first-time
+ * destructive ops.
  */
 async function writeState(filePaths: string[]): Promise<void> {
   const agents: Record<string, Array<{ path: string }>> = {
     "claude-code": filePaths.map((p) => ({ path: p })),
   };
-  await fs.writeFile(path.join(configDir, STATE_FILENAME), JSON.stringify({ agents }), "utf8");
+  const statePath = getStatePath(configDir);
+  await fs.mkdir(path.dirname(statePath), { recursive: true });
+  await fs.writeFile(statePath, JSON.stringify({ agents }), "utf8");
 }
 
 /**
@@ -246,6 +253,45 @@ describe("backup directory structure", () => {
 });
 
 describe("openBackup / BackupHandle lifecycle", () => {
+  // ISSUE-005 regression: backup-manager was reading state.json from the
+  // legacy `<configDir>/state.json` path (pre-CORE-002 location). Post-fix
+  // it must read from `<configDir>/state/state.json`. This test seeds state
+  // ONLY at the new path, then asks openBackup to include outputs without
+  // pre-existing fallback — pre-fix this would silently capture 0 outputs
+  // and return `no-files-to-snapshot`.
+  it("openBackup reads state.json from the post-CORE-002 path for includeOutput (ISSUE-005)", async () => {
+    await setup();
+    await createFile(".claude/rules/x.md", "# rule body");
+    // writeState now writes to <configDir>/state/state.json via getStatePath.
+    await writeState([".claude/rules/x.md"]);
+    // Sanity: no legacy file present — confirms we're testing the post-fix path only.
+    const legacyExists = await fs
+      .stat(path.join(configDir, "state.json"))
+      .then(() => true)
+      .catch(() => false);
+    expect(legacyExists).toBe(false);
+
+    const r = await openBackup(projectRoot, configDir, {
+      trigger: "init-first-time",
+      includeOutput: true,
+      includeSource: false,
+      includePreExisting: false,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    await r.data.finalise();
+    const manifest = JSON.parse(
+      await fs.readFile(path.join(r.data.dir, BACKUP_MANIFEST_FILENAME), "utf8"),
+    );
+    const outputs = manifest.files.filter(
+      (f: { scope?: string }) => f.scope === "output",
+    );
+    expect(outputs.length).toBeGreaterThan(0);
+    expect(
+      outputs.some((f: { path: string }) => f.path === ".claude/rules/x.md"),
+    ).toBe(true);
+  });
+
   it("openBackup with includeSource captures .codi/ files", async () => {
     await setup();
     await fs.writeFile(path.join(configDir, "codi.yaml"), "name: t\nversion: '1'\nagents: []\n");

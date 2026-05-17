@@ -163,13 +163,29 @@ function makeEmptyState(): StateData {
  * }
  * ```
  */
+/**
+ * Resolve the canonical state.json path for a given `.codi/` configDir.
+ *
+ * Single source of truth so callers don't drift from the layout
+ * `configDir/state/state.json` introduced by CORE-002. Reuse this in
+ * `backup-manager`, `watch`, and any other module that needs the state path
+ * — never compose `path.join(configDir, STATE_FILENAME)` inline.
+ *
+ * Note: this returns the NEW path only. The legacy path
+ * `configDir/state.json` is handled by `StateManager`'s constructor migration
+ * (see `StateManager` below).
+ */
+export function getStatePath(configDir: string): string {
+  return path.join(configDir, STATE_DIR, STATE_FILENAME);
+}
+
 export class StateManager {
   private readonly statePath: string;
   private readonly projectRoot: string;
 
   constructor(configDir: string, projectRoot?: string) {
     const stateDir = path.join(configDir, STATE_DIR);
-    const statePath = path.join(stateDir, STATE_FILENAME);
+    const statePath = getStatePath(configDir);
     const legacyPath = path.join(configDir, STATE_FILENAME);
     if (existsSync(legacyPath) && !existsSync(statePath)) {
       try {

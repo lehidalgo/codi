@@ -24,15 +24,15 @@ Auditoría funcional iterativa de las features core de CODI. Complementa (no ree
 
 | Métrica | Valor |
 |---|---|
-| Estado general | 🟢 Fase 2 en progreso (2/22 features auditadas) |
+| Estado general | 🟢 Fase 2 en progreso (5/22 features auditadas) |
 | Features inventariadas | 22 |
-| Features auditadas | 2 (F1 ✅ PASS, F2 ✅ PASS) |
-| Features PASS | 2 |
+| Features auditadas | 5 (F1 ✅, F2 ✅, F3 ✅, F4 ✅, F5 ✅) |
+| Features PASS | 5 |
 | Features FAIL | 0 |
 | Features BLOCKED | 0 |
 | Features PARTIAL | 0 |
 | Issues abiertos | 1 (ISSUE-002 backlog) |
-| Issues cerrados | 2 (ISSUE-001, ISSUE-003) |
+| Issues cerrados | 4 (ISSUE-001, ISSUE-003, ISSUE-004, ISSUE-005) |
 | Baseline lint+build+test | ✅ `npm run lint` PASS · `npm run build` PASS · `npm test` 3996/6/0 (+14 vs roadmap baseline tras fix de ISSUE-001) |
 
 ---
@@ -97,9 +97,6 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 
 ### Pendientes
 
-- [ ] F3 — Drift Detection
-- [ ] F4 — Backup + Revert
-- [ ] F5 — Watch Mode
 - [ ] F6 — Hook System
 - [ ] F7 — Flag System
 - [ ] F8 — Preset System
@@ -127,6 +124,9 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 - [x] Baseline lint + build + test (3996/6/0)
 - [x] F1 — Configuration Management (109/109 tests pass; ISSUE-002 doc drift en backlog)
 - [x] F2 — Generation Pipeline + Adapter System (357/357 tests pass + sandbox E2E: 6/6 adapters con token compartido; ISSUE-003 detectado y RESUELTO)
+- [x] F3 — Drift Detection + `codi status` (42/42 tests pass + sandbox E2E: drift_detection off/warn/error con exit codes 0/0/7 correctos)
+- [x] F4 — Backup System + Revert (58/58 tests pass + sandbox E2E: backup lifecycle, manifest v2, revert con pre-revert snapshot, pruneIncompleteBackups)
+- [x] F5 — Watch Mode (0 tests existentes → +34 nuevos permanentes; sandbox repro confirmó ISSUE-004 loop infinito + ISSUE-005 backup wrong path, ambos RESUELTOS con whitelist watch-filters + getStatePath helper)
 
 ### Bloqueadas
 
@@ -135,6 +135,69 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 ---
 
 ## Registro de pruebas
+
+### F5 — Watch Mode → ✅ PASS (2026-05-17) — con 2 issues RESUELTOS
+
+- **ID:** F5
+- **Estado:** PASS (tras fix de ISSUE-004 + ISSUE-005)
+- **Objetivo:** Verificar `codi watch` con debounce 500ms, flag `auto_generate_on_change`, ignore correcto de archivos generados, --once mode
+- **Archivos revisados:** `src/cli/watch.ts` (121 LOC, 0 tests preexistentes), `src/constants.ts:94` (WATCH_DEBOUNCE_MS=500)
+- **Tests ejecutados:**
+  - Pre-fix: sandbox E2E reveló loop infinito (9 regens en 5s) tras modificar 1 rule
+  - Post-fix: 34 tests nuevos permanentes (30 watch-filters + 3 state-helpers + 1 backup ISSUE-005 regression)
+  - Sandbox repro post-fix: EXACTAMENTE 1 regen ✓
+- **Evidencia clave:**
+  - `--once` mode funciona: exit 0
+  - `auto_generate_on_change: false` → refuse + warn + exit 0
+  - `auto_generate_on_change: true` + source change → exactly 1 regen (no loop)
+  - Triple análisis confirmó causa raíz: CORE-002 path drift de state.json no actualizó guards en watch.ts + backup-manager.ts
+- **Issues detectados y RESUELTOS:**
+  - **ISSUE-004:** loop infinito en watch (whitelist isSourceArtifactChange + nuevo módulo `watch-filters.ts`)
+  - **ISSUE-005:** backup includeOutput captura 0 archivos (getStatePath helper, fix backup-manager.ts:204)
+- **Conclusión:** Fix arquitectónicamente correcto (whitelist más robusto que blacklist + helper centralizado para state path). Cobertura de tests pasó de 0 → 34 permanentes. Sin defectos funcionales residuales.
+
+### F4 — Backup System + Revert command → ✅ PASS (2026-05-17)
+
+- **ID:** F4
+- **Estado:** PASS
+- **Objetivo:** Verificar lifecycle `openBackup → append → finalise`, manifest v2 sealed-last, pruneIncompleteBackups, retention MAX_BACKUPS=50, 3 scopes (source/output/pre-existing), `codi revert` con pre-snapshot, `codi backup` (list/delete/prune)
+- **Archivos revisados:** `src/core/backup/*.ts` (6 archivos, ~847 LOC), `src/cli/{revert,backup,backup-cli-helpers}.ts` (3 archivos, 452 LOC)
+- **Tests ejecutados:**
+  - Fase A: 9 test files / 58 tests pass en 2.5s (`tests/unit/cli/{backup,revert}.test.ts` + `tests/unit/core/backup/*` (6 files incl. list-project-archives añadido en FIX-001) + `tests/integration/backup-overhaul.test.ts`)
+  - Fase B sandbox E2E: ciclo completo init → modify → init --force → list → dry-run → revert → prune
+- **Evidencia clave:**
+  - Backup creado por `init --force` (operación destructiva, según `architecture.md`): `2026-05-17T10-31-01-666Z/` con `manifest v2 trigger=init-first-time files=3`
+  - Manifest v2 escrito último (sealed marker)
+  - `codi backup --list` JSON: `{"backups":[{"timestamp":"...", "fileCount":3}]}`
+  - `revert --dry-run`: previews 0 source + 3 output + 3 pre-existing files
+  - `revert --last` real: restored 3 files, creó pre-revert snapshot `2026-05-17T10-31-03-677Z` como safety net antes de mutar
+  - Default scope = output: backup captura `.claude/rules/...`, `.claude/settings.json`, `CLAUDE.md` (NO `.codi/` source — coherente con `includeOutput: true` default)
+  - `pruneIncompleteBackups`: incomplete dir sin manifest eliminada por el siguiente `openBackup` ✓
+- **Mapeo a CORE-XXX:** Backup v2 manifest sin CORE-XXX directo; sí touched en ISSUE-001 fix (movimos `listProjectArchives` a `core/backup`)
+- **Hallazgo de UX (no defecto):** `codi generate` NO crea backup — es por diseño. Backups solo en operaciones destructivas: `init`, `init --customize`, `update`, `clean` non-`--all`, `preset install`, "Add from external" wizard, `revert` mismo (pre-snapshot). Documentado en `docs/project/architecture.md` línea 314.
+- **Resultado:** PASS — lifecycle completo verificado, manifest v2 sellado correctamente, revert preserva safety net, prune limpia huérfanos automáticamente
+- **Intervención humana requerida:** ninguna
+- **Conclusión:** Backup system robusto. Pre-revert snapshot es buen patrón defensivo. Default scope = output es decisión arquitectónica explícita (no atrapa modificaciones a source artifacts — el usuario debería usar git para versioning de source). 58 tests cubren todas las facetas. Sin defectos funcionales.
+
+### F3 — Drift Detection + `codi status` → ✅ PASS (2026-05-17)
+
+- **ID:** F3
+- **Estado:** PASS
+- **Objetivo:** Verificar `codi status` detecta los 3 estados (Synced / Drifted / Missing) y respeta `drift_detection` flag (off/warn/error) con exit codes correctos
+- **Archivos revisados:** `src/cli/status.ts` (264 LOC), `src/core/config/state.ts:473-620` (detectDrift + detectHookDrift + detectPresetArtifactDrift), `src/core/flags/flag-catalog.ts:123-135` (drift_detection enum), `src/core/output/exit-codes.ts` (DRIFT_DETECTED=7)
+- **Tests ejecutados:**
+  - Fase A: 2 test files / 42 tests pass en 1.34s (`tests/unit/cli/status.test.ts` 8 tests + `tests/unit/config/state.test.ts` 42 tests con drift cobertura específica)
+  - Fase B sandbox E2E con flujo `init → generate → mutate → status` y patch de flag
+- **Evidencia clave:**
+  - `drift_detection: off` → handler short-circuit retorna empty data + exit 0 (línea 155-168 status.ts)
+  - `drift_detection: warn` (default) → reads state, detects drift, exit 0 con hasDrift=true en data
+  - `drift_detection: error` + drift presente → exit code **7 (DRIFT_DETECTED)** ✓ confirmado tras error de shell propio (ver feedback memory)
+  - Drift granular: CLAUDE.md modificado reportado como `"status": "drifted"` con `expectedHash` y `currentHash` específicos; resto de archivos `"status": "synced"`
+  - `codi validate` post-patch del flag YAML: válido (warnings de content size esperados, no errors)
+- **Mapeo a CORE-XXX:** N/A (no hay CORE específico de drift; backed por state.ts ya auditado en F1)
+- **Resultado:** PASS — drift detection funciona correctamente para los 3 estados y los 3 valores del flag
+- **Intervención humana requerida:** ninguna
+- **Conclusión:** Sistema de drift detection robusto. Short-circuit en `off` es eficiente. Granularidad por archivo correcta. Exit codes coherentes con `drift_detection` flag y CI mode. No defectos funcionales.
 
 ### F2 — Generation Pipeline + Adapter System → ✅ PASS (2026-05-17)
 
@@ -174,6 +237,41 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 - **Resultado:** PASS — todos los criterios funcionales verificados
 - **Intervención humana requerida:** ninguna
 - **Conclusión:** El subsistema de configuración es robusto, bien testeado (~109 tests cubren happy path + edge cases + concurrency + recovery). CORE-002/026/030 verificados funcionalmente. Sin defectos funcionales.
+
+### ISSUE-004 + ISSUE-005 — state path drift post-CORE-002 — RESUELTO ✅
+
+- **Tipo:** Mismo defecto categoría — multiple call sites usando path literal `path.join(configDir, STATE_FILENAME)` (legacy) en vez del nuevo `configDir/state/state.json` post-CORE-002
+- **Severidad:** ISSUE-004 P1 (visible loop) + ISSUE-005 P0/P1 (silent data loss latente)
+- **Estado:** Cerrados 2026-05-17
+- **Triple análisis:**
+  - Agent 1 (reproducibility): 9 regens en 5s confirmado, otros files trigger (`state/state.json`, `state.json.lock`, `state/operations.json`), Linux fs.watch inotify reporta paths relativos con subdirs
+  - Agent 2 (root cause): guard agregado Feb 2026 con literal filename, CORE-002 (Abr 2026) movió state pero no actualizó watch.ts. Whitelist es semantic correcto (source artifact = `rules/skills/agents/mcp-servers/` + yamls top-level)
+  - Agent 3 (impact): 100% strict/development preset users → loop; ADICIONAL: backup-manager.ts:204 silent fail (capturó como ISSUE-005)
+- **Solución implementada:**
+  1. Nuevo helper `getStatePath(configDir)` exportado desde `src/core/config/state.ts` (single source of truth — previene futura drift)
+  2. Nuevo módulo `src/core/config/watch-filters.ts` con `isSourceArtifactChange(relPath)` — whitelist approach (más robusto que blacklist)
+  3. `src/core/backup/backup-manager.ts:204` usa `getStatePath()` (ISSUE-005 fix)
+  4. `src/cli/watch.ts:97` usa `isSourceArtifactChange` en vez de blacklist literal (ISSUE-004 fix)
+- **Tests añadidos (+34 permanentes):**
+  - `tests/unit/config/watch-filters.test.ts` — 30 tests cubren source/derived paths, Windows backslashes, edge cases, exact paths que causaron el loop
+  - `tests/unit/config/state-helpers.test.ts` — 3 tests para `getStatePath`
+  - `tests/unit/core/backup/backup-manager.test.ts` — 1 nuevo test ISSUE-005 regression + actualización del helper `writeState` (también estaba escribiendo al path legacy, masked el bug)
+- **Revalidación:**
+  - Lint PASS (13 guards + tsc)
+  - 77 targeted tests pass en 491ms (8 files)
+  - Build PASS
+  - **Sandbox repro post-fix: EXACTAMENTE 1 regen** (era 9) — log limpio sin eventos `.lock`
+  - Suite completo: 4001 → 4035 (+34, 0 regresiones)
+- **Archivos modificados:**
+  - `src/core/config/state.ts` (+14 LOC, helper export)
+  - `src/core/config/watch-filters.ts` (new, 81 LOC)
+  - `src/core/backup/backup-manager.ts` (+10/-3, usa helper)
+  - `src/cli/watch.ts` (+8/-7, whitelist)
+  - `tests/unit/config/watch-filters.test.ts` (new, 91 LOC)
+  - `tests/unit/config/state-helpers.test.ts` (new, 32 LOC)
+  - `tests/unit/core/backup/backup-manager.test.ts` (+45/-3, helper + new regression test)
+
+---
 
 ### ISSUE-003 — `--agents` con coma genera error message misleading — RESUELTO ✅
 

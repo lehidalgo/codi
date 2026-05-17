@@ -5,14 +5,9 @@ import { registerAllAdapters } from "../adapters/index.js";
 import { resolveConfig } from "../core/config/resolver.js";
 import { applyConfiguration } from "../core/generator/apply.js";
 import { Logger } from "../core/output/logger.js";
-import {
-  WATCH_DEBOUNCE_MS,
-  STATE_FILENAME,
-  AUDIT_FILENAME,
-  PROJECT_CLI,
-  PROJECT_DIR,
-} from "../constants.js";
+import { WATCH_DEBOUNCE_MS, PROJECT_CLI, PROJECT_DIR } from "../constants.js";
 import { writeAuditEntry } from "../core/audit/audit-log.js";
+import { isSourceArtifactChange } from "../core/config/watch-filters.js";
 import { initFromOptions } from "./shared.js";
 import type { GlobalOptions } from "./shared.js";
 
@@ -94,9 +89,16 @@ export function registerWatchCommand(program: Command): void {
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
       let generating = false;
 
+      // ISSUE-004: previous blacklist `filename === STATE_FILENAME ||
+      // filename === AUDIT_FILENAME` only matched root-level names. After
+      // CORE-002 moved state to `.codi/state/state.json` (plus the
+      // proper-lockfile sentinel `state.json.lock`), the guard stopped
+      // firing → infinite regenerate loop. Switched to whitelist:
+      // `isSourceArtifactChange` returns true only for rules/skills/agents/
+      // mcp-servers and the three top-level YAMLs.
       const watcher = fs.watch(configDir, { recursive: true }, (_event, filename) => {
         if (!filename) return;
-        if (filename === STATE_FILENAME || filename === AUDIT_FILENAME) return;
+        if (!isSourceArtifactChange(filename)) return;
 
         if (debounceTimer) clearTimeout(debounceTimer);
         debounceTimer = setTimeout(async () => {

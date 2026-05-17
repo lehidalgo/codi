@@ -6,12 +6,12 @@ import path from "node:path";
 import { isPathSafe } from "#src/utils/path-guard.js";
 import { fileExists, safeRm } from "#src/utils/fs.js";
 import {
-  STATE_FILENAME,
   BACKUPS_DIR,
   MAX_BACKUPS,
   EXTERNAL_ARCHIVE_DIR,
   PROJECT_DIR,
 } from "#src/constants.js";
+import { getStatePath } from "#src/core/config/state.js";
 import { VERSION } from "#src/index.js";
 import { readManifest, writeManifest } from "#src/core/backup/backup-manifest.js";
 import {
@@ -201,7 +201,13 @@ async function computeInitialFiles(
   let stateData: { agents: Record<string, Array<{ path: string }>> } = {
     agents: {},
   };
-  const statePath = path.join(configDir, STATE_FILENAME);
+  // ISSUE-005: was `path.join(configDir, STATE_FILENAME)` (legacy
+  // `.codi/state.json`). After CORE-002 the path is `.codi/state/state.json`,
+  // so the literal join missed the file → empty agents → includeOutput
+  // captured 0 files in non-first-time destructive ops (init-first-time was
+  // masked by includePreExisting). Centralized in getStatePath() so future
+  // path moves only need one update.
+  const statePath = getStatePath(configDir);
   if (await fileExists(statePath)) {
     try {
       const raw = await fs.readFile(statePath, "utf8");
