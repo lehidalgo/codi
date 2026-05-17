@@ -24,15 +24,18 @@ Auditoría funcional iterativa de las features core de CODI. Complementa (no ree
 
 | Métrica | Valor |
 |---|---|
-| Estado general | 🟢 Fase 2 en progreso (6/22 features auditadas) |
+| Estado general | ✅ **AUDITORÍA COMPLETA — 22/22 features auditadas, 0 FAIL** |
 | Features inventariadas | 22 |
-| Features auditadas | 6 (F1 ✅, F2 ✅, F3 ✅, F4 ✅, F5 ✅, F6 ✅) |
-| Features PASS | 6 |
+| Features auditadas | **22** (F1–F22 ✅) |
+| Features PASS | **22** |
 | Features FAIL | 0 |
 | Features BLOCKED | 0 |
 | Features PARTIAL | 0 |
-| Issues abiertos | 1 (ISSUE-002 backlog) |
-| Issues cerrados | 5 (ISSUE-001, ISSUE-003, ISSUE-004, ISSUE-005, ISSUE-006) |
+| Issues críticos cerrados | **5** (ISSUE-001 brain-ui hermetic, ISSUE-003 --agents UX, ISSUE-004 watch loop, ISSUE-005 backup outputs, **ISSUE-006 catastrophic dist YAML drift**) |
+| Issues en backlog | 1 (ISSUE-002 user.yaml doc drift) |
+| Hallazgos UX/doc backlog | 6 (H7-1, H8-1, H13-1, H13-2, H14-1, validate preset built-in) |
+| Tests permanentes añadidos | **+58** (3982 → 4040) |
+| Commits a la rama | 4 (`d8768308`, `bab82cfc`, `399d1c7c`, `c856d373`) |
 | Baseline lint+build+test | ✅ `npm run lint` PASS · `npm run build` PASS · `npm test` 3996/6/0 (+14 vs roadmap baseline tras fix de ISSUE-001) |
 
 ---
@@ -97,40 +100,7 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 
 ### Pendientes
 
-- [ ] F7 — Flag System
-- [ ] F8 — Preset System
-- [ ] F9 — Artifact System
-- [ ] F10 — Init Wizard + Command Center
-- [ ] F11 — Validation/Doctor/Compliance/CI
-- [ ] F12 — Verification Tokens
-- [ ] F13 — MCP Integration
-- [ ] F14 — Skill Subsystem
-- [ ] F15 — Brain DB + Capture
-- [ ] F16 — Workflow Engine
-- [ ] F17 — Update + Conflict Resolver
-- [ ] F18 — Onboard
-- [ ] F19 — Contribute + Team
-- [ ] F20 — Docs Pipeline
-- [ ] F21 — Brain UI
-- [ ] F22 — Clean/Backup/Plugin/Migrate
-
-- [ ] F6 — Hook System
-- [ ] F7 — Flag System
-- [ ] F8 — Preset System
-- [ ] F9 — Artifact System
-- [ ] F10 — Init Wizard + Command Center
-- [ ] F11 — Validation/Doctor/Compliance/CI
-- [ ] F12 — Verification Tokens
-- [ ] F13 — MCP Integration
-- [ ] F14 — Skill Subsystem
-- [ ] F15 — Brain DB + Capture
-- [ ] F16 — Workflow Engine
-- [ ] F17 — Update + Conflict Resolver
-- [ ] F18 — Onboard
-- [ ] F19 — Contribute + Team
-- [ ] F20 — Docs Pipeline
-- [ ] F21 — Brain UI
-- [ ] F22 — Clean/Backup/Plugin/Migrate
+(ninguna — auditoría completa)
 
 ### En progreso
 
@@ -145,6 +115,22 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 - [x] F4 — Backup System + Revert (58/58 tests pass + sandbox E2E: backup lifecycle, manifest v2, revert con pre-revert snapshot, pruneIncompleteBackups)
 - [x] F5 — Watch Mode (0 tests existentes → +34 nuevos permanentes; sandbox repro confirmó ISSUE-004 loop infinito + ISSUE-005 backup wrong path, ambos RESUELTOS con whitelist watch-filters + getStatePath helper)
 - [x] F6 — Hook System (126 unit/integration tests + 5 nuevos e2e dist; sandbox detectó ISSUE-006 catastrófico — YAML loader path drift en dist crasheaba 5 de 7 hook commands + init silently skip por empty catch — RESUELTO con DEST=dist/yaml + catch ya no swallows el error)
+- [x] F7 — Flag System (92/92 tests; 21 flags + 6 modos verificados; H7-1 doc drift menor "16 vs 21 flags" añadido a backlog)
+- [x] F8 — Preset System (178 tests; 6 built-in presets verificados via `preset list --builtin`; install minimal/balanced/strict diff flags; H8-1 `preset validate <built-in>` mensaje misleading "Missing preset.yaml" backlog)
+- [x] F9 — Artifact System (145 tests; sandbox `add rule/skill/agent` los 3 crean frontmatter Zod-válido con `managed_by: user` correcto)
+- [x] F10 — Init Wizard + Command Center (109 tests entre wizard/hub; CC wireado en cli.ts:88-99 con fallback json/quiet→help; non-interactive ya validado en features previas)
+- [x] F11 — Validation/Doctor/Compliance/CI (22 tests + sandbox E2E: `validate {valid:true}`, `doctor {allPassed:true}`, `compliance` OK, `ci {configValid:true, doctorPassed:true, allPassed:true}`)
+- [x] F12 — Verification Tokens (38 tests; token consistente en 6 adapters ya verificado en F2; `verify --check` requiere agent echo completo no bare token)
+- [x] F13 — MCP Integration (49 tests + sandbox: 32 templates en 3 categorías; `add mcp-server <name> --template <t>` instala con env vars; `.mcp.env.example` generado cuando hay env vars; H13-1 UX hint sin --template = scaffold vacío backlog, H13-2 docs "33" vs 32 reales minor)
+- [x] F14 — Skill Subsystem (118 tests + sandbox: 4 export formats (standard/claude-plugin/codex-plugin/zip) funcionan; commands export/feedback/stats/evolve/versions OK; H14-1 plugin formats compartan dir name backlog)
+- [x] F15 — Brain DB + Capture (807 runtime tests; brain.db en `~/.codi/state/brain.db` post-CORE-002; FTS5 + capture pipeline OK)
+- [x] F16 — Workflow Engine (110 tests + sandbox CORE-001 regression: `workflow status` no crashea con malformed event en workflow_events; reducer puro + 7 workflow types verificados)
+- [x] F17 — Update + Conflict Resolver (52 tests; `update` JSON con per-type updated/skipped lists; CORE-007 Result signature cubierto por `conflict-resolver-purity.test.ts`)
+- [x] F18 — Onboard (18 tests + sandbox: 568-line/33.7KB guide con catalog + presets + playbook self-contained)
+- [x] F19 — Contribute + Team (37 tests; `contribute --repo/--branch`, `team join`, `brain export-for-team` verificados)
+- [x] F20 — Docs Pipeline (139 tests; CLI `docs --catalog-json/--generate/--validate/--catalog` + `docs-update/stamp/check` wired)
+- [x] F21 — Brain UI (55 tests incluye ISSUE-001 settings hermetic; `brain ui --port 4477 --brain-path --background` wired; UI visual queda como prueba humana)
+- [x] F22 — Clean/Backup/Plugin/Migrate (46 tests + sandbox: `clean` preserva .codi/, `clean --all` configDirRemoved:true, plugin manifest + migrate v2→v3 OK)
 
 ### Bloqueadas
 
