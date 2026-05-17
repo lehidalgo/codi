@@ -1006,22 +1006,35 @@ export async function runNonInteractiveIntake(
 
   if (ctx.options.agents && ctx.options.agents.length > 0) {
     const knownIds = new Set(getAllAdapters().map((a) => a.id));
-    const unknownAgents = ctx.options.agents.filter((id) => !knownIds.has(id));
+    // Accept both `--agents a b c` (variadic) and `--agents a,b,c`
+    // (comma-separated). Adapter IDs are kebab-case so a comma is
+    // unambiguous as a delimiter; users coming from CLIs that take
+    // comma-separated lists get the friendly behaviour. See ISSUE-003.
+    const hadCommaInput = ctx.options.agents.some((a) => a.includes(","));
+    const normalized = ctx.options.agents
+      .flatMap((a) => a.split(","))
+      .map((a) => a.trim())
+      .filter((a) => a.length > 0);
+    const unknownAgents = normalized.filter((id) => !knownIds.has(id));
     if (unknownAgents.length > 0) {
+      const quotedUnknown = unknownAgents.map((a) => `"${a}"`).join(", ");
+      const syntaxHint = hadCommaInput
+        ? " (Both space-separated `--agents a b c` and comma-separated `--agents a,b,c` are accepted.)"
+        : "";
       return {
         ok: false,
         earlyExit: buildInitFailure(ctx, state, [
           {
             code: "E_CONFIG_INVALID",
-            message: `Unknown agent(s): ${unknownAgents.join(", ")}. Known: ${[...knownIds].join(", ")}`,
-            hint: `Available agents: ${[...knownIds].join(", ")}`,
+            message: `Unknown agent(s): ${quotedUnknown}. Known: ${[...knownIds].join(", ")}.`,
+            hint: `Available agents: ${[...knownIds].join(", ")}.${syntaxHint}`,
             severity: "error",
             context: { unknownAgents },
           },
         ]),
       };
     }
-    state.agentIds = ctx.options.agents;
+    state.agentIds = normalized;
   } else {
     const detectedAdapters = await detectAdapters(ctx.projectRoot);
     state.agentIds = detectedAdapters.map((a) => a.id);

@@ -154,6 +154,57 @@ describe("init command handler", () => {
     expect(result.data.agents).toContain("claude-code");
   });
 
+  // ISSUE-003: --agents now accepts both variadic (space) and comma-separated
+  // syntaxes. The error message also calls out the syntax explicitly when the
+  // user passes a comma-separated string containing an invalid agent.
+  it("accepts comma-separated agent IDs as a single arg (DWIM)", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["claude-code,cursor"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toContain("claude-code");
+    expect(result.data.agents).toContain("cursor");
+  });
+
+  it("accepts mixed variadic + comma agent IDs", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["claude-code,cursor", "codex"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toEqual(expect.arrayContaining(["claude-code", "cursor", "codex"]));
+  });
+
+  it("trims whitespace and ignores empty entries in comma-separated input", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: [" claude-code , cursor , "],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toEqual(expect.arrayContaining(["claude-code", "cursor"]));
+  });
+
+  it("adds syntax hint when comma input contains unknown agent IDs", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["claude-code,bogus-agent"],
+    });
+    expect(result.success).toBe(false);
+    expect(result.errors[0]!.message).toContain('"bogus-agent"');
+    expect(result.errors[0]!.message).not.toContain("claude-code,bogus-agent");
+    expect(result.errors[0]!.hint).toContain("comma-separated `--agents a,b,c`");
+  });
+
+  it("does NOT add comma syntax hint when input has no commas", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["bogus-agent"],
+    });
+    expect(result.success).toBe(false);
+    expect(result.errors[0]!.hint).not.toContain("comma-separated");
+  });
+
   it("creates operations ledger", async () => {
     await initHandler(tmpDir, { json: true });
 

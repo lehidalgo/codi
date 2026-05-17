@@ -24,15 +24,15 @@ Auditoría funcional iterativa de las features core de CODI. Complementa (no ree
 
 | Métrica | Valor |
 |---|---|
-| Estado general | 🟢 Baseline verde, Fase 2 lista para iniciar |
+| Estado general | 🟢 Fase 2 en progreso (2/22 features auditadas) |
 | Features inventariadas | 22 |
-| Features auditadas | 0 (F1 lista para arrancar) |
-| Features PASS | 0 |
+| Features auditadas | 2 (F1 ✅ PASS, F2 ✅ PASS) |
+| Features PASS | 2 |
 | Features FAIL | 0 |
 | Features BLOCKED | 0 |
 | Features PARTIAL | 0 |
-| Issues abiertos | 0 |
-| Issues cerrados | 1 (ISSUE-001) |
+| Issues abiertos | 1 (ISSUE-002 backlog) |
+| Issues cerrados | 2 (ISSUE-001, ISSUE-003) |
 | Baseline lint+build+test | ✅ `npm run lint` PASS · `npm run build` PASS · `npm test` 3996/6/0 (+14 vs roadmap baseline tras fix de ISSUE-001) |
 
 ---
@@ -97,9 +97,6 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 
 ### Pendientes
 
-- [ ] Baseline lint + build + test
-- [ ] F1 — Configuration Management
-- [ ] F2 — Generation Pipeline + Adapters
 - [ ] F3 — Drift Detection
 - [ ] F4 — Backup + Revert
 - [ ] F5 — Watch Mode
@@ -127,7 +124,9 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 
 ### Completadas
 
-(ninguna)
+- [x] Baseline lint + build + test (3996/6/0)
+- [x] F1 — Configuration Management (109/109 tests pass; ISSUE-002 doc drift en backlog)
+- [x] F2 — Generation Pipeline + Adapter System (357/357 tests pass + sandbox E2E: 6/6 adapters con token compartido; ISSUE-003 detectado y RESUELTO)
 
 ### Bloqueadas
 
@@ -137,7 +136,96 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 
 ## Registro de pruebas
 
-(Vacío — se llenará a partir de la Fase 2 con un bloque por feature siguiendo este esquema)
+### F2 — Generation Pipeline + Adapter System → ✅ PASS (2026-05-17)
+
+- **ID:** F2
+- **Estado:** PASS
+- **Objetivo:** Verificar `codi generate` end-to-end: resolveConfig → 6 adapter dispatch → emission con p-limit → state atómico → verification token en cada output
+- **Archivos revisados:** `src/adapters/*.ts` (20 archivos, ~3069 LOC), `src/core/generator/{apply,generator}.ts`, `src/core/artifact-types.ts`
+- **Tests ejecutados:**
+  - Fase A: 23 test files / 357 tests pass en 4.4s (tests/unit/adapters/ + tests/unit/core/generator/ + tests/integration/{adapter-generation,full-pipeline}.test.ts)
+  - Fase B sandbox E2E: `node dist/cli.js init --preset codi-minimal --agents claude-code cursor codex windsurf cline copilot --force` + `codi generate`
+- **Evidencia clave:**
+  - 6/6 instruction files generados (CLAUDE.md, AGENTS.md, .cursorrules, .windsurfrules, .clinerules, .github/copilot-instructions.md)
+  - 6/6 adapter dirs creados (.claude, .cursor, .codex, .windsurf, .cline, .github)
+  - **Verification token IDÉNTICO en los 6 outputs:** `codi-c0f85c28811f` — confirma single-source consistency
+  - state.json escrito atómicamente en `.codi/state/state.json` (post-CORE-002 layout)
+  - adapter-generation.test.ts > "all adapters include verification token" PASS
+- **Mapeo a CORE-XXX:** CORE-002 (p-limit + atomic) ✅ · CORE-006 (BaseAdapter) ✅ · CORE-018 (ARTIFACT_LAYOUT) ✅ · CORE-025 (exists helper) ✅
+- **Resultado:** PASS — los 6 adapters funcionan end-to-end, token consistency garantizada, state mutation atómica
+- **Intervención humana requerida:** ninguna
+- **Conclusión:** Pipeline de generación robusto. 357 tests cubren happy path + multi-adapter + dry-run + concurrency. Sandbox E2E confirma producción real correcta. Sin defectos funcionales. ISSUE-003 (UX) abierto separadamente — no rompe funcionalidad, solo UX de error.
+
+### F1 — Configuration Management → ✅ PASS (2026-05-17)
+
+- **ID:** F1
+- **Estado:** PASS
+- **Objetivo:** Verificar parser+resolver+composer+validator+state end-to-end, incluyendo CORE-002 (atomic mutate+lock), CORE-026 (EMPTY_STATE lazy), CORE-030 (corruption recovery), y N-process safety
+- **Archivos revisados:** `src/core/config/{parser,resolver,composer,validator,state}.ts` (1482 LOC total)
+- **Tests ejecutados:** 11 archivos / **109 tests pass** en 945ms
+  - `tests/unit/config/{parser,parser-skills,resolver,composer,state,state-atomic-mutate,state-binary-sentinel}.test.ts`
+  - `tests/unit/core/config/validator.test.ts`
+  - `tests/unit/core/generator/{apply,apply-atomic-state,generator-concurrency}.test.ts`
+- **Evidencia clave:**
+  - state-atomic-mutate.test.ts > "serializes concurrent mutations: every update is observed" → confirma proper-lockfile cross-process serialization
+  - state.test.ts > "returns a FRESH lastGenerated for each read of a missing state.json (CORE-026)" → confirma EMPTY_STATE lazy
+  - state.test.ts > describe "state.json corruption recovery (CORE-030)" → confirma malformed JSON handling
+  - generator-concurrency.test.ts → confirma p-limit con `CODI_FILE_IO_CONCURRENCY`
+- **Resultado:** PASS — todos los criterios funcionales verificados
+- **Intervención humana requerida:** ninguna
+- **Conclusión:** El subsistema de configuración es robusto, bien testeado (~109 tests cubren happy path + edge cases + concurrency + recovery). CORE-002/026/030 verificados funcionalmente. Sin defectos funcionales.
+
+### ISSUE-003 — `--agents` con coma genera error message misleading — RESUELTO ✅
+
+- **Tipo:** UX defect en CLI
+- **Severidad:** Baja-media
+- **Estado:** Cerrado 2026-05-17
+- **Funcionalidad afectada:** F10 (Init Wizard CLI), F2 (Generation Pipeline — entry point)
+- **Reproducción original:**
+  ```
+  $ node dist/cli.js init --preset codi-minimal --agents claude-code,cursor,codex --force
+  [FAIL] init
+    [ERR] Unknown agent(s): claude-code,cursor,codex. Known: claude-code, cursor, codex, windsurf, cline, copilot
+  ```
+- **Causa raíz:** El flag está declarado en `src/cli/init.ts:114` como `--option("--agents <agents...>")` — variadic de commander.js, que requiere args separados por espacio. El parser de validación (`src/cli/init-helpers.ts:1007`) no splitteaba el input por coma. El error mostraba el input literal contra la lista de agents válidos; como ambos textos se ven casi idénticos, un usuario razonable no detecta la diferencia.
+- **Solución implementada (opción c — DWIM + mejor mensaje):**
+  1. `init-helpers.ts:1007-1024`: pre-normalizar `ctx.options.agents` con `flatMap(a => a.split(",")).map(trim).filter(non-empty)` — acepta tanto variadic `a b c` como CSV `a,b,c`.
+  2. Detectar `hadCommaInput` para añadir hint condicional solo cuando relevante.
+  3. Mensaje quote unknown agents (`"bogus"`) para distinguir visualmente del listado válido.
+  4. Hint añadido: `"(Both space-separated \`--agents a b c\` and comma-separated \`--agents a,b,c\` are accepted.)"`
+- **Tests añadidos (+5 permanentes en `tests/unit/cli/init.test.ts`):**
+  - "accepts comma-separated agent IDs as a single arg (DWIM)"
+  - "accepts mixed variadic + comma agent IDs"
+  - "trims whitespace and ignores empty entries in comma-separated input"
+  - "adds syntax hint when comma input contains unknown agent IDs"
+  - "does NOT add comma syntax hint when input has no commas"
+- **Revalidación:**
+  - `npm run lint` PASS
+  - 26/26 init tests pass (era 20)
+  - Sandbox E2E: `--agents claude-code,cursor,codex` → exit 0, state tracked correctamente
+  - Sandbox E2E: `--agents claude-code,bogus,cursor` → error claro con quote + hint añadido
+  - Sandbox E2E: `--agents bogus` (sin coma) → error sin hint redundante
+  - Full suite: 3996 → **4001 pass / 6 skipped / 0 failed** (+5 nuevos, zero regresiones)
+- **Archivos modificados:**
+  - `src/cli/init-helpers.ts` (+18/-7)
+  - `tests/unit/cli/init.test.ts` (+47 LOC, 5 nuevos tests)
+
+---
+
+### ISSUE-002 — 3-layer config doc drift (era H1-1) — ABIERTO, BACKLOG
+
+- **Tipo:** Divergencia doc↔código (gap de feature documentado, no defecto funcional)
+- **Severidad:** Baja
+- **Estado:** Abierto, tracking en backlog. Decisión del usuario el 2026-05-17: trackear y retomar tras completar Fase 2.
+- **Descripción:** `docs/project/features.md` y `docs/project/architecture.md` declaran 3-layer config resolution con capa "User" en `~/.codi/user.yaml`. El código real (`src/core/config/resolver.ts:33-54`) lee SOLO `.codi/` como single source. Presets se materializan en install time. La 3ra capa "user" no existe en runtime.
+- **Verificación:** grep `user\.yaml|userConfig|userLayer|USER_CONFIG|\.codi/user` en `src/` → 0 matches. `prefs.yaml` existe pero a nivel per-project (`.codi/preferences.yaml`), no per-user.
+- **Acciones futuras posibles:**
+  - (a) Implementar reader+merge de `~/.codi/user.yaml` en `resolveConfig`, respetando `locked: true` del repo. Effort medio (~1d). Cambia API de resolveConfig.
+  - (b) Corregir features.md + architecture.md para reflejar las 2 capas reales (preset@install + .codi/ runtime). Effort ~15min.
+
+---
+
+### Plantilla — Funcionalidad: [nombre]
 
 ### Plantilla — Funcionalidad: [nombre]
 - **ID:**
