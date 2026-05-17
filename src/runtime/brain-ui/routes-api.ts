@@ -17,12 +17,19 @@
 
 import type { Hono, Context } from "hono";
 import path from "node:path";
-import { homedir } from "node:os";
 import type { BrainHandle } from "#src/runtime/brain/db.js";
 import { quoteFtsPhrase } from "#src/runtime/brain/fts5.js";
-import { restoreBackup, restoreFromBackupDir } from "#src/core/backup/backup-manager.js";
-import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR } from "#src/constants.js";
+import {
+  restoreBackup,
+  restoreFromBackupDir,
+  defaultArchiveRoot,
+} from "#src/core/backup/backup-manager.js";
 import { isPathSafe } from "#src/utils/path-guard.js";
+
+export interface ApiRoutesOptions {
+  /** Override `~/.codi/archive/` for the archive restore endpoint. Tests inject a tmp dir. */
+  readonly archiveRoot?: string;
+}
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 1000;
@@ -34,7 +41,12 @@ const MAX_LIMIT = 1000;
 const TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/;
 const HASH_RE = /^[a-f0-9]{16}-[A-Za-z0-9._-]+$/;
 
-export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
+export function registerApiRoutes(
+  app: Hono,
+  brain: BrainHandle,
+  opts: ApiRoutesOptions = {},
+): void {
+  const archiveRoot = opts.archiveRoot ?? defaultArchiveRoot();
   app.get("/api/v1/projects", (c: Context) => {
     const rows = brain.raw
       .prepare(
@@ -381,7 +393,6 @@ export function registerApiRoutes(app: Hono, brain: BrainHandle): void {
       return c.json({ error: { code: "bad_request", message: "invalid hash or ts" } }, 400);
     }
     const projectRoot = path.dirname(path.dirname(path.dirname(brain.path)));
-    const archiveRoot = path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR);
     const archiveDir = path.join(archiveRoot, hash, ts);
     if (!isPathSafe(archiveRoot, path.relative(archiveRoot, archiveDir))) {
       return c.json({ error: { code: "bad_request", message: "path escape" } }, 400);

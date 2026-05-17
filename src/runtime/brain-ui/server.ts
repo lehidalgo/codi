@@ -23,6 +23,12 @@ import { registerSseRoute } from "./sse.js";
 export interface BuildAppOptions {
   /** Path to the brain DB. Default: `~/.codi/brain.db`. */
   readonly brainPath?: string;
+  /**
+   * Override the root used to enumerate project archives. Defaults to
+   * `~/.codi/archive/`. Tests inject a tmp dir to keep the route hermetic;
+   * production callers leave this undefined.
+   */
+  readonly archiveRoot?: string;
 }
 
 export interface AppHandle {
@@ -95,8 +101,9 @@ export function buildApp(opts: BuildAppOptions = {}): AppHandle {
     });
   });
 
-  registerApiRoutes(app, brain);
-  registerPages(app, brain);
+  const routeOpts = { archiveRoot: opts.archiveRoot };
+  registerApiRoutes(app, brain, routeOpts);
+  registerPages(app, brain, routeOpts);
   registerSseRoute(app, brain);
 
   return {
