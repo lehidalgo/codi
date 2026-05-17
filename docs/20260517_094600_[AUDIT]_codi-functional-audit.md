@@ -24,15 +24,15 @@ Auditoría funcional iterativa de las features core de CODI. Complementa (no ree
 
 | Métrica | Valor |
 |---|---|
-| Estado general | 🟢 Fase 2 en progreso (5/22 features auditadas) |
+| Estado general | 🟢 Fase 2 en progreso (6/22 features auditadas) |
 | Features inventariadas | 22 |
-| Features auditadas | 5 (F1 ✅, F2 ✅, F3 ✅, F4 ✅, F5 ✅) |
-| Features PASS | 5 |
+| Features auditadas | 6 (F1 ✅, F2 ✅, F3 ✅, F4 ✅, F5 ✅, F6 ✅) |
+| Features PASS | 6 |
 | Features FAIL | 0 |
 | Features BLOCKED | 0 |
 | Features PARTIAL | 0 |
 | Issues abiertos | 1 (ISSUE-002 backlog) |
-| Issues cerrados | 4 (ISSUE-001, ISSUE-003, ISSUE-004, ISSUE-005) |
+| Issues cerrados | 5 (ISSUE-001, ISSUE-003, ISSUE-004, ISSUE-005, ISSUE-006) |
 | Baseline lint+build+test | ✅ `npm run lint` PASS · `npm run build` PASS · `npm test` 3996/6/0 (+14 vs roadmap baseline tras fix de ISSUE-001) |
 
 ---
@@ -97,6 +97,23 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 
 ### Pendientes
 
+- [ ] F7 — Flag System
+- [ ] F8 — Preset System
+- [ ] F9 — Artifact System
+- [ ] F10 — Init Wizard + Command Center
+- [ ] F11 — Validation/Doctor/Compliance/CI
+- [ ] F12 — Verification Tokens
+- [ ] F13 — MCP Integration
+- [ ] F14 — Skill Subsystem
+- [ ] F15 — Brain DB + Capture
+- [ ] F16 — Workflow Engine
+- [ ] F17 — Update + Conflict Resolver
+- [ ] F18 — Onboard
+- [ ] F19 — Contribute + Team
+- [ ] F20 — Docs Pipeline
+- [ ] F21 — Brain UI
+- [ ] F22 — Clean/Backup/Plugin/Migrate
+
 - [ ] F6 — Hook System
 - [ ] F7 — Flag System
 - [ ] F8 — Preset System
@@ -127,6 +144,7 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 - [x] F3 — Drift Detection + `codi status` (42/42 tests pass + sandbox E2E: drift_detection off/warn/error con exit codes 0/0/7 correctos)
 - [x] F4 — Backup System + Revert (58/58 tests pass + sandbox E2E: backup lifecycle, manifest v2, revert con pre-revert snapshot, pruneIncompleteBackups)
 - [x] F5 — Watch Mode (0 tests existentes → +34 nuevos permanentes; sandbox repro confirmó ISSUE-004 loop infinito + ISSUE-005 backup wrong path, ambos RESUELTOS con whitelist watch-filters + getStatePath helper)
+- [x] F6 — Hook System (126 unit/integration tests + 5 nuevos e2e dist; sandbox detectó ISSUE-006 catastrófico — YAML loader path drift en dist crasheaba 5 de 7 hook commands + init silently skip por empty catch — RESUELTO con DEST=dist/yaml + catch ya no swallows el error)
 
 ### Bloqueadas
 
@@ -135,6 +153,25 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 ---
 
 ## Registro de pruebas
+
+### F6 — Hook System → ✅ PASS (2026-05-17) — con ISSUE-006 (catastrófico) RESUELTO
+
+- **ID:** F6
+- **Estado:** PASS (tras fix de ISSUE-006)
+- **Objetivo:** Verificar detección de framework (husky/pre-commit/lefthook/standalone), instalación adaptada, always-on vs flag-controlled hooks, 16 lang registries, `codi hooks doctor`
+- **Archivos revisados:** `src/core/hooks/*.ts` (19 archivos, ~5054 LOC), `src/cli/hooks*.ts` (4 archivos, 377 LOC), `src/core/hooks/registry/yaml/*.yaml` (15 lang YAMLs)
+- **Tests ejecutados:**
+  - Fase A: 24 hook test files / 126 tests pass en 4s
+  - Fase B sandbox dist: detectó ISSUE-006 catastrófico (5 de 7 commands crashean en `node dist/cli.js`)
+  - Post-fix: 5 nuevos e2e en `tests/e2e/hooks-dist.test.ts` (regresión contra dist binary)
+- **Evidencia clave:**
+  - Pre-fix: `node dist/cli.js hooks doctor` → ENOENT crash; `init` silently skip (catch swallowed); gitleaks no instalado
+  - Post-fix: `hooks doctor` reporta `Hooks checked: 3, ✓ Installed: 1`, missing tools listed correctly
+  - Post-fix: `init` muestra `Pre-commit hooks installed (standalone)`, `.git/hooks/pre-commit` físicamente creado (9961B)
+  - Triple agente confirmó: CI gap real, tests usan `#src/` alias (nunca dist), 100% repro, gitleaks no corriendo = catastrófico (secrets leak a GitHub)
+- **Issues detectados y RESUELTOS:**
+  - **ISSUE-006:** YAML loader path drift (P0/catastrophic) — fix DEST=dist/yaml + catch surfaces error + e2e regression test
+- **Conclusión:** Hook system arquitectónicamente robusto (24 hook tests cubren registry + installer + lifecycle), pero la auditoría destapó un defecto P0 que llevaba meses oculto por un gap de testing (tests no ejercitaban dist). Fix mecánico + nuevo e2e suite cierra el gap.
 
 ### F5 — Watch Mode → ✅ PASS (2026-05-17) — con 2 issues RESUELTOS
 
@@ -237,6 +274,51 @@ Cada feature lleva referencias a CORE-XXX del `CORE_CODI_ROADMAP.md` cuya resolu
 - **Resultado:** PASS — todos los criterios funcionales verificados
 - **Intervención humana requerida:** ninguna
 - **Conclusión:** El subsistema de configuración es robusto, bien testeado (~109 tests cubren happy path + edge cases + concurrency + recovery). CORE-002/026/030 verificados funcionalmente. Sin defectos funcionales.
+
+### ISSUE-006 — YAML loader path drift en dist (hooks doctor crash + init silently skip) — RESUELTO ✅
+
+- **Tipo:** Path resolution bug entre source-tree y bundled-dist + UX empty catch que enmascara error
+- **Severidad:** **CATASTROPHIC (P0 ship-blocker).** Antes del fix:
+  - `codi hooks doctor`/`list`/`add`/`remove` → loud crash con ENOENT
+  - `codi init` wizard (interactive) → crash en scandir
+  - `codi init` (no-wizard) → silently install sin hooks (`hooksInstalled: false`)
+  - `codi generate` → falla generar hook config
+  - **Gitleaks no se instala → secretos llegan a GitHub sin ser detectados**
+- **Estado:** Cerrado 2026-05-17
+- **Reproducción:**
+  ```
+  $ node dist/cli.js hooks doctor --no-color
+  Error: [hook-registry] cannot read YAML for language "global"
+    at /home/lehidalgo/dev/rl3/codi/dist/yaml/global.yaml: ENOENT
+  ```
+- **Causa raíz:** `src/core/hooks/registry/loader.ts:41-42` computa `YAML_DIR = join(dirname(import.meta.url), "yaml")`. En source resuelve a `src/core/hooks/registry/yaml/` ✓. En dist (bundled), tsup APLANA todos los módulos no-entry en `dist/chunk-*.js` → `import.meta.url` apunta a `dist/chunk-X.js` → `dirname` = `dist/` → busca en `dist/yaml/`. Pero `scripts/copy-hook-yaml.mjs:20` copiaba YAMLs a `dist/core/hooks/registry/yaml/` ❌.
+- **Por qué el catch lo masked:** `src/cli/init-helpers.ts:1298-1300` tenía `} catch { ctx.log.warn("Hook detection failed..."); }` — empty catch silentemente swallow el ENOENT real, mostrando solo un warning vago. Init proseguía con `hooksInstalled: false` sin que el usuario supiera por qué.
+- **Por qué los tests no lo detectaron:** la suite usa vitest + alias `#src/` que resuelve a `src/` (no `dist/`). Los 4035 tests verifican source-code contract pero NUNCA ejercitan el bundle real. Gap clásico de testing en proyectos npm-published.
+- **Triple análisis (Agente 1+2+3):**
+  - Agent 1: 5 de 7 hook commands crashean en dist, `codi doctor` (main) no afectado por suerte. CI no cacha porque solo corre vitest contra src.
+  - Agent 2: Catalogó 14 `import.meta.url` usages en src — solo el loader está roto; otros tienen fallbacks (seed-workflows, event-factory). Recomendó Fix A (DEST change) como hotfix + Fix C (multi-entry tsup) long-term.
+  - Agent 3: gitleaks no corriendo = CATASTROPHIC; 228 empty catches en codebase, init-helpers:1298 es uno de los high-impact; CI gap real (e2e existente no asserts hooks installed).
+- **Solución implementada (Fix A + UX + regression test):**
+  1. **`scripts/copy-hook-yaml.mjs:20`**: `DEST = "dist/yaml"` (matches el path que el loader resuelve en runtime). Comentario explicativo añadido para futuros maintainers.
+  2. **`src/cli/init-helpers.ts:1298-1303`**: catch ahora bind `cause` y loguea `${msg}` con el error real. Future hook-install failures son diagnosable sin re-run con debug.
+  3. **`tests/e2e/hooks-dist.test.ts` (new, 198 LOC)**: 5 tests permanentes que spawn `node dist/cli.js` y validan:
+     - dist/yaml/ contains ≥15 YAML files including global.yaml
+     - `hooks doctor` no crashea con ENOENT, muestra "Hooks checked" o "Languages detected"
+     - `hooks list` no crashea, muestra `[git/<lang>]` o `[runtime]` bucket labels
+     - `init` no muestra "Hook detection failed", `.git/hooks/pre-commit` físicamente creado
+     - **Contract test** que asserts el catch sigue bindeando `cause` y interpolándolo en el warning (previene regresión al empty catch en futuro refactor)
+- **Revalidación:**
+  - Lint PASS
+  - 5/5 nuevos e2e tests pass en 2.5s contra dist binary real
+  - Full suite: 4035 → **4040 passing**, 0 regresiones
+  - Sandbox manual: doctor/list/init funcionan end-to-end, hooks file creado
+- **Archivos modificados:**
+  - `scripts/copy-hook-yaml.mjs` (+25/-8, comentario + DEST fix)
+  - `src/cli/init-helpers.ts` (+8/-2, catch bind + log)
+  - `tests/e2e/hooks-dist.test.ts` (new, 198 LOC)
+- **Roadmap entry (Fix C — opcional architectural):** Considerar multi-entry tsup config que emita `dist/core/hooks/registry/loader.js` para preservar source structure. Más invasivo (cambia chunking). El DEST fix actual es estable y correcto; Fix C solo sería refactor cosmético.
+
+---
 
 ### ISSUE-004 + ISSUE-005 — state path drift post-CORE-002 — RESUELTO ✅
 

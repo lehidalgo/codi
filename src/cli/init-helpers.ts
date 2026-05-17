@@ -1295,8 +1295,14 @@ export async function installPreCommitHooks(
     } else {
       ctx.log.warn("Hook installation failed; you can set up hooks manually.");
     }
-  } catch {
-    ctx.log.warn("Hook detection failed; skipping hook installation.");
+  } catch (cause) {
+    // ISSUE-006: was an empty catch that swallowed the actual error and
+    // showed only "Hook detection failed" — which masked a real ENOENT
+    // from the YAML registry loader (dist path drift) and made the bug
+    // invisible to users. Log the cause so future hook-loading failures
+    // are diagnosable instead of silently degrading.
+    const msg = cause instanceof Error ? cause.message : String(cause);
+    ctx.log.warn(`Hook detection failed; skipping hook installation: ${msg}`);
   }
 }
 
