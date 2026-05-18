@@ -1,11 +1,66 @@
 # PROPOSAL — codi-default = capellai parity (placement-only scope)
 
-- **Date**: 2026-05-17
+- **Date**: 2026-05-17 (executed 2026-05-17 → 2026-05-18)
+- **Status**: Pasos 1-8 complete; Paso 9 (init wiring of `core.hooksPath` for git hooks) deferred to follow-up PR.
 - **Category**: PROPOSAL / DISTRIBUTION
 - **Session origin**: Grilling session 2026-05-17 (this session). Trabajo paralelo e independiente al PROPOSAL existente `20260517_160000_PROPOSAL_codi-v4-default-base.md` y al ADR-012 (capellai-parity-import).
 - **Source decision (this session)**: ADR-013 (refining ADR-012).
 - **Branch strategy**: `feature/codi-default-parity` ramificada desde `feature/codi-v3-harness` (NO desde main). PR atómico de vuelta a `feature/codi-v3-harness`.
 - **Pre-release**: sin migración legacy; un `.codi/preset.json` con preset removido se trata como tierra nueva.
+
+## Paso 9 — DEFERRED: git hook installation via core.hooksPath
+
+Discovered during Paso 8 implementation that codi already has a sophisticated
+git hook install pipeline (`src/core/hooks/hook-installer.ts`) that:
+* Detects the project's git hook framework (Husky / pre-commit / Lefthook /
+  standalone) via `detectHookSetup()`.
+* Installs many existing check types: `commitMsgValidation`, `secretScan`,
+  `fileSizeCheck`, `stagedJunkCheck`, `conflictMarkerCheck`, `skillYamlValidation`,
+  `versionCheck`, etc. — substantially overlapping with the capellai
+  `scripts/hooks/*.sh` set this PR was intended to absorb.
+
+The original plan for Paso 9 was to:
+1. Force `git config core.hooksPath ./hooks/` as the single canonical setup.
+2. Write `hooks/pre-commit` and `hooks/pre-push` stubs invoking
+   `codi hook git-pre-commit` / `codi hook git-pre-push`.
+
+Following that plan would bypass codi's existing per-framework hook system
+entirely — replacing months of sophisticated install logic with a stub.
+That refactor is genuinely out of scope for this PR.
+
+**Deferred work** (separate follow-up PR):
+* Reconcile the 11 hook modules in `src/runtime/hooks/{claude-code,git}/`
+  with codi's existing `hook-config-generator` + `hook-installer`. Specifically:
+  retire my `junk-paths-check.ts` and `file-lines-check.ts` (overlap with
+  codi's `stagedJunkCheck` and `fileSizeCheck`); keep `auto-format`,
+  `agent-configs-scan`, `branch-name-check`, `branch-base-check`,
+  `direct-push-guard` and register them with codi's hook config generator
+  so they install via whichever framework the project uses.
+* `codi init` auto-invokes the registration so users do not have to wire
+  hooks manually.
+
+**Current state**: the 11 hook modules ship in this PR as runtime code,
+invocable via `codi hook git-pre-commit` and `codi hook git-pre-push`.
+They are not auto-installed by `codi init`. Manual install for users who
+want the codi-default parity guardrails immediately:
+
+```bash
+git config core.hooksPath hooks/
+mkdir -p hooks
+cat > hooks/pre-commit <<'EOF'
+#!/bin/sh
+codi hook git-pre-commit
+EOF
+cat > hooks/pre-push <<'EOF'
+#!/bin/sh
+codi hook git-pre-push
+EOF
+chmod +x hooks/pre-commit hooks/pre-push
+```
+
+Note: doing this REPLACES codi's existing per-framework hook install for
+that project. Users who want both systems coexisting should wait for the
+follow-up PR that does proper integration.
 
 > Este documento es el plan de ejecución de esta sesión. La decisión está fijada en ADR-013 (que refina ADR-012) y el glosario actualizado en CONTEXT.md (entradas Capellai parity + Best-of-both merge de esta sesión).
 >
