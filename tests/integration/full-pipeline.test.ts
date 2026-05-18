@@ -271,23 +271,22 @@ describe("Drift Detection", () => {
 });
 
 describe("Update Flags → Regenerate", () => {
-  it("switching to strict preset changes flags and output", async () => {
+  it("re-applying default preset preserves flags shape", async () => {
+    // ADR-013: only codi-default remains. The original test verified
+    // preset-switching behavior, which no longer applies — re-applying the
+    // same canonical preset is the closest semantic equivalent.
     await initHandler(tmpDir, { json: true, agents: ["claude-code"] });
 
-    // Update to strict preset
     const updateResult = await updateHandler(tmpDir, {
       json: true,
-      preset: prefixedName("strict"),
+      preset: prefixedName("default"),
     });
     expect(updateResult.success).toBe(true);
-    expect(updateResult.data.flagsReset).toBe(true);
-    expect(updateResult.data.preset).toBe(prefixedName("strict"));
+    expect(updateResult.data.preset).toBe(prefixedName("default"));
 
-    // Verify flags.yaml has strict values
     const flagsContent = await fs.readFile(path.join(tmpDir, PROJECT_DIR, "flags.yaml"), "utf-8");
     const flags = parseYaml(flagsContent) as Record<string, Record<string, unknown>>;
-    expect(flags["security_scan"]?.["mode"]).toBe("enforced");
-    expect(flags["security_scan"]?.["locked"]).toBe(true);
+    expect(flags["security_scan"]).toBeDefined();
   });
 });
 

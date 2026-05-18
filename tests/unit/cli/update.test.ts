@@ -58,18 +58,20 @@ describe("update command handler", () => {
 
     const result = await updateHandler(tmpDir, {
       json: true,
-      preset: prefixedName("strict"),
+      preset: prefixedName("default"),
     });
     expect(result.success).toBe(true);
     expect(result.data.flagsReset).toBe(true);
-    expect(result.data.preset).toBe(prefixedName("strict"));
+    expect(result.data.preset).toBe(prefixedName("default"));
 
     const updated = parseYaml(
       await fs.readFile(path.join(configDir, "flags.yaml"), "utf-8"),
     ) as Record<string, unknown>;
     const secScan = updated["security_scan"] as Record<string, unknown>;
-    expect(secScan["mode"]).toBe("enforced");
-    expect(secScan["locked"]).toBe(true);
+    // ADR-013: codi-default has security_scan enabled (not enforced+locked).
+    // The original assertion was for the retired "strict" preset.
+    expect(secScan["mode"]).toBe("enabled");
+    expect(secScan["value"]).toBe(true);
   });
 
   it("dry-run does not write", async () => {
@@ -81,7 +83,7 @@ describe("update command handler", () => {
 
     const result = await updateHandler(tmpDir, {
       json: true,
-      preset: prefixedName("strict"),
+      preset: prefixedName("default"),
       dryRun: true,
     });
     expect(result.success).toBe(true);

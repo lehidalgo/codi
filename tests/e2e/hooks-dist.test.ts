@@ -139,7 +139,7 @@ describe("dist binary: hook commands (ISSUE-006 regression)", () => {
         [
           "init",
           "--preset",
-          "codi-balanced",
+          "codi-default",
           "--agents",
           "claude-code",
           "--force",

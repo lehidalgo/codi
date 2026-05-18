@@ -1,21 +1,18 @@
-import { prefixedName, PROJECT_NAME } from "#src/constants.js";
-import { preset as minimal } from "./minimal.js";
-import { preset as balanced } from "./balanced.js";
-import { preset as strict } from "./strict.js";
-import { preset as fullstack } from "./fullstack.js";
-import { preset as development } from "./development.js";
-import { preset as powerUser } from "./power-user.js";
+import { prefixedName } from "#src/constants.js";
+import { preset as defaultPreset } from "./default.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
-export { minimal, balanced, strict, fullstack, development, powerUser };
+export { defaultPreset };
 
+/**
+ * Single registered preset after ADR-013.
+ *
+ * minimal / balanced / strict / fullstack / development / power-user were retired;
+ * codi-default is the sole canonical install. The preset abstraction (resolver,
+ * flag system, wizard) is retained so adding presets again later is cheap.
+ */
 export const BUILTIN_PRESETS: Record<string, BuiltinPresetDefinition> = {
-  [prefixedName("minimal")]: minimal,
-  [prefixedName("balanced")]: balanced,
-  [prefixedName("strict")]: strict,
-  [prefixedName("fullstack")]: fullstack,
-  [`${PROJECT_NAME}-dev`]: development,
-  [prefixedName("power-user")]: powerUser,
+  [prefixedName("default")]: defaultPreset,
 };
 
 export function getBuiltinPresetDefinition(

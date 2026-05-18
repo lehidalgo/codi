@@ -3,15 +3,17 @@ import { isBuiltinPreset, materializeBuiltinPreset } from "#src/core/preset/pres
 import { prefixedName } from "#src/constants.js";
 
 describe("isBuiltinPreset", () => {
-  it("recognizes flag-only presets (minimal, balanced, strict)", () => {
-    expect(isBuiltinPreset(prefixedName("minimal"))).toBe(true);
-    expect(isBuiltinPreset(prefixedName("balanced"))).toBe(true);
-    expect(isBuiltinPreset(prefixedName("strict"))).toBe(true);
+  it("recognizes the canonical default preset", () => {
+    expect(isBuiltinPreset(prefixedName("default"))).toBe(true);
   });
 
-  it("recognizes full built-in presets", () => {
-    expect(isBuiltinPreset(prefixedName("fullstack"))).toBe(true);
-    expect(isBuiltinPreset(prefixedName("power-user"))).toBe(true);
+  it("returns false for retired preset names", () => {
+    // ADR-013: minimal/balanced/strict/fullstack/development/power-user retired
+    expect(isBuiltinPreset(prefixedName("minimal"))).toBe(false);
+    expect(isBuiltinPreset(prefixedName("balanced"))).toBe(false);
+    expect(isBuiltinPreset(prefixedName("strict"))).toBe(false);
+    expect(isBuiltinPreset(prefixedName("fullstack"))).toBe(false);
+    expect(isBuiltinPreset(prefixedName("power-user"))).toBe(false);
   });
 
   it("returns false for unknown presets", () => {
@@ -22,30 +24,15 @@ describe("isBuiltinPreset", () => {
 });
 
 describe("materializeBuiltinPreset", () => {
-  it("materializes balanced preset with artifacts", () => {
-    const result = materializeBuiltinPreset(prefixedName("balanced"));
+  it("materializes the default preset with artifacts", () => {
+    const result = materializeBuiltinPreset(prefixedName("default"));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.name).toBe(prefixedName("balanced"));
-      expect(result.data.description).toBe(
-        "Recommended — security on, type-checking strict, no force-push",
-      );
-      expect(result.data.flags).toBeDefined();
-      expect(Object.keys(result.data.flags).length).toBe(21);
-    }
-  });
-
-  it("materializes fullstack preset with 10 rules", () => {
-    const result = materializeBuiltinPreset(prefixedName("fullstack"));
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.name).toBe(prefixedName("fullstack"));
+      expect(result.data.name).toBe(prefixedName("default"));
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
       expect(Object.keys(result.data.flags).length).toBe(21);
-      expect(result.data.rules.length).toBe(10);
     }
   });
 
@@ -58,8 +45,8 @@ describe("materializeBuiltinPreset", () => {
     }
   });
 
-  it("presets have mcp with empty servers", () => {
-    const result = materializeBuiltinPreset(prefixedName("strict"));
+  it("default preset has mcp with empty servers", () => {
+    const result = materializeBuiltinPreset(prefixedName("default"));
 
     expect(result.ok).toBe(true);
     if (result.ok) {

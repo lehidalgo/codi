@@ -5,12 +5,8 @@ import { FLAG_CATALOG } from "#src/core/flags/flag-catalog.js";
 import { prefixedName } from "#src/constants.js";
 
 describe("flag presets", () => {
-  it("has 3 preset names", () => {
-    expect(getPresetNames()).toEqual([
-      prefixedName("minimal"),
-      prefixedName("balanced"),
-      prefixedName("strict"),
-    ]);
+  it("has the single canonical preset (ADR-013)", () => {
+    expect(getPresetNames()).toEqual([prefixedName("default")]);
   });
 
   it("each preset has all flags defined in the catalog", () => {
@@ -38,37 +34,17 @@ describe("flag presets", () => {
     }
   });
 
-  it("minimal preset is permissive", () => {
-    const preset = getPreset(prefixedName("minimal"));
-    expect(preset["security_scan"]!.value).toBe(false);
-    expect(preset["test_before_commit"]!.value).toBe(false);
-    expect(preset["allow_force_push"]!.value).toBe(true);
-    expect(preset["allow_shell_commands"]!.value).toBe(true);
-    expect(preset["type_checking"]!.value).toBe("off");
-  });
-
-  it("balanced preset has sensible defaults", () => {
-    const preset = getPreset(prefixedName("balanced"));
+  it("default preset has sensible security + type-checking defaults", () => {
+    const preset = getPreset(prefixedName("default"));
     expect(preset["security_scan"]!.value).toBe(true);
     expect(preset["test_before_commit"]!.value).toBe(true);
     expect(preset["allow_force_push"]!.value).toBe(false);
     expect(preset["type_checking"]!.value).toBe("strict");
   });
 
-  it("strict preset has enforced flags with locks", () => {
-    const preset = getPreset(prefixedName("strict"));
-    expect(preset["security_scan"]!.mode).toBe("enforced");
-    expect(preset["security_scan"]!.locked).toBe(true);
-    expect(preset["test_before_commit"]!.mode).toBe("enforced");
-    expect(preset["require_tests"]!.mode).toBe("enforced");
-    expect(preset["allow_force_push"]!.mode).toBe("enforced");
-    expect(preset["allow_force_push"]!.value).toBe(false);
-    expect(preset["allow_shell_commands"]!.value).toBe(true);
-  });
-
   it("getPreset returns a clone (not a reference)", () => {
-    const a = getPreset(prefixedName("balanced"));
-    const b = getPreset(prefixedName("balanced"));
+    const a = getPreset(prefixedName("default"));
+    const b = getPreset(prefixedName("default"));
     a["auto_commit"]!.value = true;
     expect(b["auto_commit"]!.value).toBe(false);
   });
@@ -77,7 +53,7 @@ describe("flag presets", () => {
     expect(() => getPreset("nonexistent" as never)).toThrow("Unknown preset");
   });
 
-  it("all presets have descriptions", () => {
+  it("all registered presets have descriptions", () => {
     for (const name of getPresetNames()) {
       expect(PRESET_DESCRIPTIONS[name]).toBeDefined();
       expect(PRESET_DESCRIPTIONS[name].length).toBeGreaterThan(10);
@@ -85,7 +61,7 @@ describe("flag presets", () => {
   });
 });
 
-describe("all 6 builtin presets", () => {
+describe("all registered builtin presets", () => {
   const catalogKeys = Object.keys(FLAG_CATALOG).sort();
   const validModes = [
     "enforced",
@@ -104,25 +80,4 @@ describe("all 6 builtin presets", () => {
       }
     });
   }
-
-  it("fullstack enforces security_scan and type_checking", () => {
-    const fullstack = BUILTIN_PRESETS[prefixedName("fullstack")]!;
-    expect(fullstack.flags["security_scan"]!.mode).toBe("enforced");
-    expect(fullstack.flags["type_checking"]!.mode).toBe("enforced");
-    expect(fullstack.flags["type_checking"]!.value).toBe("strict");
-  });
-
-  it("development preset enforces test_before_commit and security_scan", () => {
-    const dev = BUILTIN_PRESETS["codi-dev"]!;
-    expect(dev.flags["test_before_commit"]!.mode).toBe("enforced");
-    expect(dev.flags["security_scan"]!.mode).toBe("enforced");
-    expect(dev.flags["allow_force_push"]!.mode).toBe("enforced");
-    expect(dev.flags["allow_force_push"]!.value).toBe(false);
-  });
-
-  it("power-user preset has require_documentation enabled", () => {
-    const powerUser = BUILTIN_PRESETS[prefixedName("power-user")]!;
-    expect(powerUser.flags["require_documentation"]!.value).toBe(true);
-    expect(powerUser.flags["security_scan"]!.value).toBe(true);
-  });
 });

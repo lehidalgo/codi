@@ -255,29 +255,20 @@ describe("loadPresetFromDir", () => {
 });
 
 describe("loadPreset — builtin presets", () => {
-  it('loads builtin "minimal" preset', async () => {
-    const result = await loadPreset(prefixedName("minimal"), "/nonexistent");
+  it('loads builtin "default" preset', async () => {
+    const result = await loadPreset(prefixedName("default"), "/nonexistent");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.name).toBe(prefixedName("minimal"));
-    // Minimal preset has rules, skills, or agents
+    expect(result.data.name).toBe(prefixedName("default"));
     const totalArtifacts =
       result.data.rules.length + result.data.skills.length + result.data.agents.length;
     expect(totalArtifacts).toBeGreaterThanOrEqual(0);
   });
 
-  it('loads builtin "balanced" preset', async () => {
+  it("falls through to directory loading for retired preset names", async () => {
+    // ADR-013: minimal/balanced/strict no longer registered
     const result = await loadPreset(prefixedName("balanced"), "/nonexistent");
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.name).toBe(prefixedName("balanced"));
-  });
-
-  it('loads builtin "strict" preset', async () => {
-    const result = await loadPreset(prefixedName("strict"), "/nonexistent");
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.data.name).toBe(prefixedName("strict"));
+    expect(result.ok).toBe(false);
   });
 
   it("falls through to directory loading for unknown preset", async () => {

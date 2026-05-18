@@ -34,9 +34,9 @@ describe("collectAgentEntries", () => {
 });
 
 describe("collectPresetEntries", () => {
-  it("returns all builtin presets with required fields", () => {
+  it("returns the registered builtin presets with required fields (ADR-013: single canonical)", () => {
     const entries = collectPresetEntries();
-    expect(entries.length).toBeGreaterThanOrEqual(4);
+    expect(entries.length).toBeGreaterThanOrEqual(1);
     for (const e of entries) {
       expect(e.type).toBe("preset");
       expect(e.name).toBeTruthy();

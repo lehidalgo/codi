@@ -1,13 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { CORE_PLATFORM_RULES, CORE_PLATFORM_SKILLS } from "#src/templates/presets/core-platform.js";
-import { preset as minimal } from "#src/templates/presets/minimal.js";
-import { preset as balanced } from "#src/templates/presets/balanced.js";
-import { preset as strict } from "#src/templates/presets/strict.js";
-import { preset as fullstack } from "#src/templates/presets/fullstack.js";
-import { preset as development } from "#src/templates/presets/development.js";
-import { preset as powerUser } from "#src/templates/presets/power-user.js";
+import { preset as defaultPreset } from "#src/templates/presets/default.js";
 
-const ALL_PRESETS = [minimal, balanced, strict, fullstack, development, powerUser];
+const ALL_PRESETS = [defaultPreset];
 
 // ── CORE_PLATFORM_RULES ───────────────────────────────────────────────────
 
@@ -65,9 +60,9 @@ describe("CORE_PLATFORM_SKILLS", () => {
   });
 });
 
-// ── Every preset includes core platform artifacts ─────────────────────────
+// ── Every registered preset includes core platform artifacts ──────────────
 
-describe("All presets include CORE_PLATFORM_RULES", () => {
+describe("All registered presets include CORE_PLATFORM_RULES", () => {
   for (const preset of ALL_PRESETS) {
     it(`${preset.name} includes codi-improvement-dev rule`, () => {
       for (const rule of CORE_PLATFORM_RULES) {
@@ -77,7 +72,7 @@ describe("All presets include CORE_PLATFORM_RULES", () => {
   }
 });
 
-describe("All presets include CORE_PLATFORM_SKILLS", () => {
+describe("All registered presets include CORE_PLATFORM_SKILLS", () => {
   for (const preset of ALL_PRESETS) {
     it(`${preset.name} includes all 5 core platform skills`, () => {
       for (const skill of CORE_PLATFORM_SKILLS) {
@@ -87,9 +82,9 @@ describe("All presets include CORE_PLATFORM_SKILLS", () => {
   }
 });
 
-// ── No preset has duplicate rules or skills ───────────────────────────────
+// ── No registered preset has duplicate rules or skills ────────────────────
 
-describe("No preset has duplicate rules or skills", () => {
+describe("No registered preset has duplicate rules or skills", () => {
   for (const preset of ALL_PRESETS) {
     it(`${preset.name} has no duplicate rules`, () => {
       const unique = new Set(preset.rules);
@@ -101,28 +96,4 @@ describe("No preset has duplicate rules or skills", () => {
       expect(unique.size).toBe(preset.skills.length);
     });
   }
-});
-
-// ── Minimal preset has only core artifacts ────────────────────────────────
-
-describe("minimal preset", () => {
-  it("has exactly the core rules and no extras", () => {
-    expect(minimal.rules).toHaveLength(CORE_PLATFORM_RULES.length);
-  });
-
-  it("has exactly the core skills and no extras", () => {
-    expect(minimal.skills).toHaveLength(CORE_PLATFORM_SKILLS.length);
-  });
-
-  it("has no agents", () => {
-    expect(minimal.agents).toHaveLength(0);
-  });
-});
-
-// ── Development preset does not include command-creator ───────────────────
-
-describe("development preset", () => {
-  it("does not reference stale command-creator skill", () => {
-    expect(development.skills).not.toContain("codi-command-creator");
-  });
 });

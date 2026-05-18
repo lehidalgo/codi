@@ -315,12 +315,8 @@ export async function handlePresetPath(
   while (step >= 0) {
     switch (step) {
       case 0: {
-        const presetName = await wizardSelect({
-          message: "Choose a preset",
-          options: buildPresetOptions(),
-        });
-        if (isBack(presetName)) return BACK;
-        selectedPreset = presetName as string;
+        // ADR-013: codi-default is the sole registered preset — auto-select, no prompt.
+        selectedPreset = prefixedName("default");
         const presetDef = getBuiltinPresetDefinition(selectedPreset);
         originalFlags = { ...(presetDef?.flags ?? {}) };
         editedFlags = undefined;
@@ -665,31 +661,9 @@ export async function handleCustomPath(
         break;
       }
       case 4: {
-        const val = await wizardSelect({
-          message: "Choose flag preset",
-          options: [
-            {
-              label: "Balanced (recommended)",
-              value: prefixedName("balanced"),
-              hint: BUILTIN_PRESETS[prefixedName("balanced")]!.description,
-            },
-            {
-              label: "Minimal",
-              value: prefixedName("minimal"),
-              hint: BUILTIN_PRESETS[prefixedName("minimal")]!.description,
-            },
-            {
-              label: "Strict",
-              value: prefixedName("strict"),
-              hint: BUILTIN_PRESETS[prefixedName("strict")]!.description,
-            },
-          ],
-        });
-        if (isBack(val)) {
-          step--;
-          break;
-        }
-        preset = val as string;
+        // ADR-013: codi-default is the sole registered preset — auto-select, no prompt.
+        preset = prefixedName("default");
+        p.log.info(`Applying canonical preset: ${preset}`);
         step++;
         break;
       }

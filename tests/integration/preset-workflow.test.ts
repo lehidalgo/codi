@@ -24,8 +24,9 @@ afterEach(async () => {
 describe("Preset Workflow: load all builtin presets", () => {
   const presetNames = getBuiltinPresetNames();
 
-  it("has at least 5 builtin presets", () => {
-    expect(presetNames.length).toBeGreaterThanOrEqual(5);
+  it("registers the canonical single preset (ADR-013)", () => {
+    expect(presetNames.length).toBe(1);
+    expect(presetNames).toContain(prefixedName("default"));
   });
 
   for (const name of presetNames) {
@@ -69,7 +70,7 @@ describe("Preset Workflow: apply preset to project via resolveConfig", () => {
         name: "preset-test",
         version: "1",
         agents: ["claude-code"],
-        presets: [prefixedName("minimal")],
+        presets: [prefixedName("default")],
       }),
       "utf-8",
     );
@@ -83,29 +84,28 @@ describe("Preset Workflow: apply preset to project via resolveConfig", () => {
     expect(Object.keys(result.data.flags).length).toBeGreaterThanOrEqual(0);
   });
 
-  it('project with "strict" preset has enforced flags', async () => {
+  it('project with "default" preset resolves manifest correctly', async () => {
     const configDir = path.join(tmpDir, PROJECT_DIR);
     await fs.mkdir(configDir, { recursive: true });
     await fs.writeFile(
       path.join(configDir, MANIFEST_FILENAME),
       stringifyYaml({
-        name: "strict-test",
+        name: "default-test",
         version: "1",
         agents: ["claude-code"],
-        presets: [prefixedName("strict")],
+        presets: [prefixedName("default")],
       }),
       "utf-8",
     );
 
+    // resolveConfig parses the project directory; preset flag merging
+    // happens in a downstream pipeline (init/update handler), not here.
     const result = await resolveConfig(tmpDir);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    // Strict preset should enforce security_scan
-    const secFlag = result.data.flags["security_scan"];
-    if (secFlag) {
-      expect(secFlag.mode).toBe("enforced");
-    }
+    expect(result.data.manifest.name).toBe("default-test");
+    expect(result.data.manifest.presets).toEqual([prefixedName("default")]);
   });
 
   it("project presets merge with local rules", async () => {
@@ -117,7 +117,7 @@ describe("Preset Workflow: apply preset to project via resolveConfig", () => {
         name: "merge-test",
         version: "1",
         agents: ["claude-code"],
-        presets: [prefixedName("minimal")],
+        presets: [prefixedName("default")],
       }),
       "utf-8",
     );
