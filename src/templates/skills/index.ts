@@ -264,3 +264,11 @@ export {
   staticDir as wikiLintSkillStaticDir,
 } from "./wiki-lint/index.js";
 export { template as canvas, staticDir as canvasStaticDir } from "./canvas/index.js";
+export {
+  template as obsidianMarkdown,
+  staticDir as obsidianMarkdownStaticDir,
+} from "./obsidian-markdown/index.js";
+export {
+  template as obsidianBases,
+  staticDir as obsidianBasesStaticDir,
+} from "./obsidian-bases/index.js";

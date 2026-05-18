@@ -104,6 +104,8 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("wiki-ingest")]: skillTemplates.wikiIngestSkill,
   [prefixedName("wiki-lint")]: skillTemplates.wikiLintSkill,
   [prefixedName("canvas")]: skillTemplates.canvas,
+  [prefixedName("obsidian-markdown")]: skillTemplates.obsidianMarkdown,
+  [prefixedName("obsidian-bases")]: skillTemplates.obsidianBases,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -204,6 +206,8 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("wiki-ingest")]: skillTemplates.wikiIngestSkillStaticDir,
   [prefixedName("wiki-lint")]: skillTemplates.wikiLintSkillStaticDir,
   [prefixedName("canvas")]: skillTemplates.canvasStaticDir,
+  [prefixedName("obsidian-markdown")]: skillTemplates.obsidianMarkdownStaticDir,
+  [prefixedName("obsidian-bases")]: skillTemplates.obsidianBasesStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

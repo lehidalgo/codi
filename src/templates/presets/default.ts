@@ -118,6 +118,8 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("wiki-ingest"),
     prefixedName("wiki-lint"),
     prefixedName("canvas"),
+    prefixedName("obsidian-markdown"),
+    prefixedName("obsidian-bases"),
   ],
   // Capellai parity: 2 vault-management agents. Other built-in agents
   // (code-reviewer, data experts, etc.) remain available as templates but
