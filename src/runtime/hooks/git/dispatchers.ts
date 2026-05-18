@@ -24,6 +24,9 @@ import { runAutoFormat } from "./auto-format.js";
 import { checkBranchName } from "./branch-name-check.js";
 import { checkBranchBase } from "./branch-base-check.js";
 import { checkDirectPush } from "./direct-push-guard.js";
+import { checkSecretScan } from "./secret-scan.js";
+import { checkConflictMarkers } from "./conflict-marker-check.js";
+import { checkCommitMsg } from "./commit-msg-validator.js";
 import { aggregateExitCode, formatVerdictForStderr } from "./types.js";
 import type { GitHookContext, GitHookVerdict } from "./types.js";
 
@@ -45,13 +48,29 @@ function emit(verdicts: readonly GitHookVerdict[]): void {
 
 export function runGitPreCommit(): void {
   const ctx: GitHookContext = { cwd: process.cwd() };
-  // Order matters: auto-format last so re-staged files are committed.
+  // Order matters:
+  //   1. Block hard problems first (secrets, conflict markers, junk paths).
+  //   2. Advisory checks next (file lines, agent configs).
+  //   3. Auto-format LAST so the re-staged formatted content lands in the commit.
   const verdicts: GitHookVerdict[] = [
+    checkSecretScan(ctx),
+    checkConflictMarkers(ctx),
     checkJunkPaths(ctx),
     checkFileLines(ctx),
     scanAgentConfigs(ctx),
     runAutoFormat(ctx),
   ];
+  emit(verdicts);
+  process.exit(aggregateExitCode(verdicts));
+}
+
+export function runGitCommitMsg(msgPath: string | undefined): void {
+  const ctx: GitHookContext = { cwd: process.cwd() };
+  // Git passes the commit-msg path as $1. If invoked without an arg
+  // (e.g. by hand), fall back to .git/COMMIT_EDITMSG which is git's
+  // canonical commit-message scratch file.
+  const path = msgPath ?? ".git/COMMIT_EDITMSG";
+  const verdicts: GitHookVerdict[] = [checkCommitMsg(ctx, path)];
   emit(verdicts);
   process.exit(aggregateExitCode(verdicts));
 }

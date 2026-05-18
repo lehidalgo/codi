@@ -54,7 +54,11 @@ import {
 } from "../runtime/hooks/claude-code/capability-discovery.js";
 import { runMemorySync } from "../runtime/hooks/claude-code/claudemd-memory-sync.js";
 import { buildHookConflictBlock } from "../runtime/hooks/claude-code/hook-conflict-detection.js";
-import { runGitPreCommit, runGitPrePush } from "../runtime/hooks/git/dispatchers.js";
+import {
+  runGitPreCommit,
+  runGitCommitMsg,
+  runGitPrePush,
+} from "../runtime/hooks/git/dispatchers.js";
 import { getRuntimeHooks } from "../core/hooks/registry/index.js";
 import { runRuntimeHooks, aggregateExitDecision } from "../runtime/hooks/runner.js";
 import type { HookContext as RuntimeHookCtx } from "../core/hooks/hook-artifact.js";
@@ -470,19 +474,21 @@ const HOOK_NAMES = [
   "pre-tool-use",
   "post-tool-use",
   "stop",
-  // ADR-013 Paso 8: git lifecycle hooks invoked via core.hooksPath
+  // ADR-013 Paso 8-9: git lifecycle hooks invoked via core.hooksPath
   "git-pre-commit",
+  "git-commit-msg",
   "git-pre-push",
 ] as const;
 export type AgentHookName = (typeof HOOK_NAMES)[number];
 
-const DISPATCHERS: Record<AgentHookName, () => void | Promise<void>> = {
-  "user-prompt-submit": runUserPromptSubmit,
-  "pre-tool-use": runPreToolUse,
-  "post-tool-use": runPostToolUse,
-  stop: runStop,
-  "git-pre-commit": runGitPreCommit,
-  "git-pre-push": runGitPrePush,
+const DISPATCHERS: Record<AgentHookName, (args: string[]) => void | Promise<void>> = {
+  "user-prompt-submit": () => runUserPromptSubmit(),
+  "pre-tool-use": () => runPreToolUse(),
+  "post-tool-use": () => runPostToolUse(),
+  stop: () => runStop(),
+  "git-pre-commit": () => runGitPreCommit(),
+  "git-commit-msg": (args) => runGitCommitMsg(args[0]),
+  "git-pre-push": () => runGitPrePush(),
 };
 
 const VALID_AGENTS: ReadonlySet<string> = new Set(SUPPORTED_PLATFORMS);
@@ -520,12 +526,12 @@ function detectAgentFromEnv(): string | null {
 
 export function registerAgentHookCommand(program: Command): void {
   const hook = program
-    .command("hook <name>")
+    .command("hook <name> [args...]")
     .description(
-      `Run a built-in F6/F7 agent hook against stdin payload. Names: ${HOOK_NAMES.join(", ")}. Wired into .claude/settings.json + .codex/hooks.json by 'codi init'.`,
+      `Run a built-in F6/F7 agent hook against stdin payload (or git-event payload). Names: ${HOOK_NAMES.join(", ")}. Wired into .claude/settings.json + .codex/hooks.json + .githooks/* by 'codi init'.`,
     )
     .option("--agent <id>", "Originating agent id (claude-code | codex | cursor | ...)")
-    .action(async (name: string, opts: { agent?: string }) => {
+    .action(async (name: string, args: string[], opts: { agent?: string }) => {
       if (!(HOOK_NAMES as readonly string[]).includes(name)) {
         process.stderr.write(
           `[codi hook] Unknown hook name '${name}'. Valid: ${HOOK_NAMES.join(", ")}\n`,
@@ -537,7 +543,7 @@ export function registerAgentHookCommand(program: Command): void {
       const detected = detectAgentFromEnv();
       const resolved = flagAgent || envAgent || detected || "claude-code";
       activeAgent = VALID_AGENTS.has(resolved) ? resolved : "claude-code";
-      await DISPATCHERS[name as AgentHookName]();
+      await DISPATCHERS[name as AgentHookName](args ?? []);
     });
   void hook;
 }
