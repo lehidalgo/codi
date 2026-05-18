@@ -94,6 +94,7 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("wiki-query")]: skillTemplates.wikiQuery,
   [prefixedName("triage")]: skillTemplates.triage,
   // setup-pre-commit + git-guardrails-claude-code removed (ADR-013 Paso 8).
+  [prefixedName("dev-migrate-hooks")]: skillTemplates.migrateHooks,
   [prefixedName("wiki")]: skillTemplates.wiki,
   [prefixedName("autoresearch")]: skillTemplates.autoresearch,
   [prefixedName("grill-with-docs")]: skillTemplates.grillWithDocs,
@@ -195,6 +196,7 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("wiki-query")]: skillTemplates.wikiQueryStaticDir,
   [prefixedName("triage")]: skillTemplates.triageStaticDir,
   // setup-pre-commit + git-guardrails-claude-code static dirs removed.
+  [prefixedName("dev-migrate-hooks")]: skillTemplates.migrateHooksStaticDir,
   [prefixedName("wiki")]: skillTemplates.wikiStaticDir,
   [prefixedName("autoresearch")]: skillTemplates.autoresearchStaticDir,
   [prefixedName("grill-with-docs")]: skillTemplates.grillWithDocsStaticDir,

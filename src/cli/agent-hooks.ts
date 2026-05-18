@@ -35,7 +35,7 @@ import {
   type ToolCall,
 } from "../runtime/hook-logic.js";
 import { BrainEventLog } from "../runtime/brain-event-log.js";
-import { PROJECT_DIR, SUPPORTED_PLATFORMS } from "../constants.js";
+import { PROJECT_DIR, PROJECT_NAME, SUPPORTED_PLATFORMS } from "../constants.js";
 import {
   buildIronLawsBlock,
   buildPullReminder,
@@ -53,6 +53,7 @@ import {
   buildOutputModeOverrideBlock,
 } from "../runtime/hooks/claude-code/capability-discovery.js";
 import { runMemorySync } from "../runtime/hooks/claude-code/claudemd-memory-sync.js";
+import { buildHookConflictBlock } from "../runtime/hooks/claude-code/hook-conflict-detection.js";
 import { runGitPreCommit, runGitPrePush } from "../runtime/hooks/git/dispatchers.js";
 import { getRuntimeHooks } from "../core/hooks/registry/index.js";
 import { runRuntimeHooks, aggregateExitDecision } from "../runtime/hooks/runner.js";
@@ -150,12 +151,20 @@ function runUserPromptSubmit(): void {
   // ADR-013 Paso 8: capability-discovery + per-checkout output-mode override.
   // capability_discovery defaults to true for the codi-default preset; can be
   // disabled by editing flags.yaml or using a different preset.
+  // ADR-013 Paso 9: hook-conflict-detection — warns the agent (which then
+  // invokes the codi-dev-migrate-hooks skill) when Husky / Lefthook /
+  // pre-commit-framework are configured alongside codi-default.
   const prefs = readPreferences(cwd);
   const capabilityEnabled = prefs.capability_discovery !== false;
   const capabilityDiscoveryBlock = buildCapabilityDiscoveryBlock({
     enabled: capabilityEnabled,
   });
   const outputModeOverrideBlock = buildOutputModeOverrideBlock({ cwd });
+  const hookConflictBlock = buildHookConflictBlock({
+    cwd,
+    enabled: prefs.hook_conflict_detection !== false,
+    projectName: PROJECT_NAME,
+  });
 
   const out = [
     captureBlock,
@@ -164,6 +173,7 @@ function runUserPromptSubmit(): void {
     gateAdvisoryBlock,
     capabilityDiscoveryBlock,
     outputModeOverrideBlock,
+    hookConflictBlock,
   ]
     .filter((s) => s.length > 0)
     .join("\n\n");

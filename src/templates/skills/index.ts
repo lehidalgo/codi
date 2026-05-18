@@ -231,6 +231,12 @@ export { template as wikiQuery, staticDir as wikiQueryStaticDir } from "./wiki-q
 export { template as triage, staticDir as triageStaticDir } from "./triage/index.js";
 // setup-pre-commit removed (ADR-013 Paso 8): behavior now native to codi via
 // core.hooksPath + git-pre-commit dispatcher.
+// ADR-013 Paso 9: dev-migrate-hooks replaces the manual setup-pre-commit
+// flow with a guided migration FROM other runners TO codi's core.hooksPath.
+export {
+  template as migrateHooks,
+  staticDir as migrateHooksStaticDir,
+} from "./dev-migrate-hooks/index.js";
 export { template as wiki, staticDir as wikiStaticDir } from "./wiki/index.js";
 export {
   template as autoresearch,

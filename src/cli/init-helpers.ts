@@ -614,6 +614,7 @@ import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
+import { installCoreHooksPath } from "../core/hooks/core-hooks-path-installer.js";
 import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
@@ -1294,6 +1295,21 @@ export async function installPreCommitHooks(
       }
     } else {
       ctx.log.warn("Hook installation failed; you can set up hooks manually.");
+    }
+
+    // ADR-013 Paso 9: also set up codi's git-native core.hooksPath layer.
+    // Coexists with the legacy installer for now — it skips silently when
+    // Husky / Lefthook / pre-commit-framework is configured (in which case
+    // the dev-migrate-hooks skill is auto-prompted via UserPromptSubmit).
+    // The legacy installer will be retired in a follow-up commit once all
+    // 17 hook templates have been ported to TS modules.
+    const coreHooksResult = await installCoreHooksPath(ctx.projectRoot);
+    if (coreHooksResult.ok && !coreHooksResult.data.skipped) {
+      ctx.log.info(
+        `core.hooksPath set to .githooks/ (${coreHooksResult.data.files.length} stub scripts written)`,
+      );
+    } else if (coreHooksResult.ok && coreHooksResult.data.skipped && coreHooksResult.data.skipReason) {
+      ctx.log.info(coreHooksResult.data.skipReason);
     }
   } catch (cause) {
     // ISSUE-006: was an empty catch that swallowed the actual error and

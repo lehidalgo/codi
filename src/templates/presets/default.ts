@@ -116,6 +116,9 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("wiki-query"),
     prefixedName("triage"),
     // setup-pre-commit removed (ADR-013 Paso 8) — now native.
+    // dev-migrate-hooks ships as the guided migration for projects that
+    // still have Husky / Lefthook / pre-commit-framework configured.
+    prefixedName("dev-migrate-hooks"),
     prefixedName("wiki"),
     prefixedName("autoresearch"),
     prefixedName("grill-with-docs"),
