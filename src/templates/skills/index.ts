@@ -246,3 +246,12 @@ export {
   template as gitGuardrailsClaudeCode,
   staticDir as gitGuardrailsClaudeCodeStaticDir,
 } from "./git-guardrails-claude-code/index.js";
+export {
+  template as migrateToShoehorn,
+  staticDir as migrateToShoehornStaticDir,
+} from "./migrate-to-shoehorn/index.js";
+export {
+  template as scaffoldExercises,
+  staticDir as scaffoldExercisesStaticDir,
+} from "./scaffold-exercises/index.js";
+export { template as wikiFold, staticDir as wikiFoldStaticDir } from "./wiki-fold/index.js";

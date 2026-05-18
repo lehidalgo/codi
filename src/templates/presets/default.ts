@@ -112,6 +112,9 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("autoresearch"),
     prefixedName("grill-with-docs"),
     prefixedName("git-guardrails-claude-code"),
+    prefixedName("migrate-to-shoehorn"),
+    prefixedName("scaffold-exercises"),
+    prefixedName("wiki-fold"),
   ],
   // Capellai parity: 2 vault-management agents. Other built-in agents
   // (code-reviewer, data experts, etc.) remain available as templates but

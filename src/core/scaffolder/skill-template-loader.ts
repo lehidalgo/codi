@@ -98,6 +98,9 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("autoresearch")]: skillTemplates.autoresearch,
   [prefixedName("grill-with-docs")]: skillTemplates.grillWithDocs,
   [prefixedName("git-guardrails-claude-code")]: skillTemplates.gitGuardrailsClaudeCode,
+  [prefixedName("migrate-to-shoehorn")]: skillTemplates.migrateToShoehorn,
+  [prefixedName("scaffold-exercises")]: skillTemplates.scaffoldExercises,
+  [prefixedName("wiki-fold")]: skillTemplates.wikiFold,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -192,6 +195,9 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("autoresearch")]: skillTemplates.autoresearchStaticDir,
   [prefixedName("grill-with-docs")]: skillTemplates.grillWithDocsStaticDir,
   [prefixedName("git-guardrails-claude-code")]: skillTemplates.gitGuardrailsClaudeCodeStaticDir,
+  [prefixedName("migrate-to-shoehorn")]: skillTemplates.migrateToShoehornStaticDir,
+  [prefixedName("scaffold-exercises")]: skillTemplates.scaffoldExercisesStaticDir,
+  [prefixedName("wiki-fold")]: skillTemplates.wikiFoldStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
