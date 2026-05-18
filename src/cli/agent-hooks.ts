@@ -53,6 +53,7 @@ import {
   buildOutputModeOverrideBlock,
 } from "../runtime/hooks/claude-code/capability-discovery.js";
 import { runMemorySync } from "../runtime/hooks/claude-code/claudemd-memory-sync.js";
+import { runGitPreCommit, runGitPrePush } from "../runtime/hooks/git/dispatchers.js";
 import { getRuntimeHooks } from "../core/hooks/registry/index.js";
 import { runRuntimeHooks, aggregateExitDecision } from "../runtime/hooks/runner.js";
 import type { HookContext as RuntimeHookCtx } from "../core/hooks/hook-artifact.js";
@@ -454,7 +455,15 @@ function runStop(): void {
 
 // ─── Registration ──────────────────────────────────────────────────────────
 
-const HOOK_NAMES = ["user-prompt-submit", "pre-tool-use", "post-tool-use", "stop"] as const;
+const HOOK_NAMES = [
+  "user-prompt-submit",
+  "pre-tool-use",
+  "post-tool-use",
+  "stop",
+  // ADR-013 Paso 8: git lifecycle hooks invoked via core.hooksPath
+  "git-pre-commit",
+  "git-pre-push",
+] as const;
 export type AgentHookName = (typeof HOOK_NAMES)[number];
 
 const DISPATCHERS: Record<AgentHookName, () => void | Promise<void>> = {
@@ -462,6 +471,8 @@ const DISPATCHERS: Record<AgentHookName, () => void | Promise<void>> = {
   "pre-tool-use": runPreToolUse,
   "post-tool-use": runPostToolUse,
   stop: runStop,
+  "git-pre-commit": runGitPreCommit,
+  "git-pre-push": runGitPrePush,
 };
 
 const VALID_AGENTS: ReadonlySet<string> = new Set(SUPPORTED_PLATFORMS);
