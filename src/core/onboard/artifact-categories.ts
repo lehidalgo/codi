@@ -103,6 +103,7 @@ export const AGENT_CATEGORIES: Record<string, string[]> = {
     "codi-python-expert",
   ],
   "Exploration & Docs": ["codi-docs-lookup"],
+  "Knowledge Management": ["codi-wiki-ingest", "codi-wiki-lint"],
 };
 
 // MCP server categories derived from the grouped registry in the template index.

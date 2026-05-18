@@ -76,6 +76,9 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("workflow"),
   ],
   skills: [...CORE_PLATFORM_SKILLS],
-  agents: [],
+  // Capellai parity: 2 vault-management agents. Other built-in agents
+  // (code-reviewer, data experts, etc.) remain available as templates but
+  // are NOT registered in the default preset.
+  agents: [prefixedName("wiki-ingest"), prefixedName("wiki-lint")],
   mcpServers: [],
 };
