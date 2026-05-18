@@ -30,6 +30,14 @@ export const preset: BuiltinPresetDefinition = {
     allow_file_deletion: { mode: "enabled", value: true },
     lint_on_save: { mode: "enabled", value: true },
     allow_force_push: { mode: "enabled", value: false },
+    // ADR-013 Paso 8 — capellai-parity guardrails. All on by default in
+    // codi-default; users opt out via flags.yaml.
+    disallow_push_to_protected: { mode: "enabled", value: true },
+    disallow_no_verify: { mode: "enabled", value: true },
+    disallow_env_edits: { mode: "enabled", value: true },
+    disallow_git_config_global: { mode: "enabled", value: true },
+    disallow_pip_install: { mode: "enabled", value: true },
+    allow_feature_branch_workflow: { mode: "enabled", value: true },
     require_pr_review: { mode: "enabled", value: true },
     mcp_allowed_servers: { mode: "enabled", value: [] },
     require_documentation: { mode: "enabled", value: false },
@@ -107,11 +115,11 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("save"),
     prefixedName("wiki-query"),
     prefixedName("triage"),
-    prefixedName("setup-pre-commit"),
+    // setup-pre-commit removed (ADR-013 Paso 8) — now native.
     prefixedName("wiki"),
     prefixedName("autoresearch"),
     prefixedName("grill-with-docs"),
-    prefixedName("git-guardrails-claude-code"),
+    // git-guardrails-claude-code removed (ADR-013 Paso 8) — now native.
     prefixedName("migrate-to-shoehorn"),
     prefixedName("scaffold-exercises"),
     prefixedName("wiki-fold"),

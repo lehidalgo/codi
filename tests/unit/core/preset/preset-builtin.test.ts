@@ -32,7 +32,7 @@ describe("materializeBuiltinPreset", () => {
       expect(result.data.name).toBe(prefixedName("default"));
       expect(result.data.description).toBeTruthy();
       expect(result.data.flags).toBeDefined();
-      expect(Object.keys(result.data.flags).length).toBe(21);
+      expect(Object.keys(result.data.flags).length).toBe(27);
     }
   });
 

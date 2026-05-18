@@ -147,6 +147,7 @@ export function buildSettingsJson(
 
   // Map flags to permissions.deny (native enforcement — hard blocks tool calls)
   const deny: string[] = [];
+  const allow: string[] = [];
   const flagValue = (key: string): unknown => config.flags[key]?.value;
 
   if (flagValue("allow_force_push") === false) {
@@ -159,13 +160,78 @@ export function buildSettingsJson(
     deny.push("Bash(rm -rf *)", "Bash(rm -r *)");
   }
 
+  // ADR-013 Paso 8 — capellai-parity guardrails. Each flag toggles a
+  // group of patterns. codi-default activates all five; users can opt
+  // out individually by editing flags.yaml.
+  if (flagValue("disallow_push_to_protected") === true) {
+    deny.push(
+      "Bash(git push origin main*)",
+      "Bash(git push * main)",
+      "Bash(git push origin HEAD:main*)",
+      "Bash(git push origin develop*)",
+      "Bash(git push * develop)",
+      "Bash(git push origin HEAD:develop*)",
+      "Bash(git push origin master*)",
+      "Bash(git push * master)",
+    );
+  }
+  if (flagValue("disallow_no_verify") === true) {
+    deny.push(
+      "Bash(git push --no-verify*)",
+      "Bash(git commit --no-verify*)",
+      "Bash(git commit -n *)",
+      "Bash(git commit -n)",
+    );
+  }
+  if (flagValue("disallow_env_edits") === true) {
+    deny.push(
+      "Edit(.env)",
+      "Edit(.env.local)",
+      "Edit(.env.production)",
+      "Edit(.env.staging)",
+      "Edit(.env.development)",
+      "Edit(.env.test)",
+      "Write(.env)",
+      "Write(.env.local)",
+      "Write(.env.production)",
+      "Write(.env.staging)",
+      "Write(.env.development)",
+      "Write(.env.test)",
+    );
+  }
+  if (flagValue("disallow_git_config_global") === true) {
+    deny.push("Bash(git config --global *)");
+  }
+  if (flagValue("disallow_pip_install") === true) {
+    deny.push("Bash(pip install *)");
+  }
+  if (flagValue("allow_feature_branch_workflow") === true) {
+    allow.push(
+      "Bash(git push --force-with-lease origin feature/*)",
+      "Bash(git push --force-with-lease origin bugfix/*)",
+      "Bash(git push --force-with-lease origin chore/*)",
+      "Bash(git push --force-with-lease origin release/*)",
+      "Bash(git push --force-with-lease origin hotfix/*)",
+      "Bash(git checkout -b feature/*)",
+      "Bash(git checkout -b bugfix/*)",
+      "Bash(git checkout -b chore/*)",
+      "Bash(git checkout -b release/*)",
+      "Bash(git checkout -b hotfix/*)",
+      "Bash(git switch -c feature/*)",
+      "Bash(git switch -c bugfix/*)",
+      "Bash(git switch -c chore/*)",
+      "Bash(git switch -c release/*)",
+      "Bash(git switch -c hotfix/*)",
+    );
+  }
+
   // Preset-declared permissions (ADR-013 Paso 8). Set-union with flag-derived
   // denies; the merge step at the end de-dupes. Allow patterns also flow
   // through preset declaration since flags do not currently express them.
   const presetDeny = config.permissions?.deny ?? [];
   const presetAllow = config.permissions?.allow ?? [];
   const mergedDeny = Array.from(new Set([...deny, ...presetDeny]));
-  const mergedAllow = Array.from(new Set([...presetAllow]));
+  const mergedAllow = Array.from(new Set([...allow, ...presetAllow]));
 
   if (mergedDeny.length > 0 || mergedAllow.length > 0) {
     settings.permissions = {};

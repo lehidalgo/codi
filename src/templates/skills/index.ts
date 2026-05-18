@@ -229,10 +229,8 @@ export { template as defuddle, staticDir as defuddleStaticDir } from "./defuddle
 export { template as save, staticDir as saveStaticDir } from "./save/index.js";
 export { template as wikiQuery, staticDir as wikiQueryStaticDir } from "./wiki-query/index.js";
 export { template as triage, staticDir as triageStaticDir } from "./triage/index.js";
-export {
-  template as setupPreCommit,
-  staticDir as setupPreCommitStaticDir,
-} from "./setup-pre-commit/index.js";
+// setup-pre-commit removed (ADR-013 Paso 8): behavior now native to codi via
+// core.hooksPath + git-pre-commit dispatcher.
 export { template as wiki, staticDir as wikiStaticDir } from "./wiki/index.js";
 export {
   template as autoresearch,
@@ -242,10 +240,10 @@ export {
   template as grillWithDocs,
   staticDir as grillWithDocsStaticDir,
 } from "./grill-with-docs/index.js";
-export {
-  template as gitGuardrailsClaudeCode,
-  staticDir as gitGuardrailsClaudeCodeStaticDir,
-} from "./git-guardrails-claude-code/index.js";
+// git-guardrails-claude-code removed (ADR-013 Paso 8): policy already lives in
+// codi-git-workflow rule, enforced operationally via flag-driven permissions
+// (disallow_push_to_protected, disallow_no_verify) emitted by claude-settings
+// adapter.
 export {
   template as migrateToShoehorn,
   staticDir as migrateToShoehornStaticDir,
