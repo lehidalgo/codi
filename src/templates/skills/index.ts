@@ -212,3 +212,10 @@ export {
   staticDir as verifyEvidenceStaticDir,
 } from "./verify-evidence/index.js";
 export { template as zoomOut, staticDir as zoomOutStaticDir } from "./zoom-out/index.js";
+export { template as handoff, staticDir as handoffStaticDir } from "./handoff/index.js";
+export {
+  template as editArticle,
+  staticDir as editArticleStaticDir,
+} from "./edit-article/index.js";
+export { template as grillMe, staticDir as grillMeStaticDir } from "./grill-me/index.js";
+export { template as prototype, staticDir as prototypeStaticDir } from "./prototype/index.js";

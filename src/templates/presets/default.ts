@@ -75,7 +75,32 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("vault-discipline"),
     prefixedName("workflow"),
   ],
-  skills: [...CORE_PLATFORM_SKILLS],
+  // Capellai parity skills. Group A: 11 skills already in src/templates/skills/
+  // (caveman, diagnose, tdd, zoom-out + 7 dev-* meta-skills). The dev-X
+  // family renders as codi-dev-X — capellai installed these without the
+  // `dev-` infix, the divergence is intentional (codi convention preserves
+  // the meta-skill marker in source).
+  // Group B (7 Obsidian/wiki skills) and Group C (19 capellai-only skills)
+  // remain to be ported into src/templates/skills/ in follow-up commits.
+  skills: [
+    ...CORE_PLATFORM_SKILLS,
+    prefixedName("caveman"),
+    prefixedName("diagnose"),
+    prefixedName("tdd"),
+    prefixedName("zoom-out"),
+    prefixedName("dev-agent-creator"),
+    prefixedName("dev-artifact-contributor"),
+    prefixedName("dev-docs-manager"),
+    prefixedName("dev-operations"),
+    prefixedName("dev-preset-creator"),
+    prefixedName("dev-rule-creator"),
+    prefixedName("dev-skill-creator"),
+    // Group C — capellai-only ports (4 smallest first, the rest in follow-up commits)
+    prefixedName("handoff"),
+    prefixedName("edit-article"),
+    prefixedName("grill-me"),
+    prefixedName("prototype"),
+  ],
   // Capellai parity: 2 vault-management agents. Other built-in agents
   // (code-reviewer, data experts, etc.) remain available as templates but
   // are NOT registered in the default preset.

@@ -82,6 +82,10 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("verify-evidence")]: skillTemplates.verifyEvidence,
   [prefixedName("zoom-out")]: skillTemplates.zoomOut,
   [prefixedName("dev-brain-ui")]: skillTemplates.brainUi,
+  [prefixedName("handoff")]: skillTemplates.handoff,
+  [prefixedName("edit-article")]: skillTemplates.editArticle,
+  [prefixedName("grill-me")]: skillTemplates.grillMe,
+  [prefixedName("prototype")]: skillTemplates.prototype,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -159,6 +163,10 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("verify-evidence")]: skillTemplates.verifyEvidenceStaticDir,
   [prefixedName("zoom-out")]: skillTemplates.zoomOutStaticDir,
   [prefixedName("dev-brain-ui")]: skillTemplates.brainUiStaticDir,
+  [prefixedName("handoff")]: skillTemplates.handoffStaticDir,
+  [prefixedName("edit-article")]: skillTemplates.editArticleStaticDir,
+  [prefixedName("grill-me")]: skillTemplates.grillMeStaticDir,
+  [prefixedName("prototype")]: skillTemplates.prototypeStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);
