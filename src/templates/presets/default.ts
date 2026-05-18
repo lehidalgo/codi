@@ -108,6 +108,10 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("wiki-query"),
     prefixedName("triage"),
     prefixedName("setup-pre-commit"),
+    prefixedName("wiki"),
+    prefixedName("autoresearch"),
+    prefixedName("grill-with-docs"),
+    prefixedName("git-guardrails-claude-code"),
   ],
   // Capellai parity: 2 vault-management agents. Other built-in agents
   // (code-reviewer, data experts, etc.) remain available as templates but

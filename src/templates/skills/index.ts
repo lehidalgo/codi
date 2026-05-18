@@ -233,3 +233,16 @@ export {
   template as setupPreCommit,
   staticDir as setupPreCommitStaticDir,
 } from "./setup-pre-commit/index.js";
+export { template as wiki, staticDir as wikiStaticDir } from "./wiki/index.js";
+export {
+  template as autoresearch,
+  staticDir as autoresearchStaticDir,
+} from "./autoresearch/index.js";
+export {
+  template as grillWithDocs,
+  staticDir as grillWithDocsStaticDir,
+} from "./grill-with-docs/index.js";
+export {
+  template as gitGuardrailsClaudeCode,
+  staticDir as gitGuardrailsClaudeCodeStaticDir,
+} from "./git-guardrails-claude-code/index.js";
