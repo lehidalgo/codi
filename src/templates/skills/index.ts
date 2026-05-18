@@ -255,3 +255,12 @@ export {
   staticDir as scaffoldExercisesStaticDir,
 } from "./scaffold-exercises/index.js";
 export { template as wikiFold, staticDir as wikiFoldStaticDir } from "./wiki-fold/index.js";
+export {
+  template as wikiIngestSkill,
+  staticDir as wikiIngestSkillStaticDir,
+} from "./wiki-ingest/index.js";
+export {
+  template as wikiLintSkill,
+  staticDir as wikiLintSkillStaticDir,
+} from "./wiki-lint/index.js";
+export { template as canvas, staticDir as canvasStaticDir } from "./canvas/index.js";

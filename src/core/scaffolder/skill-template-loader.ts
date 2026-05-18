@@ -101,6 +101,9 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("migrate-to-shoehorn")]: skillTemplates.migrateToShoehorn,
   [prefixedName("scaffold-exercises")]: skillTemplates.scaffoldExercises,
   [prefixedName("wiki-fold")]: skillTemplates.wikiFold,
+  [prefixedName("wiki-ingest")]: skillTemplates.wikiIngestSkill,
+  [prefixedName("wiki-lint")]: skillTemplates.wikiLintSkill,
+  [prefixedName("canvas")]: skillTemplates.canvas,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -198,6 +201,9 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("migrate-to-shoehorn")]: skillTemplates.migrateToShoehornStaticDir,
   [prefixedName("scaffold-exercises")]: skillTemplates.scaffoldExercisesStaticDir,
   [prefixedName("wiki-fold")]: skillTemplates.wikiFoldStaticDir,
+  [prefixedName("wiki-ingest")]: skillTemplates.wikiIngestSkillStaticDir,
+  [prefixedName("wiki-lint")]: skillTemplates.wikiLintSkillStaticDir,
+  [prefixedName("canvas")]: skillTemplates.canvasStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

@@ -115,6 +115,9 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("migrate-to-shoehorn"),
     prefixedName("scaffold-exercises"),
     prefixedName("wiki-fold"),
+    prefixedName("wiki-ingest"),
+    prefixedName("wiki-lint"),
+    prefixedName("canvas"),
   ],
   // Capellai parity: 2 vault-management agents. Other built-in agents
   // (code-reviewer, data experts, etc.) remain available as templates but
