@@ -24,7 +24,7 @@ interface ClaudeHookEntry {
 }
 
 export interface ClaudeSettings {
-  permissions?: { deny?: string[]; [k: string]: unknown };
+  permissions?: { deny?: string[]; allow?: string[]; [k: string]: unknown };
   hooks?: Record<string, ClaudeHookEntry[]>;
   // Index signature lets us preserve unknown top-level keys (statusLine,
   // model, env, etc.) added by the user to .claude/settings.json without
@@ -159,8 +159,18 @@ export function buildSettingsJson(
     deny.push("Bash(rm -rf *)", "Bash(rm -r *)");
   }
 
-  if (deny.length > 0) {
-    settings.permissions = { deny };
+  // Preset-declared permissions (ADR-013 Paso 8). Set-union with flag-derived
+  // denies; the merge step at the end de-dupes. Allow patterns also flow
+  // through preset declaration since flags do not currently express them.
+  const presetDeny = config.permissions?.deny ?? [];
+  const presetAllow = config.permissions?.allow ?? [];
+  const mergedDeny = Array.from(new Set([...deny, ...presetDeny]));
+  const mergedAllow = Array.from(new Set([...presetAllow]));
+
+  if (mergedDeny.length > 0 || mergedAllow.length > 0) {
+    settings.permissions = {};
+    if (mergedDeny.length > 0) settings.permissions.deny = mergedDeny;
+    if (mergedAllow.length > 0) settings.permissions.allow = mergedAllow;
   }
 
   // Two layers of hooks coexist:

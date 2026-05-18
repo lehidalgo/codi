@@ -25,4 +25,19 @@ export interface BuiltinPresetDefinition {
   brands?: string[];
   /** MCP server template names to include (from src/templates/mcp-servers/) */
   mcpServers?: string[];
+  /**
+   * Additional Claude Code `permissions` patterns that a preset wants to
+   * ship verbatim — beyond the flag-derived denies the adapter already
+   * computes. The adapter set-unions these with flag-derived patterns
+   * (dedup) and writes them to `.claude/settings.json::permissions`.
+   *
+   * Use this for static guardrail patterns that aren't expressible via
+   * the flag catalog (e.g. specific branch protection, env-file edits,
+   * branch-create allowlists). Flag-derived patterns remain the canonical
+   * path for flag-toggleable behavior.
+   */
+  permissions?: {
+    deny?: string[];
+    allow?: string[];
+  };
 }

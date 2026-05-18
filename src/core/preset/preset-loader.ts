@@ -35,6 +35,11 @@ export interface LoadedPreset {
   skills: NormalizedSkill[];
   agents: NormalizedAgent[];
   mcp: McpConfig;
+  /** Preset-declared Claude Code permissions (ADR-013 Paso 8). */
+  permissions?: {
+    deny?: string[];
+    allow?: string[];
+  };
 }
 
 export async function loadPreset(name: string, presetsDir: string): Promise<Result<LoadedPreset>> {

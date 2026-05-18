@@ -54,6 +54,7 @@ function materializeDefinition(def: BuiltinPresetDefinition): Result<LoadedPrese
     skills,
     agents,
     mcp,
+    ...(def.permissions !== undefined ? { permissions: def.permissions } : {}),
   });
 }
 

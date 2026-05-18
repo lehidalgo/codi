@@ -48,6 +48,11 @@ import {
 import { recordIncidentalChange } from "../runtime/cli-handlers.js";
 import { readFileSafe } from "../runtime/fs-utils.js";
 import { readPreferences } from "../runtime/preferences.js";
+import {
+  buildCapabilityDiscoveryBlock,
+  buildOutputModeOverrideBlock,
+} from "../runtime/hooks/claude-code/capability-discovery.js";
+import { runMemorySync } from "../runtime/hooks/claude-code/claudemd-memory-sync.js";
 import { getRuntimeHooks } from "../core/hooks/registry/index.js";
 import { runRuntimeHooks, aggregateExitDecision } from "../runtime/hooks/runner.js";
 import type { HookContext as RuntimeHookCtx } from "../core/hooks/hook-artifact.js";
@@ -141,7 +146,24 @@ function runUserPromptSubmit(): void {
     // Iron-laws + gate-advisory blocks are advisory.
   }
 
-  const out = [captureBlock, stateBlock, ironLawsBlock, gateAdvisoryBlock]
+  // ADR-013 Paso 8: capability-discovery + per-checkout output-mode override.
+  // capability_discovery defaults to true for the codi-default preset; can be
+  // disabled by editing flags.yaml or using a different preset.
+  const prefs = readPreferences(cwd);
+  const capabilityEnabled = prefs.capability_discovery !== false;
+  const capabilityDiscoveryBlock = buildCapabilityDiscoveryBlock({
+    enabled: capabilityEnabled,
+  });
+  const outputModeOverrideBlock = buildOutputModeOverrideBlock({ cwd });
+
+  const out = [
+    captureBlock,
+    stateBlock,
+    ironLawsBlock,
+    gateAdvisoryBlock,
+    capabilityDiscoveryBlock,
+    outputModeOverrideBlock,
+  ]
     .filter((s) => s.length > 0)
     .join("\n\n");
   if (out.length > 0) process.stdout.write(out + "\n");
@@ -382,6 +404,21 @@ function runPostToolUse(): void {
     } catch {
       /* non-blocking */
     }
+  }
+
+  // ADR-013 Paso 8: agent-memory file writes also land in CLAUDE.md so the
+  // user-managed memory zone survives `codi generate`. Fail-open; runs after
+  // brain persistence so observability is never blocked by file-IO.
+  try {
+    const prefs = readPreferences(cwd);
+    runMemorySync({
+      cwd,
+      toolName: payload.tool_name,
+      toolInput: payload.tool_input as Record<string, unknown>,
+      enabled: prefs.claudemd_memory_sync !== false,
+    });
+  } catch {
+    /* fail-open */
   }
 
   process.exit(0);
