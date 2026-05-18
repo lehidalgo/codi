@@ -219,3 +219,10 @@ export {
 } from "./edit-article/index.js";
 export { template as grillMe, staticDir as grillMeStaticDir } from "./grill-me/index.js";
 export { template as prototype, staticDir as prototypeStaticDir } from "./prototype/index.js";
+export {
+  template as improveCodebaseArchitecture,
+  staticDir as improveCodebaseArchitectureStaticDir,
+} from "./improve-codebase-architecture/index.js";
+export { template as toPrd, staticDir as toPrdStaticDir } from "./to-prd/index.js";
+export { template as toIssues, staticDir as toIssuesStaticDir } from "./to-issues/index.js";
+export { template as defuddle, staticDir as defuddleStaticDir } from "./defuddle/index.js";

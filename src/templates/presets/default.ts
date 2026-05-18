@@ -100,6 +100,10 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("edit-article"),
     prefixedName("grill-me"),
     prefixedName("prototype"),
+    prefixedName("improve-codebase-architecture"),
+    prefixedName("to-prd"),
+    prefixedName("to-issues"),
+    prefixedName("defuddle"),
   ],
   // Capellai parity: 2 vault-management agents. Other built-in agents
   // (code-reviewer, data experts, etc.) remain available as templates but
