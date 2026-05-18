@@ -1,4 +1,4 @@
-import { PROJECT_NAME, prefixedName } from "#src/constants.js";
+import { PROJECT_NAME, SUPPORTED_PLATFORMS, prefixedName } from "#src/constants.js";
 import { CORE_PLATFORM_RULES, CORE_PLATFORM_SKILLS } from "./core-platform.js";
 import type { BuiltinPresetDefinition } from "./types.js";
 
@@ -18,7 +18,7 @@ export const preset: BuiltinPresetDefinition = {
   tags: ["default", "canonical"],
   compatibility: {
     engine: ">=0.3.0",
-    agents: ["claude-code", "codex", "cursor", "windsurf", "cline", "copilot"],
+    agents: [...SUPPORTED_PLATFORMS],
   },
   flags: {
     auto_commit: { mode: "enabled", value: false },
@@ -43,7 +43,38 @@ export const preset: BuiltinPresetDefinition = {
     commit_type_check: { mode: "enabled", value: "auto" },
     commit_test_run: { mode: "enabled", value: "auto" },
   },
-  rules: [...CORE_PLATFORM_RULES],
+  // Capellai-parity rules (24 + 1 from CORE_PLATFORM = 25 total).
+  // Language-specific extras present in src/templates/rules/ but excluded
+  // from the canonical default: csharp, django, golang, java, kotlin, rust,
+  // spring-boot, swift. Project-specific rule `v1-sprint-gates` from capellai
+  // is intentionally dropped (ADR-013).
+  rules: [
+    ...CORE_PLATFORM_RULES,
+    prefixedName("agent-capability-discovery"),
+    prefixedName("agent-usage"),
+    prefixedName("api-design"),
+    prefixedName("architecture"),
+    prefixedName("capture-everything"),
+    prefixedName("code-style"),
+    prefixedName("contribution-discipline"),
+    prefixedName("documentation"),
+    prefixedName("error-handling"),
+    prefixedName("git-workflow"),
+    prefixedName("nextjs"),
+    prefixedName("output-discipline"),
+    prefixedName("output-tone-policy"),
+    prefixedName("performance"),
+    prefixedName("production-mindset"),
+    prefixedName("python"),
+    prefixedName("react"),
+    prefixedName("security"),
+    prefixedName("simplicity-first"),
+    prefixedName("spanish-orthography"),
+    prefixedName("testing"),
+    prefixedName("typescript"),
+    prefixedName("vault-discipline"),
+    prefixedName("workflow"),
+  ],
   skills: [...CORE_PLATFORM_SKILLS],
   agents: [],
   mcpServers: [],
