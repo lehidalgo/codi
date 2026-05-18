@@ -563,7 +563,7 @@ describe("presetInstallUnifiedHandler — builtin rejection", () => {
   });
 
   it("rejects builtin preset names with helpful error", async () => {
-    const result = await presetInstallUnifiedHandler(tmpDir, "codi-balanced", {
+    const result = await presetInstallUnifiedHandler(tmpDir, "codi-default", {
       force: true,
     });
 

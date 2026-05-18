@@ -36,6 +36,9 @@ const TEMPLATE_MAP: Record<string, string> = {
   [devArtifactName("improvement")]: ruleTemplates.improvement,
   [prefixedName("capture-everything")]: ruleTemplates.captureEverything,
   [prefixedName("contribution-discipline")]: ruleTemplates.contributionDiscipline,
+  [prefixedName("agent-capability-discovery")]: ruleTemplates.agentCapabilityDiscovery,
+  [prefixedName("vault-discipline")]: ruleTemplates.vaultDiscipline,
+  [prefixedName("output-tone-policy")]: ruleTemplates.outputTonePolicy,
 };
 
 export const AVAILABLE_TEMPLATES = Object.keys(TEMPLATE_MAP);

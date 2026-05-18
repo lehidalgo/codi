@@ -12,10 +12,10 @@ import { prefixedName, PROJECT_NAME } from "#src/constants.js";
 
 describe("parsePresetIdentifier", () => {
   it("identifies builtin presets", () => {
-    const result = parsePresetIdentifier(prefixedName("balanced"));
+    const result = parsePresetIdentifier(prefixedName("default"));
 
     expect(result.type).toBe("builtin");
-    expect(result.identifier).toBe(prefixedName("balanced"));
+    expect(result.identifier).toBe(prefixedName("default"));
   });
 
   it("identifies zip files", () => {
@@ -110,10 +110,10 @@ describe("extractPresetName", () => {
   it("returns identifier for builtin descriptor", () => {
     const name = extractPresetName({
       type: "builtin",
-      identifier: prefixedName("balanced"),
+      identifier: prefixedName("default"),
     });
 
-    expect(name).toBe(prefixedName("balanced"));
+    expect(name).toBe(prefixedName("default"));
   });
 });
 
@@ -135,12 +135,12 @@ describe("resolveAndLoadPreset", () => {
 
   it("resolves builtin preset by name", async () => {
     const result = await resolveAndLoadPreset(
-      prefixedName("balanced"),
+      prefixedName("default"),
       presetsDir,
     );
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.name).toBe(prefixedName("balanced"));
+      expect(result.data.name).toBe(prefixedName("default"));
     }
   });
 

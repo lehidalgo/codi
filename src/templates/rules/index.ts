@@ -28,3 +28,6 @@ export { template as outputDiscipline } from "./output-discipline.js";
 export { template as improvement } from "./improvement.js";
 export { template as captureEverything } from "./capture-everything.js";
 export { template as contributionDiscipline } from "./contribution-discipline.js";
+export { template as agentCapabilityDiscovery } from "./agent-capability-discovery.js";
+export { template as vaultDiscipline } from "./vault-discipline.js";
+export { template as outputTonePolicy } from "./output-tone-policy.js";

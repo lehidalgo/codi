@@ -267,7 +267,7 @@ describe("handleCustomPath — groupMultiselect messages include real counts", (
       .mockResolvedValueOnce([]) // skills
       .mockResolvedValueOnce([]) // agents
       .mockResolvedValueOnce([]); // mcps
-    mockWizardSelect.mockResolvedValueOnce("codi-balanced"); // flag preset
+    mockWizardSelect.mockResolvedValueOnce("codi-default"); // flag preset
     mockWizardConfirm
       .mockResolvedValueOnce(false) // save as preset
       .mockResolvedValueOnce(false); // version pin
@@ -309,8 +309,8 @@ describe("handlePresetPath — current-install hydrates selections", () => {
   });
 
   it("uses current install selections as initialValues", async () => {
-    mockWizardSelect.mockResolvedValueOnce("codi-balanced");
-    mockFlagEditing("codi-balanced");
+    mockWizardSelect.mockResolvedValueOnce("codi-default");
+    mockFlagEditing("codi-default");
     mockGroupMultiselect
       .mockResolvedValueOnce(["typescript", "legacy-rule"])
       .mockResolvedValueOnce([])

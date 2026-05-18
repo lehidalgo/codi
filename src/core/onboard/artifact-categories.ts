@@ -44,9 +44,16 @@ export const RULE_CATEGORIES: Record<string, string[]> = {
     "codi-documentation",
     "codi-spanish-orthography",
     "codi-output-discipline",
+    "codi-output-tone-policy",
     "codi-contribution-discipline",
   ],
-  [PLATFORM_CATEGORY]: ["codi-agent-usage", "codi-improvement-dev", "codi-capture-everything"],
+  [PLATFORM_CATEGORY]: [
+    "codi-agent-usage",
+    "codi-agent-capability-discovery",
+    "codi-improvement-dev",
+    "codi-capture-everything",
+    "codi-vault-discipline",
+  ],
 };
 
 // Artifacts that are always pre-selected regardless of preset or custom choice.
@@ -96,6 +103,7 @@ export const AGENT_CATEGORIES: Record<string, string[]> = {
     "codi-python-expert",
   ],
   "Exploration & Docs": ["codi-docs-lookup"],
+  "Knowledge Management": ["codi-wiki-ingest", "codi-wiki-lint"],
 };
 
 // MCP server categories derived from the grouped registry in the template index.

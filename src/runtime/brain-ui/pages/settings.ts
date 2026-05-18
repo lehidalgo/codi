@@ -1,15 +1,31 @@
 /**
  * Settings panel — project metadata, brain DB info, backups list with
  * restore links into the external archive at ~/.codi/archive/.
+ *
+ * Archive enumeration is owned by `core/backup/backup-manager.ts`
+ * (`listProjectArchives`). This route is a thin renderer that accepts an
+ * injected `archiveRoot` so tests can keep the route hermetic and so
+ * pagination, symlink safety, and manifest size guards live in one place.
  */
 
 import type { Hono, Context } from "hono";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { homedir } from "node:os";
+import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { BrainHandle } from "#src/runtime/brain/db.js";
-import { PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, BACKUPS_DIR } from "#src/constants.js";
+import { BACKUPS_DIR } from "#src/constants.js";
+import {
+  listProjectArchives,
+  defaultArchiveRoot,
+  DEFAULT_ARCHIVE_PAGE_SIZE,
+  MAX_MANIFEST_BYTES,
+  type ArchiveListEntry,
+} from "#src/core/backup/backup-manager.js";
 import { shell, escapeHtml, fmtRelative, fmtTs } from "./shell.js";
+
+export interface SettingsOptions {
+  /** Override `~/.codi/archive/`. Tests inject a tmp dir; prod leaves undefined. */
+  readonly archiveRoot?: string;
+}
 
 // Backup ID validators — duplicated from routes-api.ts (intentional; 2 callsites do not warrant a shared module).
 // Must match backup-manager.ts formats: timestamp = ISO with `:` and `.` replaced by `-`; hash = 16-hex + slug.
@@ -25,65 +41,33 @@ interface ProjectRow {
   readonly last_seen: number;
 }
 
-interface ArchiveEntry {
-  readonly hash: string;
-  readonly timestamp: string;
-  readonly path: string;
-  readonly size: number;
-  readonly trigger: string;
-}
-
-function listProjectArchives(): ArchiveEntry[] {
-  const root = join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR);
-  if (!existsSync(root)) return [];
-  const out: ArchiveEntry[] = [];
-  for (const hashDir of readdirSync(root)) {
-    const hashPath = join(root, hashDir);
-    if (!statSync(hashPath).isDirectory()) continue;
-    for (const tsDir of readdirSync(hashPath)) {
-      const dir = join(hashPath, tsDir);
-      if (!statSync(dir).isDirectory()) continue;
-      const manifestPath = join(dir, "backup-manifest.json");
-      let trigger = "unknown";
-      let size = 0;
-      try {
-        const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
-          trigger?: string;
-          files?: Array<{ path: string }>;
-        };
-        trigger = manifest.trigger ?? "unknown";
-        for (const f of manifest.files ?? []) {
-          try {
-            size += statSync(join(dir, f.path)).size;
-          } catch {
-            /* missing files are tolerated */
-          }
-        }
-      } catch {
-        /* manifest unreadable — keep entry as best-effort */
-      }
-      out.push({ hash: hashDir, timestamp: tsDir, path: dir, size, trigger });
-    }
-  }
-  out.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  return out;
-}
-
 function listLocalBackups(brain: BrainHandle): Array<{ ts: string; trigger: string }> {
   const root = brain.path
     .replace(/\/state\/brain\.db$/, `/${BACKUPS_DIR}`)
     .replace(/\/brain\.db$/, `/${BACKUPS_DIR}`);
   if (!existsSync(root)) return [];
   const out: Array<{ ts: string; trigger: string }> = [];
-  for (const tsDir of readdirSync(root)) {
+  let entries: string[] = [];
+  try {
+    entries = readdirSync(root);
+  } catch {
+    return [];
+  }
+  for (const tsDir of entries) {
     const dir = join(root, tsDir);
-    if (!statSync(dir).isDirectory()) continue;
+    if (!isDirNoSymlink(dir)) continue;
     let trigger = "unknown";
+    const manifestPath = join(dir, "backup-manifest.json");
     try {
-      const manifest = JSON.parse(readFileSync(join(dir, "backup-manifest.json"), "utf8")) as {
-        trigger?: string;
-      };
-      trigger = manifest.trigger ?? "unknown";
+      const stat = lstatSync(manifestPath);
+      if (stat.isFile() && stat.size <= MAX_MANIFEST_BYTES) {
+        const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+          trigger?: string;
+        };
+        trigger = manifest.trigger ?? "unknown";
+      } else if (stat.isFile()) {
+        trigger = "oversized";
+      }
     } catch {
       /* unsealed backup */
     }
@@ -93,6 +77,21 @@ function listLocalBackups(brain: BrainHandle): Array<{ ts: string; trigger: stri
   return out;
 }
 
+function isDirNoSymlink(p: string): boolean {
+  try {
+    return lstatSync(p).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function parsePage(c: Context): number {
+  const raw = c.req.query("page");
+  const n = raw ? Number(raw) : 1;
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.floor(n);
+}
+
 function fmtBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -100,7 +99,12 @@ function fmtBytes(n: number): string {
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
-export function registerSettings(app: Hono, brain: BrainHandle): void {
+export function registerSettings(
+  app: Hono,
+  brain: BrainHandle,
+  opts: SettingsOptions = {},
+): void {
+  const archiveRoot = opts.archiveRoot ?? defaultArchiveRoot();
   app.get("/settings", (c: Context) => {
     const project = brain.raw.prepare(`SELECT * FROM projects LIMIT 1`).get() as
       | ProjectRow
@@ -110,11 +114,20 @@ export function registerSettings(app: Hono, brain: BrainHandle): void {
       .get() as { v: number | null };
     let dbSize = 0;
     try {
-      dbSize = statSync(brain.path).size;
+      dbSize = lstatSync(brain.path).size;
     } catch {
       /* brand-new db */
     }
-    const archives = listProjectArchives();
+
+    const page = parsePage(c);
+    const pageSize = DEFAULT_ARCHIVE_PAGE_SIZE;
+    const archivesPage = listProjectArchives({
+      archiveRoot,
+      offset: (page - 1) * pageSize,
+      limit: pageSize,
+    });
+    const archives = archivesPage.entries;
+    const totalPages = Math.max(1, Math.ceil(archivesPage.total / pageSize));
     const local = listLocalBackups(brain);
 
     const projectHtml = project
@@ -139,9 +152,9 @@ export function registerSettings(app: Hono, brain: BrainHandle): void {
         ${restoreIcon}
       </button>`;
 
-    const archivesHtml = archives.length
+    const archivesListHtml = archives.length
       ? `<ul class="divide-y divide-slate-100">${archives
-          .map((a) => {
+          .map((a: ArchiveListEntry) => {
             const href = `/backup/archive/${encodeURIComponent(a.hash)}/${encodeURIComponent(a.timestamp)}`;
             return `
           <li class="text-sm flex items-center gap-3 hover:bg-slate-50 px-2 py-2 rounded transition-colors">
@@ -157,6 +170,18 @@ export function registerSettings(app: Hono, brain: BrainHandle): void {
           })
           .join("")}</ul>`
       : `<p class="text-sm text-slate-500">No external archives yet. <code>codi clean --all</code> creates one before wiping.</p>`;
+
+    const pagerHtml =
+      totalPages > 1
+        ? `<nav class="flex items-center justify-between text-xs text-slate-500 mt-3" aria-label="Archives pagination">
+            <span>Page ${page} of ${totalPages} (${archivesPage.total} total)</span>
+            <span class="flex gap-2">
+              ${page > 1 ? `<a class="px-2 py-1 rounded hover:bg-slate-100" href="?page=${page - 1}">← Prev</a>` : `<span class="px-2 py-1 text-slate-300">← Prev</span>`}
+              ${page < totalPages ? `<a class="px-2 py-1 rounded hover:bg-slate-100" href="?page=${page + 1}">Next →</a>` : `<span class="px-2 py-1 text-slate-300">Next →</span>`}
+            </span>
+          </nav>`
+        : "";
+    const archivesHtml = archivesListHtml + pagerHtml;
 
     const localHtml = local.length
       ? `<ul class="divide-y divide-slate-100">${local
@@ -285,7 +310,7 @@ export function registerSettings(app: Hono, brain: BrainHandle): void {
     if (!HASH_RE.test(hash) || !TS_RE.test(ts)) {
       return c.html(renderInvalidBackupId(), 400);
     }
-    const dir = join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, hash, ts);
+    const dir = join(archiveRoot, hash, ts);
     return c.html(renderBackupDetail("archive", { hash, ts }, dir));
   });
 }
@@ -320,25 +345,30 @@ function renderBackupDetail(scope: "local" | "archive", key: BackupKey, dir: str
   let files: Array<{ path: string; scope?: string; size: number; deleted?: boolean }> = [];
   let totalSize = 0;
   try {
-    const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
-      trigger?: string;
-      codiVersion?: string;
-      timestamp?: string;
-      files?: Array<{ path: string; scope?: string; deleted?: boolean }>;
-    };
-    trigger = manifest.trigger ?? "unknown";
-    codiVersion = manifest.codiVersion ?? "?";
-    if (manifest.timestamp) timestamp = manifest.timestamp;
-    files = (manifest.files ?? []).map((f) => {
-      let size = 0;
-      try {
-        size = statSync(join(dir, f.path)).size;
-      } catch {
-        /* missing file */
-      }
-      totalSize += size;
-      return { path: f.path, scope: f.scope, size, deleted: f.deleted };
-    });
+    const manifestStat = lstatSync(manifestPath);
+    if (manifestStat.isFile() && manifestStat.size <= MAX_MANIFEST_BYTES) {
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+        trigger?: string;
+        codiVersion?: string;
+        timestamp?: string;
+        files?: Array<{ path: string; scope?: string; deleted?: boolean }>;
+      };
+      trigger = manifest.trigger ?? "unknown";
+      codiVersion = manifest.codiVersion ?? "?";
+      if (manifest.timestamp) timestamp = manifest.timestamp;
+      files = (manifest.files ?? []).map((f) => {
+        let size = 0;
+        try {
+          size = lstatSync(join(dir, f.path)).size;
+        } catch {
+          /* missing file */
+        }
+        totalSize += size;
+        return { path: f.path, scope: f.scope, size, deleted: f.deleted };
+      });
+    } else if (manifestStat.isFile()) {
+      trigger = "oversized";
+    }
   } catch {
     /* manifest unreadable — show what we have */
   }

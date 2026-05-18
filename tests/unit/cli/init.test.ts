@@ -51,14 +51,14 @@ describe("init command handler", () => {
     // First init
     await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code"],
     });
 
     // Second init (update) — should succeed, not reject
     const result = await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code"],
     });
     expect(result.success).toBe(true);
@@ -130,10 +130,10 @@ describe("init command handler", () => {
   it("accepts known preset names", async () => {
     const result = await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("strict"),
+      preset: prefixedName("default"),
     });
     expect(result.success).toBe(true);
-    expect(result.data.preset).toBe(prefixedName("strict"));
+    expect(result.data.preset).toBe(prefixedName("default"));
   });
 
   it("rejects unknown agent IDs", async () => {
@@ -152,6 +152,57 @@ describe("init command handler", () => {
     });
     expect(result.success).toBe(true);
     expect(result.data.agents).toContain("claude-code");
+  });
+
+  // ISSUE-003: --agents now accepts both variadic (space) and comma-separated
+  // syntaxes. The error message also calls out the syntax explicitly when the
+  // user passes a comma-separated string containing an invalid agent.
+  it("accepts comma-separated agent IDs as a single arg (DWIM)", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["claude-code,cursor"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toContain("claude-code");
+    expect(result.data.agents).toContain("cursor");
+  });
+
+  it("accepts mixed variadic + comma agent IDs", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["claude-code,cursor", "codex"],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toEqual(expect.arrayContaining(["claude-code", "cursor", "codex"]));
+  });
+
+  it("trims whitespace and ignores empty entries in comma-separated input", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: [" claude-code , cursor , "],
+    });
+    expect(result.success).toBe(true);
+    expect(result.data.agents).toEqual(expect.arrayContaining(["claude-code", "cursor"]));
+  });
+
+  it("adds syntax hint when comma input contains unknown agent IDs", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["claude-code,bogus-agent"],
+    });
+    expect(result.success).toBe(false);
+    expect(result.errors[0]!.message).toContain('"bogus-agent"');
+    expect(result.errors[0]!.message).not.toContain("claude-code,bogus-agent");
+    expect(result.errors[0]!.hint).toContain("comma-separated `--agents a,b,c`");
+  });
+
+  it("does NOT add comma syntax hint when input has no commas", async () => {
+    const result = await initHandler(tmpDir, {
+      json: true,
+      agents: ["bogus-agent"],
+    });
+    expect(result.success).toBe(false);
+    expect(result.errors[0]!.hint).not.toContain("comma-separated");
   });
 
   it("creates operations ledger", async () => {
@@ -185,7 +236,7 @@ describe("init command handler", () => {
   it("scaffolds preset artifacts in non-interactive mode", async () => {
     const result = await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code"],
     });
     expect(result.success).toBe(true);
@@ -198,14 +249,14 @@ describe("init command handler", () => {
   it("writes preset-lock.json with sourceType builtin", async () => {
     await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code"],
     });
 
     const lockPath = path.join(tmpDir, PROJECT_DIR, "preset-lock.json");
     const lock = JSON.parse(await fs.readFile(lockPath, "utf-8"));
-    expect(lock.presets[prefixedName("balanced")]).toBeDefined();
-    expect(lock.presets[prefixedName("balanced")]!.sourceType).toBe("builtin");
+    expect(lock.presets[prefixedName("default")]).toBeDefined();
+    expect(lock.presets[prefixedName("default")]!.sourceType).toBe("builtin");
   });
 
   // Regression: an existing install + a re-init that adds a new agent must
@@ -216,7 +267,7 @@ describe("init command handler", () => {
   it("update mode persists newly-added agent in manifest and generates its output", async () => {
     await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code"],
     });
 
@@ -226,7 +277,7 @@ describe("init command handler", () => {
 
     const result = await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code", "codex"],
     });
     expect(result.success).toBe(true);
@@ -244,26 +295,11 @@ describe("init command handler", () => {
     expect(agentsMdExists).toBe(true);
   });
 
-  // Regression: switching flag preset on update must rewrite flags.yaml.
-  // Prior to the fix, persistFlags was only invoked on fresh install, so
-  // a customize pass that picked a different preset was silently ignored.
-  it("update mode rewrites flags.yaml when the flag preset changes", async () => {
-    await initHandler(tmpDir, {
-      json: true,
-      preset: prefixedName("minimal"),
-      agents: ["claude-code"],
-    });
-    const flagsBefore = await fs.readFile(path.join(tmpDir, PROJECT_DIR, "flags.yaml"), "utf-8");
-
-    await initHandler(tmpDir, {
-      json: true,
-      preset: prefixedName("strict"),
-      agents: ["claude-code"],
-    });
-    const flagsAfter = await fs.readFile(path.join(tmpDir, PROJECT_DIR, "flags.yaml"), "utf-8");
-
-    expect(flagsAfter).not.toBe(flagsBefore);
-  });
+  // ADR-013: with a single registered preset, the original "switching
+  // preset" regression scenario (init with minimal → update to strict →
+  // expect flags.yaml to differ) cannot be expressed. The underlying
+  // persistFlags-on-update behavior is exercised by the other update-mode
+  // tests in this file.
 
   // Regression: dropping an agent on a re-init must prune its per-agent output
   // dirs across every category (root instruction file, agent dir, skill dir).
@@ -277,7 +313,7 @@ describe("init command handler", () => {
   it("update mode prunes a dropped agent's outputs across all its categories", async () => {
     await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code", "codex"],
     });
 
@@ -302,7 +338,7 @@ describe("init command handler", () => {
 
     const result = await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code"],
     });
     expect(result.success).toBe(true);
@@ -324,7 +360,7 @@ describe("init command handler", () => {
   it("update mode pruning is per-agent — keeps retained agent's outputs intact", async () => {
     await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code", "codex"],
     });
 
@@ -337,7 +373,7 @@ describe("init command handler", () => {
     // Drop claude-code; keep codex.
     const result = await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["codex"],
     });
     expect(result.success).toBe(true);
@@ -362,7 +398,7 @@ describe("init command handler", () => {
   it("update mode preserves user-set manifest fields (description, presets, layers)", async () => {
     await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code"],
     });
 
@@ -376,7 +412,7 @@ describe("init command handler", () => {
 
     await initHandler(tmpDir, {
       json: true,
-      preset: prefixedName("balanced"),
+      preset: prefixedName("default"),
       agents: ["claude-code", "codex"],
     });
 

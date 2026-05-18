@@ -1,16 +1,17 @@
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import path from "node:path";
 import { isPathSafe } from "#src/utils/path-guard.js";
 import { fileExists, safeRm } from "#src/utils/fs.js";
 import {
-  STATE_FILENAME,
   BACKUPS_DIR,
   MAX_BACKUPS,
   EXTERNAL_ARCHIVE_DIR,
   PROJECT_DIR,
 } from "#src/constants.js";
+import { getStatePath } from "#src/core/config/state.js";
 import { VERSION } from "#src/index.js";
 import { readManifest, writeManifest } from "#src/core/backup/backup-manifest.js";
 import {
@@ -200,7 +201,13 @@ async function computeInitialFiles(
   let stateData: { agents: Record<string, Array<{ path: string }>> } = {
     agents: {},
   };
-  const statePath = path.join(configDir, STATE_FILENAME);
+  // ISSUE-005: was `path.join(configDir, STATE_FILENAME)` (legacy
+  // `.codi/state.json`). After CORE-002 the path is `.codi/state/state.json`,
+  // so the literal join missed the file → empty agents → includeOutput
+  // captured 0 files in non-first-time destructive ops (init-first-time was
+  // masked by includePreExisting). Centralized in getStatePath() so future
+  // path moves only need one update.
+  const statePath = getStatePath(configDir);
   if (await fileExists(statePath)) {
     try {
       const raw = await fs.readFile(statePath, "utf8");
@@ -261,6 +268,156 @@ export function externalArchiveRoot(projectRoot: string): string {
   const hash = createHash("sha256").update(abs).digest("hex").slice(0, 16);
   const slug = path.basename(abs).replace(/[^A-Za-z0-9._-]/g, "_") || "project";
   return path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR, `${hash}-${slug}`);
+}
+
+/**
+ * Default top-level archive root: `~/.codi/archive/`. Callers that need
+ * project-specific paths should use `externalArchiveRoot(projectRoot)` instead.
+ * Exposed so brain-ui and tests can inject an alternate root for hermetic
+ * fixtures or test isolation (e.g. point at a tmp dir during tests).
+ */
+export function defaultArchiveRoot(): string {
+  return path.join(homedir(), PROJECT_DIR, EXTERNAL_ARCHIVE_DIR);
+}
+
+export interface ArchiveListEntry {
+  readonly hash: string;
+  readonly timestamp: string;
+  readonly path: string;
+  readonly size: number;
+  readonly trigger: string;
+}
+
+export interface ListProjectArchivesOptions {
+  /** Override default `~/.codi/archive/` — primarily for tests. */
+  readonly archiveRoot?: string;
+  /** Max entries per page (1..MAX_ARCHIVE_PAGE_SIZE). Default = DEFAULT_ARCHIVE_PAGE_SIZE. */
+  readonly limit?: number;
+  /** Page offset (entries to skip). Default 0. */
+  readonly offset?: number;
+}
+
+export interface ListProjectArchivesResult {
+  readonly entries: readonly ArchiveListEntry[];
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+}
+
+/** Default page size when listing archives (UI pagination). */
+export const DEFAULT_ARCHIVE_PAGE_SIZE = 50;
+/** Hard cap on archive page size to prevent unbounded responses. */
+export const MAX_ARCHIVE_PAGE_SIZE = 500;
+/**
+ * Hard cap on the size of `backup-manifest.json` we will read into memory
+ * and JSON.parse. A maliciously-large manifest could OOM the process; entries
+ * past this size are kept as best-effort placeholders.
+ */
+export const MAX_MANIFEST_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Enumerate all project archives under `archiveRoot` (default `~/.codi/archive/`).
+ *
+ * Safety guarantees:
+ *   - `lstat` is used everywhere — symlinks under the archive root are NOT
+ *     followed. A symlinked directory looks like a regular file to the walker
+ *     and is skipped.
+ *   - Each `backup-manifest.json` is size-checked before reading; oversized
+ *     manifests are kept as best-effort entries (size=0, trigger="oversized").
+ *   - Results are paginated. Callers MUST provide explicit `limit`/`offset` or
+ *     accept the conservative defaults.
+ *
+ * Sync I/O on purpose: archives are read in a request handler that is itself
+ * synchronous; switching to async fs would add `await` overhead without
+ * reducing event-loop blocking for this directory size in practice. If/when
+ * archive counts grow past a few thousand, revisit by streaming the listing.
+ */
+export function listProjectArchives(
+  opts: ListProjectArchivesOptions = {},
+): ListProjectArchivesResult {
+  const root = opts.archiveRoot ?? defaultArchiveRoot();
+  const limit = clampPageSize(opts.limit);
+  const offset = Math.max(0, opts.offset ?? 0);
+
+  if (!fsSync.existsSync(root)) {
+    return { entries: [], total: 0, offset, limit };
+  }
+
+  const all: ArchiveListEntry[] = [];
+  let rootEntries: string[] = [];
+  try {
+    rootEntries = fsSync.readdirSync(root);
+  } catch {
+    return { entries: [], total: 0, offset, limit };
+  }
+
+  for (const hashDir of rootEntries) {
+    const hashPath = path.join(root, hashDir);
+    if (!isDirectoryNoSymlink(hashPath)) continue;
+
+    let tsDirs: string[] = [];
+    try {
+      tsDirs = fsSync.readdirSync(hashPath);
+    } catch {
+      continue;
+    }
+
+    for (const tsDir of tsDirs) {
+      const dir = path.join(hashPath, tsDir);
+      if (!isDirectoryNoSymlink(dir)) continue;
+
+      const manifestPath = path.join(dir, "backup-manifest.json");
+      let trigger = "unknown";
+      let size = 0;
+
+      try {
+        const manifestStat = fsSync.lstatSync(manifestPath);
+        if (!manifestStat.isFile()) {
+          // dangling symlink or non-file — keep entry as best-effort
+        } else if (manifestStat.size > MAX_MANIFEST_BYTES) {
+          trigger = "oversized";
+        } else {
+          const raw = fsSync.readFileSync(manifestPath, "utf8");
+          const manifest = JSON.parse(raw) as {
+            trigger?: string;
+            files?: Array<{ path: string }>;
+          };
+          trigger = manifest.trigger ?? "unknown";
+          for (const f of manifest.files ?? []) {
+            try {
+              size += fsSync.lstatSync(path.join(dir, f.path)).size;
+            } catch {
+              /* tolerate missing files inside snapshot */
+            }
+          }
+        }
+      } catch {
+        /* manifest unreadable — keep entry as best-effort placeholder */
+      }
+      all.push({ hash: hashDir, timestamp: tsDir, path: dir, size, trigger });
+    }
+  }
+
+  all.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  return {
+    entries: all.slice(offset, offset + limit),
+    total: all.length,
+    offset,
+    limit,
+  };
+}
+
+function clampPageSize(raw: number | undefined): number {
+  if (raw === undefined || !Number.isFinite(raw)) return DEFAULT_ARCHIVE_PAGE_SIZE;
+  return Math.max(1, Math.min(MAX_ARCHIVE_PAGE_SIZE, Math.floor(raw)));
+}
+
+function isDirectoryNoSymlink(p: string): boolean {
+  try {
+    return fsSync.lstatSync(p).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 async function applyRetention(

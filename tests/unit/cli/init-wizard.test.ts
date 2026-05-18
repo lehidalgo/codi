@@ -78,7 +78,11 @@ function mockFlagEditing(presetName: string): void {
 
 describe("runInitWizard", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // resetAllMocks clears queued mockResolvedValueOnce chains in addition to
+    // call history. With ADR-013's wizard short-circuits, several tests queue
+    // fewer wizardSelect resolves than before; without a reset the leftover
+    // resolves from a prior test pollute the next.
+    vi.resetAllMocks();
     vi.mocked(p.isCancel).mockReturnValue(false);
   });
 
@@ -141,8 +145,8 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce(["github"] as never); // MCP servers
 
     vi.mocked(wizardSelect).mockResolvedValueOnce("custom" as never); // config mode
-    // flag preset is inside handleCustomPath — wizardSelect called inside it
-    vi.mocked(wizardSelect).mockResolvedValueOnce(prefixedName("balanced") as never);
+    // ADR-013: flag-preset prompt inside handleCustomPath is suppressed
+    // (codi-default auto-selected). No additional wizardSelect mock needed.
 
     vi.mocked(wizardConfirm)
       .mockResolvedValueOnce(false as never) // save as preset? no
@@ -154,12 +158,12 @@ describe("runInitWizard", () => {
     expect(result!.configMode).toBe("custom");
     expect(result!.rules).toEqual([prefixedName("security")]);
     expect(result!.skills).toEqual([prefixedName("code-review")]);
-    expect(result!.flagPreset).toBe(prefixedName("balanced"));
+    expect(result!.flagPreset).toBe(prefixedName("default"));
     expect(result!.versionPin).toBe(true);
   });
 
   it("returns preset config when preset mode selected without modifications", async () => {
-    const presetDef = getBuiltinPresetDefinition(prefixedName("balanced"));
+    const presetDef = getBuiltinPresetDefinition(prefixedName("default"));
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
@@ -170,13 +174,11 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce([] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
 
-    // config mode + preset choice (both wizardSelect)
-    vi.mocked(wizardSelect)
-      .mockResolvedValueOnce("preset" as never)
-      .mockResolvedValueOnce(prefixedName("balanced") as never);
+    // config mode (single wizardSelect — preset-choice prompt suppressed by ADR-013)
+    vi.mocked(wizardSelect).mockResolvedValueOnce("preset" as never);
 
     // flag editing (wizardMultiselect for booleans, wizardSelect for enums, p.text for numbers)
-    mockFlagEditing(prefixedName("balanced"));
+    mockFlagEditing(prefixedName("default"));
 
     // artifact editing (return same as preset — no changes)
     vi.mocked(groupMultiselect)
@@ -192,11 +194,11 @@ describe("runInitWizard", () => {
 
     expect(result).not.toBeNull();
     expect(result!.configMode).toBe("preset");
-    expect(result!.presetName).toBe(prefixedName("balanced"));
+    expect(result!.presetName).toBe(prefixedName("default"));
   });
 
   it("prompts save-as-preset when preset artifacts are modified", async () => {
-    const presetDef = getBuiltinPresetDefinition(prefixedName("strict"));
+    const presetDef = getBuiltinPresetDefinition(prefixedName("default"));
     const presetRules = presetDef?.rules ?? [];
     const modifiedRules = presetRules.length > 0 ? presetRules.slice(1) : ["extra-rule"];
 
@@ -205,13 +207,11 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce([] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
 
-    // config mode + preset choice
-    vi.mocked(wizardSelect)
-      .mockResolvedValueOnce("preset" as never)
-      .mockResolvedValueOnce(prefixedName("strict") as never);
+    // config mode (preset-choice prompt suppressed by ADR-013)
+    vi.mocked(wizardSelect).mockResolvedValueOnce("preset" as never);
 
     // flag editing
-    mockFlagEditing(prefixedName("strict"));
+    mockFlagEditing(prefixedName("default"));
 
     // artifacts (modified rules)
     vi.mocked(groupMultiselect)
@@ -235,7 +235,7 @@ describe("runInitWizard", () => {
   });
 
   it("returns selected preset name directly (no base mapping)", async () => {
-    const presetDef = getBuiltinPresetDefinition(prefixedName("fullstack"));
+    const presetDef = getBuiltinPresetDefinition(prefixedName("default"));
     const presetRules = presetDef?.rules ?? [];
     const presetSkills = presetDef?.skills ?? [];
     const presetAgents = presetDef?.agents ?? [];
@@ -246,11 +246,10 @@ describe("runInitWizard", () => {
       .mockResolvedValueOnce(["typescript"] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
 
-    vi.mocked(wizardSelect)
-      .mockResolvedValueOnce("preset" as never)
-      .mockResolvedValueOnce(prefixedName("fullstack") as never);
+    // config mode (preset-choice prompt suppressed by ADR-013)
+    vi.mocked(wizardSelect).mockResolvedValueOnce("preset" as never);
 
-    mockFlagEditing(prefixedName("fullstack"));
+    mockFlagEditing(prefixedName("default"));
 
     vi.mocked(groupMultiselect)
       .mockResolvedValueOnce(presetRules as never)
@@ -264,7 +263,7 @@ describe("runInitWizard", () => {
     const result = await runInitWizard([], [], ["claude-code"]);
 
     expect(result).not.toBeNull();
-    expect(result!.preset).toBe(prefixedName("fullstack"));
+    expect(result!.preset).toBe(prefixedName("default"));
   });
 
   it("goes back from agents to languages, then exits on cancel", async () => {
@@ -282,8 +281,8 @@ describe("runInitWizard", () => {
   it("lets the user choose modify current installation for existing installs", async () => {
     vi.mocked(wizardSelect)
       .mockResolvedValueOnce("modify" as never) // existing install action
-      .mockResolvedValueOnce("custom" as never) // update source: customize current artifacts
-      .mockResolvedValueOnce(prefixedName("balanced") as never); // flag preset inside handleCustomPath
+      .mockResolvedValueOnce("custom" as never); // update source: customize current artifacts
+    // ADR-013: flag preset prompt no longer fires (codi-default auto-selected).
     vi.mocked(wizardMultiselect)
       .mockResolvedValueOnce(["typescript"] as never) // languages
       .mockResolvedValueOnce(["claude-code"] as never); // agents
@@ -311,8 +310,9 @@ describe("runInitWizard", () => {
 
     expect(result).not.toBeNull();
     expect(vi.mocked(wizardSelect).mock.calls[0]?.[0]?.message).toContain("already installed");
-    // modify mode: 3 wizardSelect calls (existing-install action, update source, flag preset)
-    expect(vi.mocked(wizardSelect).mock.calls).toHaveLength(3);
+    // modify mode: 2 wizardSelect calls (existing-install action, update source).
+    // Flag preset prompt is suppressed by ADR-013 (single canonical preset).
+    expect(vi.mocked(wizardSelect).mock.calls).toHaveLength(2);
     // second prompt is the update-source selector with modify-aware wording
     expect(vi.mocked(wizardSelect).mock.calls[1]?.[0]?.message).toContain(
       "update your installation",

@@ -55,6 +55,25 @@ export interface CodiPreferences {
    * Empty/missing means use registry defaults and project state selection.
    */
   hooks?: Record<string, HookPreferenceOverride>;
+  /**
+   * ADR-013 Paso 8: capability-discovery prompt injection on UserPromptSubmit.
+   * Default `true` for codi-default preset. Set to `false` in preferences.yaml
+   * to silence the per-turn capability reminder.
+   */
+  capability_discovery?: boolean;
+  /**
+   * ADR-013 Paso 8: agent-memory writes synced into project CLAUDE.md.
+   * Default `true` for codi-default preset. Set to `false` to disable the
+   * CLAUDE.md memory append on PostToolUse Write/Edit.
+   */
+  claudemd_memory_sync?: boolean;
+  /**
+   * ADR-013 Paso 9: warn the agent via UserPromptSubmit when the project
+   * still has Husky / Lefthook / pre-commit-framework configured. Default
+   * `true` for codi-default. Set to `false` to silence the migration
+   * prompt (e.g. when you intentionally want to keep your other runner).
+   */
+  hook_conflict_detection?: boolean;
 }
 
 export const PREFERENCES_YAML_RELATIVE_PATH = `${PROJECT_DIR}/preferences.yaml`;
@@ -69,6 +88,9 @@ export const DEFAULT_PREFERENCES: Required<CodiPreferences> = {
   issue_tracker: "github",
   default_profiles: {},
   hooks: {},
+  capability_discovery: true,
+  claudemd_memory_sync: true,
+  hook_conflict_detection: true,
 };
 
 export function preferencesYamlPath(cwd: string): string {
@@ -150,6 +172,18 @@ function mergeWithDefaults(raw: Partial<CodiPreferences>): Required<CodiPreferen
       ? raw.default_profiles
       : DEFAULT_PREFERENCES.default_profiles,
     hooks: raw.hooks ?? {},
+    capability_discovery:
+      typeof raw.capability_discovery === "boolean"
+        ? raw.capability_discovery
+        : DEFAULT_PREFERENCES.capability_discovery,
+    claudemd_memory_sync:
+      typeof raw.claudemd_memory_sync === "boolean"
+        ? raw.claudemd_memory_sync
+        : DEFAULT_PREFERENCES.claudemd_memory_sync,
+    hook_conflict_detection:
+      typeof raw.hook_conflict_detection === "boolean"
+        ? raw.hook_conflict_detection
+        : DEFAULT_PREFERENCES.hook_conflict_detection,
   };
 }
 

@@ -13,9 +13,13 @@ import { registerToolCalls } from "./pages/tool-calls.js";
 import { registerWorkflows } from "./pages/workflows.js";
 import { registerArtifacts } from "./pages/artifacts.js";
 import { registerPainPoints } from "./pages/pain-points.js";
-import { registerSettings } from "./pages/settings.js";
+import { registerSettings, type SettingsOptions } from "./pages/settings.js";
 
-export function registerPages(app: Hono, brain: BrainHandle): void {
+export interface PagesOptions {
+  readonly archiveRoot?: string;
+}
+
+export function registerPages(app: Hono, brain: BrainHandle, opts: PagesOptions = {}): void {
   registerDashboard(app, brain);
   registerSessions(app, brain);
   registerCaptures(app, brain);
@@ -23,5 +27,6 @@ export function registerPages(app: Hono, brain: BrainHandle): void {
   registerWorkflows(app, brain);
   registerArtifacts(app, brain);
   registerPainPoints(app, brain);
-  registerSettings(app, brain);
+  const settingsOpts: SettingsOptions = { archiveRoot: opts.archiveRoot };
+  registerSettings(app, brain, settingsOpts);
 }

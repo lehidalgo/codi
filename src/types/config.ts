@@ -256,4 +256,13 @@ export interface NormalizedConfig {
   flags: ResolvedFlags;
   /** Parsed MCP server configuration. */
   mcp: McpConfig;
+  /**
+   * Preset-declared Claude Code permissions, merged through the adapter
+   * into `.claude/settings.json::permissions`. Flag-derived denies still
+   * compose with these in the adapter (set-union, dedup).
+   */
+  permissions?: {
+    deny?: string[];
+    allow?: string[];
+  };
 }

@@ -27,6 +27,8 @@ const TEMPLATE_MAP: Record<string, string> = {
   [prefixedName("payload-cms-auditor")]: agentTemplates.payloadCmsAuditor,
   [prefixedName("python-expert")]: agentTemplates.pythonExpert,
   [prefixedName("scalability-expert")]: agentTemplates.scalabilityExpert,
+  [prefixedName("wiki-ingest")]: agentTemplates.wikiIngest,
+  [prefixedName("wiki-lint")]: agentTemplates.wikiLint,
 };
 
 export const AVAILABLE_AGENT_TEMPLATES = Object.keys(TEMPLATE_MAP);

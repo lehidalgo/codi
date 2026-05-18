@@ -19,3 +19,5 @@ export { template as openaiAgentsSpecialist } from "./openai-agents-specialist.j
 export { template as payloadCmsAuditor } from "./payload-cms-auditor.js";
 export { template as pythonExpert } from "./python-expert.js";
 export { template as scalabilityExpert } from "./scalability-expert.js";
+export { template as wikiIngest } from "./wiki-ingest.js";
+export { template as wikiLint } from "./wiki-lint.js";

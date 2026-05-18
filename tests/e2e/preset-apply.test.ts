@@ -93,8 +93,11 @@ describe("E2E: preset operations", () => {
 });
 
 describe("E2E: update with preset flags", () => {
-  it("update --preset strict changes flags", async () => {
-    const result = await runCli(projectDir, ["update", "--preset", "strict"]);
+  it("update --preset codi-default applies canonical flags", async () => {
+    // ADR-013: only codi-default is registered. The original test asserted
+    // strict-preset behavior (security_scan enforced+locked); codi-default
+    // ships security_scan enabled but not enforced.
+    const result = await runCli(projectDir, ["update", "--preset", "codi-default"]);
     expect(result.exitCode).toBe(0);
 
     const flagsContent = await readFile(
@@ -104,8 +107,8 @@ describe("E2E: update with preset flags", () => {
       string,
       Record<string, unknown>
     >;
-    expect(flags["security_scan"]?.["mode"]).toBe("enforced");
-    expect(flags["security_scan"]?.["locked"]).toBe(true);
+    expect(flags["security_scan"]?.["mode"]).toBe("enabled");
+    expect(flags["security_scan"]?.["value"]).toBe(true);
   });
 
   it("update --preset invalid fails", async () => {

@@ -35,7 +35,7 @@ import {
   type ToolCall,
 } from "../runtime/hook-logic.js";
 import { BrainEventLog } from "../runtime/brain-event-log.js";
-import { PROJECT_DIR, SUPPORTED_PLATFORMS } from "../constants.js";
+import { PROJECT_DIR, PROJECT_NAME, SUPPORTED_PLATFORMS } from "../constants.js";
 import {
   buildIronLawsBlock,
   buildPullReminder,
@@ -48,6 +48,17 @@ import {
 import { recordIncidentalChange } from "../runtime/cli-handlers.js";
 import { readFileSafe } from "../runtime/fs-utils.js";
 import { readPreferences } from "../runtime/preferences.js";
+import {
+  buildCapabilityDiscoveryBlock,
+  buildOutputModeOverrideBlock,
+} from "../runtime/hooks/claude-code/capability-discovery.js";
+import { runMemorySync } from "../runtime/hooks/claude-code/claudemd-memory-sync.js";
+import { buildHookConflictBlock } from "../runtime/hooks/claude-code/hook-conflict-detection.js";
+import {
+  runGitPreCommit,
+  runGitCommitMsg,
+  runGitPrePush,
+} from "../runtime/hooks/git/dispatchers.js";
 import { getRuntimeHooks } from "../core/hooks/registry/index.js";
 import { runRuntimeHooks, aggregateExitDecision } from "../runtime/hooks/runner.js";
 import type { HookContext as RuntimeHookCtx } from "../core/hooks/hook-artifact.js";
@@ -141,7 +152,33 @@ function runUserPromptSubmit(): void {
     // Iron-laws + gate-advisory blocks are advisory.
   }
 
-  const out = [captureBlock, stateBlock, ironLawsBlock, gateAdvisoryBlock]
+  // ADR-013 Paso 8: capability-discovery + per-checkout output-mode override.
+  // capability_discovery defaults to true for the codi-default preset; can be
+  // disabled by editing flags.yaml or using a different preset.
+  // ADR-013 Paso 9: hook-conflict-detection — warns the agent (which then
+  // invokes the codi-dev-migrate-hooks skill) when Husky / Lefthook /
+  // pre-commit-framework are configured alongside codi-default.
+  const prefs = readPreferences(cwd);
+  const capabilityEnabled = prefs.capability_discovery !== false;
+  const capabilityDiscoveryBlock = buildCapabilityDiscoveryBlock({
+    enabled: capabilityEnabled,
+  });
+  const outputModeOverrideBlock = buildOutputModeOverrideBlock({ cwd });
+  const hookConflictBlock = buildHookConflictBlock({
+    cwd,
+    enabled: prefs.hook_conflict_detection !== false,
+    projectName: PROJECT_NAME,
+  });
+
+  const out = [
+    captureBlock,
+    stateBlock,
+    ironLawsBlock,
+    gateAdvisoryBlock,
+    capabilityDiscoveryBlock,
+    outputModeOverrideBlock,
+    hookConflictBlock,
+  ]
     .filter((s) => s.length > 0)
     .join("\n\n");
   if (out.length > 0) process.stdout.write(out + "\n");
@@ -384,6 +421,21 @@ function runPostToolUse(): void {
     }
   }
 
+  // ADR-013 Paso 8: agent-memory file writes also land in CLAUDE.md so the
+  // user-managed memory zone survives `codi generate`. Fail-open; runs after
+  // brain persistence so observability is never blocked by file-IO.
+  try {
+    const prefs = readPreferences(cwd);
+    runMemorySync({
+      cwd,
+      toolName: payload.tool_name,
+      toolInput: payload.tool_input as Record<string, unknown>,
+      enabled: prefs.claudemd_memory_sync !== false,
+    });
+  } catch {
+    /* fail-open */
+  }
+
   process.exit(0);
 }
 
@@ -417,14 +469,26 @@ function runStop(): void {
 
 // ─── Registration ──────────────────────────────────────────────────────────
 
-const HOOK_NAMES = ["user-prompt-submit", "pre-tool-use", "post-tool-use", "stop"] as const;
+const HOOK_NAMES = [
+  "user-prompt-submit",
+  "pre-tool-use",
+  "post-tool-use",
+  "stop",
+  // ADR-013 Paso 8-9: git lifecycle hooks invoked via core.hooksPath
+  "git-pre-commit",
+  "git-commit-msg",
+  "git-pre-push",
+] as const;
 export type AgentHookName = (typeof HOOK_NAMES)[number];
 
-const DISPATCHERS: Record<AgentHookName, () => void | Promise<void>> = {
-  "user-prompt-submit": runUserPromptSubmit,
-  "pre-tool-use": runPreToolUse,
-  "post-tool-use": runPostToolUse,
-  stop: runStop,
+const DISPATCHERS: Record<AgentHookName, (args: string[]) => void | Promise<void>> = {
+  "user-prompt-submit": () => runUserPromptSubmit(),
+  "pre-tool-use": () => runPreToolUse(),
+  "post-tool-use": () => runPostToolUse(),
+  stop: () => runStop(),
+  "git-pre-commit": () => runGitPreCommit(),
+  "git-commit-msg": (args) => runGitCommitMsg(args[0]),
+  "git-pre-push": () => runGitPrePush(),
 };
 
 const VALID_AGENTS: ReadonlySet<string> = new Set(SUPPORTED_PLATFORMS);
@@ -462,12 +526,12 @@ function detectAgentFromEnv(): string | null {
 
 export function registerAgentHookCommand(program: Command): void {
   const hook = program
-    .command("hook <name>")
+    .command("hook <name> [args...]")
     .description(
-      `Run a built-in F6/F7 agent hook against stdin payload. Names: ${HOOK_NAMES.join(", ")}. Wired into .claude/settings.json + .codex/hooks.json by 'codi init'.`,
+      `Run a built-in F6/F7 agent hook against stdin payload (or git-event payload). Names: ${HOOK_NAMES.join(", ")}. Wired into .claude/settings.json + .codex/hooks.json + .githooks/* by 'codi init'.`,
     )
     .option("--agent <id>", "Originating agent id (claude-code | codex | cursor | ...)")
-    .action(async (name: string, opts: { agent?: string }) => {
+    .action(async (name: string, args: string[], opts: { agent?: string }) => {
       if (!(HOOK_NAMES as readonly string[]).includes(name)) {
         process.stderr.write(
           `[codi hook] Unknown hook name '${name}'. Valid: ${HOOK_NAMES.join(", ")}\n`,
@@ -479,7 +543,7 @@ export function registerAgentHookCommand(program: Command): void {
       const detected = detectAgentFromEnv();
       const resolved = flagAgent || envAgent || detected || "claude-code";
       activeAgent = VALID_AGENTS.has(resolved) ? resolved : "claude-code";
-      await DISPATCHERS[name as AgentHookName]();
+      await DISPATCHERS[name as AgentHookName](args ?? []);
     });
   void hook;
 }

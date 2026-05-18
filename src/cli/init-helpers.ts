@@ -614,6 +614,7 @@ import { detectHookSetup } from "../core/hooks/hook-detector.js";
 import { generateHooksConfig } from "../core/hooks/hook-config-generator.js";
 import { resolveAutoFlags } from "../core/hooks/auto-detection.js";
 import { installHooks } from "../core/hooks/hook-installer.js";
+import { installCoreHooksPath } from "../core/hooks/core-hooks-path-installer.js";
 import { checkHookDependencies, filterMissing } from "../core/hooks/hook-dependency-checker.js";
 import { installMissingDeps } from "../core/hooks/hook-dep-installer.js";
 import { detectStack } from "../core/hooks/stack-detector.js";
@@ -1006,22 +1007,35 @@ export async function runNonInteractiveIntake(
 
   if (ctx.options.agents && ctx.options.agents.length > 0) {
     const knownIds = new Set(getAllAdapters().map((a) => a.id));
-    const unknownAgents = ctx.options.agents.filter((id) => !knownIds.has(id));
+    // Accept both `--agents a b c` (variadic) and `--agents a,b,c`
+    // (comma-separated). Adapter IDs are kebab-case so a comma is
+    // unambiguous as a delimiter; users coming from CLIs that take
+    // comma-separated lists get the friendly behaviour. See ISSUE-003.
+    const hadCommaInput = ctx.options.agents.some((a) => a.includes(","));
+    const normalized = ctx.options.agents
+      .flatMap((a) => a.split(","))
+      .map((a) => a.trim())
+      .filter((a) => a.length > 0);
+    const unknownAgents = normalized.filter((id) => !knownIds.has(id));
     if (unknownAgents.length > 0) {
+      const quotedUnknown = unknownAgents.map((a) => `"${a}"`).join(", ");
+      const syntaxHint = hadCommaInput
+        ? " (Both space-separated `--agents a b c` and comma-separated `--agents a,b,c` are accepted.)"
+        : "";
       return {
         ok: false,
         earlyExit: buildInitFailure(ctx, state, [
           {
             code: "E_CONFIG_INVALID",
-            message: `Unknown agent(s): ${unknownAgents.join(", ")}. Known: ${[...knownIds].join(", ")}`,
-            hint: `Available agents: ${[...knownIds].join(", ")}`,
+            message: `Unknown agent(s): ${quotedUnknown}. Known: ${[...knownIds].join(", ")}.`,
+            hint: `Available agents: ${[...knownIds].join(", ")}.${syntaxHint}`,
             severity: "error",
             context: { unknownAgents },
           },
         ]),
       };
     }
-    state.agentIds = ctx.options.agents;
+    state.agentIds = normalized;
   } else {
     const detectedAdapters = await detectAdapters(ctx.projectRoot);
     state.agentIds = detectedAdapters.map((a) => a.id);
@@ -1282,8 +1296,29 @@ export async function installPreCommitHooks(
     } else {
       ctx.log.warn("Hook installation failed; you can set up hooks manually.");
     }
-  } catch {
-    ctx.log.warn("Hook detection failed; skipping hook installation.");
+
+    // ADR-013 Paso 9: also set up codi's git-native core.hooksPath layer.
+    // Coexists with the legacy installer for now — it skips silently when
+    // Husky / Lefthook / pre-commit-framework is configured (in which case
+    // the dev-migrate-hooks skill is auto-prompted via UserPromptSubmit).
+    // The legacy installer will be retired in a follow-up commit once all
+    // 17 hook templates have been ported to TS modules.
+    const coreHooksResult = await installCoreHooksPath(ctx.projectRoot);
+    if (coreHooksResult.ok && !coreHooksResult.data.skipped) {
+      ctx.log.info(
+        `core.hooksPath set to .githooks/ (${coreHooksResult.data.files.length} stub scripts written)`,
+      );
+    } else if (coreHooksResult.ok && coreHooksResult.data.skipped && coreHooksResult.data.skipReason) {
+      ctx.log.info(coreHooksResult.data.skipReason);
+    }
+  } catch (cause) {
+    // ISSUE-006: was an empty catch that swallowed the actual error and
+    // showed only "Hook detection failed" — which masked a real ENOENT
+    // from the YAML registry loader (dist path drift) and made the bug
+    // invisible to users. Log the cause so future hook-loading failures
+    // are diagnosable instead of silently degrading.
+    const msg = cause instanceof Error ? cause.message : String(cause);
+    ctx.log.warn(`Hook detection failed; skipping hook installation: ${msg}`);
   }
 }
 

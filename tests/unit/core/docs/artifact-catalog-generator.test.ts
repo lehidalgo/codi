@@ -29,7 +29,7 @@ describe("generateCatalogMarkdownFiles", () => {
     expect(skillFiles.length).toBeGreaterThanOrEqual(40);
     expect(ruleFiles.length).toBeGreaterThanOrEqual(10);
     expect(agentFiles.length).toBeGreaterThanOrEqual(10);
-    expect(presetFiles.length).toBeGreaterThanOrEqual(4);
+    expect(presetFiles.length).toBeGreaterThanOrEqual(1);
   });
 
   it("skill markdown contains frontmatter with artifactType", async () => {
@@ -60,7 +60,7 @@ describe("exportCatalogMetaJson", () => {
     expect(data.counts.skills).toBeGreaterThanOrEqual(40);
     expect(data.counts.rules).toBeGreaterThanOrEqual(10);
     expect(data.counts.agents).toBeGreaterThanOrEqual(10);
-    expect(data.counts.presets).toBeGreaterThanOrEqual(4);
+    expect(data.counts.presets).toBeGreaterThanOrEqual(1);
     expect(data.artifacts.every((a) => a.type && a.name)).toBe(true);
   });
 

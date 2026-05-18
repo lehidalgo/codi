@@ -50,7 +50,7 @@ describe("collectStats", () => {
 
   it("presets count is positive", () => {
     expect(stats.presets.count).toBeGreaterThan(0);
-    expect(stats.presets.names).toContain(prefixedName("balanced"));
+    expect(stats.presets.names).toContain(prefixedName("default"));
   });
 
   it("error codes is positive", () => {

@@ -139,7 +139,7 @@ export const DEFAULT_MAINTAINER = "@lehidalgo";
 // Extended preset names are derived from templates/presets/index.ts BUILTIN_PRESETS.
 // Only the default preset identifier is a true constant.
 /** Fully-qualified name of the preset applied when no preset is explicitly configured. */
-export const DEFAULT_PRESET = prefixedName("balanced");
+export const DEFAULT_PRESET = prefixedName("default");
 
 // --- Preset source types ---
 /** All supported sources from which a preset can be installed. */

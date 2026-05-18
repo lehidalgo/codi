@@ -5,13 +5,12 @@ import { BUILTIN_PRESETS, getBuiltinPresetDefinition } from "#src/templates/pres
 /**
  * Thin shim — delegates to the unified preset registry.
  * Preserves the original API for existing consumers.
+ *
+ * After ADR-013 there is a single registered preset (`codi-default`); the
+ * shim keeps returning a list so callers that iterate keep working.
  */
 
-const BASE_PRESET_NAMES = [
-  prefixedName("minimal"),
-  prefixedName("balanced"),
-  prefixedName("strict"),
-] as const;
+const BASE_PRESET_NAMES = [prefixedName("default")] as const;
 
 export type PresetName = (typeof BASE_PRESET_NAMES)[number];
 
@@ -26,7 +25,5 @@ export function getPresetNames(): PresetName[] {
 }
 
 export const PRESET_DESCRIPTIONS: Record<PresetName, string> = {
-  [prefixedName("minimal")]: BUILTIN_PRESETS[prefixedName("minimal")]!.description,
-  [prefixedName("balanced")]: BUILTIN_PRESETS[prefixedName("balanced")]!.description,
-  [prefixedName("strict")]: BUILTIN_PRESETS[prefixedName("strict")]!.description,
+  [prefixedName("default")]: BUILTIN_PRESETS[prefixedName("default")]!.description,
 };

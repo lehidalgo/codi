@@ -15,8 +15,8 @@ const testCatalog: Record<string, FlagSpec> = {
 };
 
 describe("FLAG_CATALOG", () => {
-  it("has exactly 21 entries", () => {
-    expect(Object.keys(FLAG_CATALOG)).toHaveLength(21);
+  it("has exactly 27 entries", () => {
+    expect(Object.keys(FLAG_CATALOG)).toHaveLength(27);
   });
 
   it("contains all expected flag names", () => {
@@ -42,6 +42,13 @@ describe("FLAG_CATALOG", () => {
       "js_format_lint",
       "commit_type_check",
       "commit_test_run",
+      // ADR-013 Paso 8 — capellai-parity guardrail flags
+      "disallow_push_to_protected",
+      "disallow_no_verify",
+      "disallow_env_edits",
+      "disallow_git_config_global",
+      "disallow_pip_install",
+      "allow_feature_branch_workflow",
     ];
     expect(Object.keys(FLAG_CATALOG).sort()).toEqual(expected.sort());
   });
@@ -136,8 +143,8 @@ describe("buildFlagSchema", () => {
 describe("getDefaultFlags", () => {
   const defaults = getDefaultFlags();
 
-  it("returns all 21 flags", () => {
-    expect(Object.keys(defaults)).toHaveLength(21);
+  it("returns all 27 flags", () => {
+    expect(Object.keys(defaults)).toHaveLength(27);
   });
 
   it("auto_commit defaults to false", () => {
