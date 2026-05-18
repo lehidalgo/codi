@@ -90,6 +90,10 @@ const TEMPLATE_MAP: Record<string, TemplateEntry> = {
   [prefixedName("to-prd")]: skillTemplates.toPrd,
   [prefixedName("to-issues")]: skillTemplates.toIssues,
   [prefixedName("defuddle")]: skillTemplates.defuddle,
+  [prefixedName("save")]: skillTemplates.save,
+  [prefixedName("wiki-query")]: skillTemplates.wikiQuery,
+  [prefixedName("triage")]: skillTemplates.triage,
+  [prefixedName("setup-pre-commit")]: skillTemplates.setupPreCommit,
 };
 
 /** Maps template names to their static asset directories (when available).
@@ -176,6 +180,10 @@ const STATIC_DIR_MAP: Record<string, string | null> = {
   [prefixedName("to-prd")]: skillTemplates.toPrdStaticDir,
   [prefixedName("to-issues")]: skillTemplates.toIssuesStaticDir,
   [prefixedName("defuddle")]: skillTemplates.defuddleStaticDir,
+  [prefixedName("save")]: skillTemplates.saveStaticDir,
+  [prefixedName("wiki-query")]: skillTemplates.wikiQueryStaticDir,
+  [prefixedName("triage")]: skillTemplates.triageStaticDir,
+  [prefixedName("setup-pre-commit")]: skillTemplates.setupPreCommitStaticDir,
 };
 
 export const AVAILABLE_SKILL_TEMPLATES = Object.keys(TEMPLATE_MAP);

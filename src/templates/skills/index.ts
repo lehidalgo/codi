@@ -226,3 +226,10 @@ export {
 export { template as toPrd, staticDir as toPrdStaticDir } from "./to-prd/index.js";
 export { template as toIssues, staticDir as toIssuesStaticDir } from "./to-issues/index.js";
 export { template as defuddle, staticDir as defuddleStaticDir } from "./defuddle/index.js";
+export { template as save, staticDir as saveStaticDir } from "./save/index.js";
+export { template as wikiQuery, staticDir as wikiQueryStaticDir } from "./wiki-query/index.js";
+export { template as triage, staticDir as triageStaticDir } from "./triage/index.js";
+export {
+  template as setupPreCommit,
+  staticDir as setupPreCommitStaticDir,
+} from "./setup-pre-commit/index.js";

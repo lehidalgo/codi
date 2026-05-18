@@ -104,6 +104,10 @@ export const preset: BuiltinPresetDefinition = {
     prefixedName("to-prd"),
     prefixedName("to-issues"),
     prefixedName("defuddle"),
+    prefixedName("save"),
+    prefixedName("wiki-query"),
+    prefixedName("triage"),
+    prefixedName("setup-pre-commit"),
   ],
   // Capellai parity: 2 vault-management agents. Other built-in agents
   // (code-reviewer, data experts, etc.) remain available as templates but
